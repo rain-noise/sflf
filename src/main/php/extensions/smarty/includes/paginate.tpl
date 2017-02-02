@@ -29,6 +29,11 @@
 .paginate .pager li a { border: 1px solid #eee; background-color: #eee; padding: 5px 10px 5px; border-radius: 4px; -webkit-border-radius: 4px; -moz-border-radius: 4px; color: #333; }
 .paginate .pager li a:HOVER { background-color: #666; color: #fff; border-color: #666; }
 .paginate .pager li span { border: 1px solid #eee; padding: 5px 10px 5px; border-radius: 4px; -webkit-border-radius: 4px; -moz-border-radius: 4px; color: #333; }
+
+@package   SFLF
+@author    github.com/rain-noise
+@copyright Copyright (c) 2017 github.com/rain-noise
+@license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
 =======================================================================
 *}
 {if $method == 'POST'}

@@ -73,8 +73,10 @@
  * 
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/function.domains.php ドメイン整形出力用 Smarty タグ
  * 
- * @author github.com/rain-noise
- * @copyright github.com/rain-noise
+ * @package   SFLF
+ * @author    github.com/rain-noise
+ * @copyright Copyright (c) 2017 github.com/rain-noise
+ * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
  */
 abstract class Domain {
 	

@@ -27,7 +27,7 @@
  * @package   SFLF
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
- * @license   MIT License https://opensource.org/licenses/MIT
+ * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
  */
  class Dao
 {
@@ -514,7 +514,7 @@
  * @package   SFLF
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
- * @license   MIT License https://opensource.org/licenses/MIT
+ * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
  */
 class DatabaseException extends RuntimeException {
 	public function __construct ($message, $code=null, $previous=null) {
@@ -529,7 +529,7 @@ class DatabaseException extends RuntimeException {
  * @package   SFLF
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
- * @license   MIT License https://opensource.org/licenses/MIT
+ * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
  */
 class PageInfo {
 	/**

@@ -1,5 +1,5 @@
 <?php
-/*
+/**
  * Smarty plugin
  * -------------------------------------------------------------
  * File:     function.domains.php
@@ -19,6 +19,11 @@
  *  - {tag_attr} (optional)          : html tag attribute and value like id, class, name, style, data-*
  * Purpose:  ドメイン選択フォーム及びラベルを表示する
  * -------------------------------------------------------------
+ * 
+ * @package   SFLF
+ * @author    github.com/rain-noise
+ * @copyright Copyright (c) 2017 github.com/rain-noise
+ * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
  */
 function smarty_function_domains($params, &$smarty)
 {

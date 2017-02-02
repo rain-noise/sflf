@@ -93,7 +93,7 @@
  * @package   SFLF
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
- * @license   MIT License https://opensource.org/licenses/MIT
+ * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
  */
 abstract class Form
 {
@@ -1113,7 +1113,7 @@ abstract class Form
  * @package   SFLF
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
- * @license   MIT License https://opensource.org/licenses/MIT
+ * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
  */
 class UploadFile {
 	// サイズ指定計算用の定数
@@ -1354,7 +1354,7 @@ class UploadFile {
  * @package   SFLF
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
- * @license   MIT License https://opensource.org/licenses/MIT
+ * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
  */
 class InvalidValidateRuleException extends RuntimeException {
 	public function __construct ($message, $code=null, $previous=null) {

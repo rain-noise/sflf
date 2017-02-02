@@ -1,5 +1,5 @@
 <?php
-/*
+/**
  * Smarty plugin
  * -------------------------------------------------------------
  * File:     function.token.php
@@ -10,6 +10,11 @@
  *  - name (optional) : name of hidden form name (default 'token')
  * Purpose:  トークンを出力する
  * -------------------------------------------------------------
+ * 
+ * @package   SFLF
+ * @author    github.com/rain-noise
+ * @copyright Copyright (c) 2017 github.com/rain-noise
+ * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
  */
 function smarty_function_token($params, &$smarty)
 {

@@ -4,7 +4,7 @@
  - pi     : PageInfo object
  - size   : Pager length size
  - method : GET or POST
- - url    : [GET]  URL liek /user/search?page= 
+ - url    : [GET]  URL like /user/search?page= 
  - submit : [POST] submit button html tag selecter
  - hidden : [POST] hidden html tag selecter of page
  

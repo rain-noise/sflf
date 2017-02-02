@@ -7,11 +7,14 @@
  * {クラス名}.php 又は {クラス名}.class.php で検索を行います。
  * ※サブディレクトリを含んだ検索を行います
  * ※同名のクラス名となるファイルが複数存意した場合、先勝ちになります。
- * ※XxxYyyZzz のクラスロードに失敗した場合
- * 　　- xxxyyyzzz[.class].php (小文字での検索)
- * 　　- YyyZzz[.class].php    (推定親クラスでの検索)
- * 　　- Zzz[.class].php       (推定親クラスでの検索)
- * 　をチェックしてクラスロードを試行します。
+ * 
+ * 【クラスファイル検索手順】
+ * XxxYyyZzz のクラスをロードする場合、以下の手順でクラスファイルを検索しロードを試みます。
+ * 
+ * 　 1. XxxYyyZzz[.class].php (完全一致での検索)
+ * 　 2. xxxyyyzzz[.class].php (小文字での検索)
+ * 　 3. YyyZzz[.class].php    (推定親クラスでの検索)
+ * 　 4. Zzz[.class].php       (推定親クラスでの検索)
  * 
  * 【使い方】
  * require_once "/path/to/AutoLoader.php";
@@ -57,7 +60,7 @@ class AutoLoader
 	private function __construct() {}
 
 	/**
-	 * 指定のクラスをロードするメソッド
+	 * 指定のクラスをロードする
 	 * 
 	 * @param  string $class クラス名
 	 * @return bool   true : 成功／false : 失敗

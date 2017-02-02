@@ -57,7 +57,7 @@
  *     }
  *     
  *     // カスタム Validation の定義
- *     protected function valid_mail_address_exists($label, $value) {
+ *     protected function valid_mail_address_exists($field, $label, $value) {
  *         if($this->_empty($value)) { return null; }
  *         if(Dao::exists(
  *              "SELECT * FROM user WHERE mail_address=:mail_address" . (!empty($this->user_id) ? " AND user_id<>:user_id" : "")

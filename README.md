@@ -4,7 +4,7 @@
 
 SFLF is 'Single File Low Functionality Class Tools' for small or middle web applications.
 
-## Concept
+## Concepts
 
 This project concept are
 
@@ -16,4 +16,5 @@ So you can feel free to use only what you want.
 ## Insufficient Test
 
 There is no unit test yet for the code of this project, the test is not overwhelmingly enough.
+
 So, when using / altering this code please do it on your own risk.

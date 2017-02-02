@@ -2,7 +2,7 @@
 /**
  * Single File Low Functionality Class Tools
  * 
- * ■単一ファイル低機能 データベースアクセスオブジェクト クラス
+ * ■単一ファイル低機能 MySQL データベースアクセスオブジェクト クラス
  * 
  * 【使い方】
  * //[php.ini] date.timezone = Asia/Tokyo

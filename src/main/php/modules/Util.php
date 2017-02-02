@@ -408,7 +408,7 @@ class Util {
 	 * }
 	 * 
 	 * 【使い方】
-	 * // ケース１：$rs 内の UserDetailDto クラスの全フィールドを出力
+	 * // ケース1 ： $rs 内の UserDetailDto クラスの全フィールドを出力
 	 * Util::csv(
 	 *     "user_list_".date('YmdHis').'.csv'
 	 *    ,function($line, $col, $val) { return $val; }
@@ -416,7 +416,7 @@ class Util {
 	 *    ,UserDetailDto::class
 	 *  );
 	 * 
-	 * // ケース２：$rs 内の UserDetailDto クラスの全フィールドを出力／日付のフォーマットを指定
+	 * // ケース2 ： $rs 内の UserDetailDto クラスの全フィールドを出力／日付のフォーマットを指定
 	 * Util::csv(
 	 *     "user_list_".date('YmdHis').'.csv'
 	 *    ,function($line, $col, $val) {
@@ -427,7 +427,7 @@ class Util {
 	 *    ,UserDetailDto::class
 	 *  );
 	 * 
-	 * // ケース３：指定のフィールドを任意の列順で出力
+	 * // ケース3 ： 指定のフィールドを任意の列順で出力
 	 * Util::csv(
 	 *     "user_list_".date('YmdHis').'.csv'
 	 *    ,function($line, $col, $val) { return $val; }
@@ -435,7 +435,7 @@ class Util {
 	 *    ,array('user_id','mail_address','last_name','first_name')
 	 *  );
 	 *  
-	 * // ケース４：存在しない項目を固定値で追加
+	 * // ケース4 ： 存在しない項目を固定値で追加
 	 * Util::csv(
 	 *     "user_list_".date('YmdHis').'.csv'
 	 *    ,function($line, $col, $val) {
@@ -446,7 +446,7 @@ class Util {
 	 *    ,array('user_id','mail_address','last_name','first_name','fixed_col')
 	 *  );
 	 *  
-	 * // ケース５：複数項目を結合して出力
+	 * // ケース5 ： 複数項目を結合して出力
 	 * Util::csv(
 	 *     "user_list_".date('YmdHis').'.csv'
 	 *    ,function($line, $col, $val) {
@@ -457,7 +457,7 @@ class Util {
 	 *    ,array('user_id','mail_address','name')
 	 *  );
 	 *  
-	 * // ケース６：ヘッダ行を出力しない
+	 * // ケース6 ： ヘッダ行を出力しない
 	 * Util::csv(
 	 *     "user_list_".date('YmdHis').'.csv'
 	 *    ,function($line, $col, $val) { return $val; }
@@ -466,7 +466,7 @@ class Util {
 	 *    ,false
 	 *  );
 	 * 
-	 * // ケース７：ヘッダラベル指定（配列指定）
+	 * // ケース7 ： ヘッダラベル指定（配列指定）
 	 * // ※配列の範囲外の項目はシステムラベルで出力されます
 	 * Util::csv(
 	 *     "user_list_".date('YmdHis').'.csv'
@@ -477,7 +477,7 @@ class Util {
 	 *    ,array('会員ID','メールアドレス','姓','名')
 	 *  );
 	 *  
-	 * // ケース８：ヘッダラベル指定（連想配列指定）
+	 * // ケース8 ： ヘッダラベル指定（連想配列指定）
 	 * // ※連想配列に定義の無い項目はシステムラベルで出力されます
 	 * Util::csv(
 	 *     "user_list_".date('YmdHis').'.csv'

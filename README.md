@@ -1,6 +1,6 @@
 # SFLF
 
- [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE.txt)
+ [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 SFLF is 'Single File Low Functionality Class Tools' for small or middle web applications.
 

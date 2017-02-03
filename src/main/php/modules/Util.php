@@ -540,7 +540,6 @@ class Util {
 			$line = '';
 			foreach ($cols AS $col) {
 				$val = self::get($row, $col) ;
-				Log::trace("$col : $val");
 				if($converter) {
 					$val = $converter($row, $col, $val);
 				}

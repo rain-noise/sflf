@@ -119,23 +119,20 @@ class AutoLoader
 		}
 		
 		// カレントディレクトリ検索
-		foreach(glob("{$dir}/*.php") as $path) {
-			if(is_file($path)) {
-				$class = basename(basename($path, '.php'),'.class');
-				if(!isset(self::$CLASS_FILE_PATH[$class])) {
-					self::$CLASS_FILE_PATH[$class] = $path;
-				}
+		foreach(glob($dir."/*.php") as $path) {
+			$class = basename(basename($path, '.php'),'.class');
+			if(!isset(self::$CLASS_FILE_PATH[$class])) {
+				self::$CLASS_FILE_PATH[$class] = $path;
 			}
 		}
 		
 		// サブディレクトリ検索
-		foreach(glob("{$dir}/*" , GLOB_ONLYDIR) as $subDir) {
-			if($subDir != "." && $subDir != "..") {
+		foreach(glob($dir.'/*' , GLOB_ONLYDIR) as $subDir) {
+			if($subDir !== '.' && $subDir !== '..') {
 				self::_listup($subDir);
 			}
 		}
 	}
-	
 }
 
 spl_autoload_register(array('AutoLoader', 'load'));

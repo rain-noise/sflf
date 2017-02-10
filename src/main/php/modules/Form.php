@@ -701,9 +701,7 @@ abstract class Form
 		foreach ($ng_words AS $word) {
 			if(mb_strlen(trim($word,'^$')) > $len) { continue; }
 			$regex = $this->_ngWordToMatcher($word, $separateLetterPattern, $blankLetterPattern, $blankLeterIndex);
-			Log::info($regex);
 			if(preg_match($regex, $value, $matches)){
-				Log::info(">> MATCH : ", $matches);
 				return "{$label} に利用できない単語「{$matches[0]}」が含まれます。";
 			}
 		}

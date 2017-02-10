@@ -688,8 +688,8 @@ abstract class Form
 		$index           = 0;
 		foreach (preg_split("//u", $value, -1, PREG_SPLIT_NO_EMPTY) AS $letter) {
 			if(preg_match('/^'.$blankLetterPattern.'$/u', $letter)){
-				$blankLeterIndex[] = $index;
-				$index++;
+				$blankLeterIndex[] = $index++;
+				continue;
 			}
 			if(preg_match('/^'.$separateLetterPattern.'$/u', $letter)){ continue; }
 			$index++;

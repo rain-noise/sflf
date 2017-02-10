@@ -716,9 +716,14 @@ abstract class Form
 	 */
 	private function _ngWordToMatcher($word, $separateLetterPattern, $blankLetterPattern, $blankLeterIndex) {
 		$regex = '';
-		foreach (preg_split("//u", $word, -1, PREG_SPLIT_NO_EMPTY) AS $i => $letter) {
+		$i = 0;
+		foreach (preg_split("//u", $word, -1, PREG_SPLIT_NO_EMPTY) AS $letter) {
 			$letterPattern = isset(self::$_LETTER_TO_REGEX[$letter]) ? self::$_LETTER_TO_REGEX[$letter] : preg_quote($letter, '/') ;
-			$regex .= in_array($i, $blankLeterIndex) ? $blankLetterPattern.'?'.$letterPattern.'?' : $letterPattern ;
+			if(in_array($letterPattern, array('^','$'))) {
+				$regex .= $letterPattern.$separateLetterPattern.'*';
+				continue;
+			}
+			$regex .= in_array($i++, $blankLeterIndex) ? $blankLetterPattern.'?'.$letterPattern.'?' : $letterPattern ;
 			$regex .= $separateLetterPattern.'*';
 		}
 		$regex = mb_substr($regex, 0, mb_strlen($regex) - mb_strlen($separateLetterPattern.'*'));

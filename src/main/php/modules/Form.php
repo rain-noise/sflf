@@ -676,7 +676,7 @@ abstract class Form
 	// なお、短い単語は ^〇〇$ と定義することで全体一致検索にできます
 	//-------------------------------------------------------------------------
 	const VALID_NG_WORD = 'ng_word';
-	protected function valid_ng_word($field, $label, $value, $ng_words, $separateLetterPattern='[\p{Common}]', $blankLetterPattern='[\p{M}\p{S}〇*＊_＿]') {
+	protected function valid_ng_word($field, $label, $value, $ng_words, $separateLetterPattern='[\p{Common}]', $blankLetterPattern='[\p{M}\p{S}〇*＊_＿]', $blankApplyLength = 3) {
 		if($this->_empty($value)) { return null; }
 		if(!is_array($ng_words)) {
 			$ng_words = file($ng_words, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -685,14 +685,16 @@ abstract class Form
 		// 伏字の考慮
 		$len             = mb_strlen($value);
 		$blankLeterIndex = array();
-		$index           = 0;
-		foreach (preg_split("//u", $value, -1, PREG_SPLIT_NO_EMPTY) AS $letter) {
-			if(preg_match('/^'.$blankLetterPattern.'$/u', $letter)){
-				$blankLeterIndex[] = $index++;
-				continue;
+		if($len >= $blankApplyLength) {
+			$index = 0;
+			foreach (preg_split("//u", $value, -1, PREG_SPLIT_NO_EMPTY) AS $letter) {
+				if(preg_match('/^'.$blankLetterPattern.'$/u', $letter)){
+					$blankLeterIndex[] = $index++;
+					continue;
+				}
+				if(preg_match('/^'.$separateLetterPattern.'$/u', $letter)){ continue; }
+				$index++;
 			}
-			if(preg_match('/^'.$separateLetterPattern.'$/u', $letter)){ continue; }
-			$index++;
 		}
 		
 		// NGワードチェック

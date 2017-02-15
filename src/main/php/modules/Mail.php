@@ -141,7 +141,7 @@ class Mail {
 		
 		$headers = array();
 		$headers[] = "MIME-Version: 1.0";
-		$headers[] = "X-Mailer: PHP/" . phpversion();
+		$headers[] = "X-Mailer: PHP/SFLF";
 		
 		// 件名
 		if(empty($this->_subject)) {
@@ -153,7 +153,10 @@ class Mail {
 		if(empty($this->_from)) {
 			throw new MailSendException("Mail 'from' not set.");
 		}
-		$headers[] = "From: ".$this->_mailAddressEncode($this->_from);
+		$from = $this->_mailAddressEncode($this->_from);
+		$headers[] = "From: ".$from;
+		$headers[] = "Return-Path: ".$from;
+		$headers[] = "Reply-To: ".$from;
 		
 		// 宛先(To)
 		if(empty($this->_to)) {

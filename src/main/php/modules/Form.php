@@ -676,7 +676,7 @@ abstract class Form
 	// なお、短い単語は ^〇〇$ と定義することで全体一致検索にできます
 	//-------------------------------------------------------------------------
 	const VALID_NG_WORD = 'ng_word';
-	protected function valid_ng_word($field, $label, $value, $ng_words, $separateLetterPattern='[\p{Common}]', $blankLetterPattern='[\p{M}\p{S}〇*＊_＿]', $blankApplyLength = 3) {
+	protected function valid_ng_word($field, $label, $value, $ng_words, $separateLetterPattern='[\p{Common}]', $blankLetterPattern='[\p{M}\p{S}〇*＊_＿]', $blankApplyLength = 3, $blankApplyRatio = 0.4) {
 		if($this->_empty($value)) { return null; }
 		if(!is_array($ng_words)) {
 			$ng_words = file($ng_words, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -695,6 +695,9 @@ abstract class Form
 				if(preg_match('/^'.$separateLetterPattern.'$/u', $letter)){ continue; }
 				$index++;
 			}
+		}
+		if($len * $blankApplyRatio < count($blankLeterIndex)) {
+			$blankLeterIndex = array();
 		}
 		
 		// NGワードチェック

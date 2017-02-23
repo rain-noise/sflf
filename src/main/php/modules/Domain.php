@@ -107,6 +107,9 @@ abstract class Domain {
 		$rc   = new ReflectionClass(get_called_class());
 		$list = array();
 		foreach ($rc->getStaticProperties() AS $domain) {
+			if(empty($domain)) {
+				throw new Exception('Domain field not initialzed.');
+			}
 			$list[] = $domain;
 		}
 		return $list;

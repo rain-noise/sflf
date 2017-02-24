@@ -27,6 +27,84 @@ class Util {
 	private function __construct() {}
 
 	/**
+	 * 最も左側にある指定文字列より左側(Left Before)の文字をトリムします。
+	 *
+	 * @param string $str       トリム対象
+	 * @param string $delimiter 区切り文字
+	 * @param string $remove    true : 区切り文字も削除する, false : 区切り文字は削除しない （デフォルト：true）
+	 * @return string トリム文字列
+	 */
+	public static function lbtrim($str, $delimiter, $remove=true) {
+		$start = strpos($str, $delimiter);
+		if($start === false) { return $str; }
+		return mb_substr($str, $start + ($remove ? mb_strlen($delimiter) : 0));
+	}
+	
+	/**
+	 * 最も左側にある指定文字列より右側(Left After)の文字をトリムします。
+	 * 
+	 * @param string $str       トリム対象
+	 * @param string $delimiter 区切り文字
+	 * @param string $remove    true : 区切り文字も削除する, false : 区切り文字は削除しない （デフォルト：true）
+	 * @return string トリム文字列
+	 */
+	public static function latrim($str, $delimiter, $remove=true) {
+		$end = strpos($str, $delimiter);
+		if($end === false) { return $str; }
+		return mb_substr($str, 0, $end + ($remove ? 0 : mb_strlen($delimiter)));
+	}
+	
+	/**
+	 * 最も右側にある指定文字列より左側(Right Before)の文字をトリムします。
+	 * 
+	 * @param string $str       トリム対象
+	 * @param string $delimiter 区切り文字
+	 * @param string $remove    true : 区切り文字も削除する, false : 区切り文字は削除しない （デフォルト：true）
+	 * @return string トリム文字列
+	 */
+	public static function rbtrim($str, $delimiter, $remove=true) {
+		$start = strrpos($str, $delimiter);
+		if($start === false) { return $str; }
+		return mb_substr($str, $start + ($remove ? mb_strlen($delimiter) : 0));
+	}
+	
+	/**
+	 * 最も右側にある指定文字列より右側(Right After)の文字をトリムします。
+	 * 
+	 * @param string $str       トリム対象
+	 * @param string $delimiter 区切り文字
+	 * @param string $remove    true : 区切り文字も削除する, false : 区切り文字は削除しない （デフォルト：true）
+	 * @return string トリム文字列
+	 */
+	public static function ratrim($str, $delimiter, $remove=true) {
+		$end = strrpos($str, $delimiter);
+		if($end === false) { return $str; }
+		return mb_substr($str, 0, $end + ($remove ? 0 : mb_strlen($delimiter)));
+	}
+	
+	/**
+	 * 左端の指定文字列の繰り返しをトリムします。
+	 * 
+	 * @param string $str    トリム対象
+	 * @param string $prefix トリム文字列
+	 * @return string トリム文字列
+	 */
+	public static function ltrim($str, $prefix=' ') {
+		return preg_replace("/^(".preg_quote($prefix).")*/u", '', $str);
+	}
+	
+	/**
+	 * 右端の指定文字列の繰り返しをトリムします。
+	 * 
+	 * @param string $str    トリム対象
+	 * @param string $suffix トリム文字列
+	 * @return string トリム文字列
+	 */
+	public static function rtrim($str, $suffix=' ') {
+		return preg_replace("/(".preg_quote($suffix).")*$/u", '', $str);
+	}
+	
+	/**
 	 * ランダムなパスワードを生成します。
 	 * 
 	 * @param  number $length パスワードの長さ

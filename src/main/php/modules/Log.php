@@ -192,7 +192,7 @@ class Log {
 					 ."\n".var_export($params, true);
 		}
 		
-		if($level >= self::LEVEL_DEBUG) {
+		if($level >= self::LEVEL_DEBUG && self::$_LOG_LEVEL >= self::LEVEL_TRACE) {
 			$body .=  "\n*** DEBUG TRACE ***"
 				     ."\n".self::_traceToString(debug_backtrace(), false);
 		}

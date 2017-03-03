@@ -126,7 +126,7 @@ abstract class Form
 	 * @param array     $aliases form_filed_name => request_parameter_name の対応付け（値に null 指定で exclude）
 	 */
 	public function popurate($request, $files = null, $aliases = array()) {
-		if(empty($request)) { return; }
+		if(empty($request) && empty($files)) { return; }
 		
 		if(!is_array($request)) {
 			$request = get_object_vars($request);

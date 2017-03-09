@@ -187,7 +187,7 @@ class Util {
 	 * @return string URL利用可能文字列
 	 */
 	public static function pack($byte) {
-		return strtr(base64_encode($byte), '+/=', '-_.');
+		return strtr(base64_encode($byte), '+/=', '._-');
 	}
 	
 	/**
@@ -197,7 +197,7 @@ class Util {
 	 * @return byte バイナリデータ
 	 */
 	public static function unpack($packed) {
-		return base64_decode(strtr($packed, '-_.', '+/='));
+		return base64_decode(strtr($packed, '._-', '+/='));
 	}
 	
 	/**

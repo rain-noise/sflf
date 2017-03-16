@@ -420,7 +420,7 @@
 			return $value;
 		}
 		
-		if($value instanceof DateTime) {
+		if($value instanceof DateTime || $value instanceof DateTimeImmutable) {
 			return "'".$value->format("Y-m-d H:i:s")."'";
 		}
 		

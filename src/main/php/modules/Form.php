@@ -26,6 +26,10 @@
  *         );
  *     }
  *     
+ *     protected function files() {
+ *         return array('avatar');
+ *     }
+ *     
  *     protected function rules() {
  *         return array(
  *              'user_id' => array(
@@ -132,7 +136,8 @@ abstract class Form
 			$request = get_object_vars($request);
 		}
 		
-		$clazz = get_class($this);
+		$clazz          = get_class($this);
+		$fileFormFields = $this->files();
 		foreach ($this AS $field => $value) {
 			$alias = isset($aliases[$field]) ? $aliases[$field] : $field ;
 			
@@ -141,13 +146,14 @@ abstract class Form
 				$this->$field = $request[$alias];
 			}
 			
-			if(UploadFile::exists($clazz, $field)) {
-				$this->$field = UploadFile::load($clazz, $field);
-			}
-			
-			if(empty($files)) { continue; }
 			if(isset($files[$alias])) {
 				$this->$field = new UploadFile($clazz, $field, $files[$alias]);
+			} else {
+				if(UploadFile::exists($clazz, $field)) {
+					$this->$field = UploadFile::load($clazz, $field);
+				} else if(in_array($field, $fileFormFields) && empty($this->$field)) {
+					$this->$field = UploadFile::createEmpty($clazz, $field);
+				}
 			}
 		}
 	}
@@ -274,6 +280,16 @@ abstract class Form
 	 * @return array フィールド名 と ラベル の連想配列
 	 */
 	abstract protected function labels();
+	
+	/**
+	 * ファイルアップロードフォーム名を返します。
+	 * ※詳細はクラスコメントの【使い方】を参照
+	 * 
+	 * @return array ファイルアップロードフォーム名の配列
+	 */
+	protected function files() {
+		return array();
+	}
 	
 	/**
 	 * Validate ルールを返します。
@@ -1531,6 +1547,17 @@ class UploadFile {
 	 */
 	public static function load($formName, $fieldName) {
 		return self::exists($formName, $fieldName) ? unserialize($_SESSION[self::_fileId($formName, $fieldName)]) : new UploadFile($formName, $fieldName, array()) ;
+	}
+	
+	/**
+	 * 空のアップロードファイルデータを生成します。
+	 * 
+	 * @param string $formName  フォーム名
+	 * @param string $fieldName フィールド名
+	 * @return UploadFile 空のアップロードファイル
+	 */
+	public static function createEmpty($formName, $fieldName) {
+		return new UploadFile($formName, $fieldName, array());
 	}
 	
 	/**

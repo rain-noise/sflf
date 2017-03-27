@@ -307,36 +307,52 @@ class Util {
 	/**
 	 * 対象のパスを ZIP 圧縮します。
 	 * 
-	 * @param  string $sourcePath 圧縮対象ファイル or ディレクトリ
-	 * @param  string $outZipPath 圧縮後のZIPファイルパス
+	 * @param  string   $sourcePath        圧縮対象ファイル or ディレクトリ
+	 * @param  string   $outZipPath        圧縮後のZIPファイルパス
+	 * @param  function $filter            格納データ取捨選択用フィルタ
+	 *                                     ⇒ $path を引数に取り、 true を返すとそのパスを含み, false を返すとそのパスを除外する。
+	 *                                     　 （デフォルト：null = function($path) { return true; }; = 全データ格納）
+	 * @param  number   $outDirePermission ZIP格納ディレクトリ自動生成時のパーミッション（デフォルト：775）
 	 * @return void
 	 */
-	public static function zip($sourcePath, $outZipPath)
+	public static function zip($sourcePath, $outZipPath, $filter=null, $outDirPermission=775)
 	{
+		if(empty($filter)) {
+			$filter = function($path) { return true; };
+		}
+		
 		$pathInfo = pathInfo($sourcePath);
 		$parentPath = $pathInfo['dirname'];
 		$dirName = $pathInfo['basename'];
-	
-		$z = new \ZipArchive();
-		$z->open($outZipPath, \ZipArchive::CREATE);
+		
+		$destDir = dirname($outZipPath);
+		if(!file_exists($destDir)) {
+			mkdir($destDir, $outDirPermission, true);
+		}
+		
+		$z = new ZipArchive();
+		$z->open($outZipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
 		$z->addEmptyDir($dirName);
-		self::folderToZip($sourcePath, $z, strlen("$parentPath/"));
+		self::folderToZip($sourcePath, $z, strlen("$parentPath/"), $filter);
 		$z->close();
 	}
 	
 	/**
 	 * ディレクトリを再帰的にZIP圧縮します。
 	 * 
-	 * @param  string $folder
-	 * @param  string $zipFile
-	 * @param  int    $exclusiveLength
+	 * @param  string   $folder
+	 * @param  string   $zipFile
+	 * @param  int      $exclusiveLength
+	 * @param  function $filter
 	 * @return void
 	 */
-	private static function folderToZip($folder, &$zipFile, $exclusiveLength) {
+	private static function folderToZip($folder, &$zipFile, $exclusiveLength, $filter) {
 		$handle = opendir($folder);
 		while (false !== $f = readdir($handle)) {
 			if ($f != '.' && $f != '..') {
 				$filePath = "$folder/$f";
+				if(!$filter($filePath)) { continue; }
+				
 				// Remove prefix from file path before add to zip.
 				$localPath = substr($filePath, $exclusiveLength);
 				if (is_file($filePath)) {
@@ -344,7 +360,7 @@ class Util {
 				} elseif (is_dir($filePath)) {
 					// Add sub-directory.
 					$zipFile->addEmptyDir($localPath);
-					self::folderToZip($filePath, $zipFile, $exclusiveLength);
+					self::folderToZip($filePath, $zipFile, $exclusiveLength, $filter);
 				}
 			}
 		}

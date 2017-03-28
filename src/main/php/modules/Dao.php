@@ -14,6 +14,7 @@
  *     Dao::connect('host', 'user', 'pass', 'dbName', $port);
  *     Dao::begin();
  *     $user = Dao::find('SELECT * FROM user WHERE id = :id',array(':id' => $id), UserEntiry::class);
+ *     // You can set IN phrase like 'WHERE status IN (:status)'. ($status will be converted comma separated values when $status is array) 
  *     
  *     // Something to do
  *     
@@ -394,7 +395,7 @@
 					$item = self::_convertToSql($item);
 				}
 				
-				$value = '('.join(', ', $value).')';
+				$value = join(', ', $value);
 			} else {
 				$value = self::_convertToSql($value);
 			}

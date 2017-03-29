@@ -640,16 +640,16 @@ abstract class Form
 	// 全角ひらがな
 	//-------------------------------------------------------------------------
 	const VALID_HIRAGANA = 'hiragana';
-	protected function valid_hiragana($field, $label, $value) {
-		return $this->valid_regex($field, $label, $value, "/^[\p{Hiragana}ー]+$/u", "全角ひらがな");
+	protected function valid_hiragana($field, $label, $value, $extra='') {
+		return $this->valid_regex($field, $label, $value, "/^[\p{Hiragana}ー{$extra}]+$/u", "全角ひらがな");
 	}
 	
 	//-------------------------------------------------------------------------
 	// 全角カタカナ
 	//-------------------------------------------------------------------------
 	const VALID_FULL_KANA = 'full_kana';
-	protected function valid_full_kana($field, $label, $value) {
-		return $this->valid_regex($field, $label, $value, "/^[ァ-ヾ]+$/u", "全角カタカナ");
+	protected function valid_full_kana($field, $label, $value, $extra='') {
+		return $this->valid_regex($field, $label, $value, "/^[ァ-ヾ{$extra}]+$/u", "全角カタカナ");
 	}
 	
 	//-------------------------------------------------------------------------

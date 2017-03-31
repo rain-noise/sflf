@@ -125,29 +125,24 @@ abstract class Form
 	/**
 	 * リクエストデータ又はDtoオブジェクトから自身のインスタンス変数に値をコピーします。
 	 * 
-	 * @param array|obj $request リクエストデータ(=$_REQUEST)又はDtoオブジェクト
-	 * @param array     $files アップロードファイル情報(=$_FILES)
-	 * @param array     $aliases form_filed_name => request_parameter_name の対応付け（値に null 指定で exclude）
+	 * @param array|obj $request   リクエストデータ(=$_REQUEST)又はDtoオブジェクト
+	 * @param array     $files     アップロードファイル情報(=$_FILES)
+	 * @param function  $converter function($field, $src, $value, $form, $origin) { return $value; } コンバータの戻り値が設定されます
 	 */
-	public function popurate($request, $files = null, $aliases = array()) {
+	public function popurate($request, $files = null, $converter = null) {
 		if(empty($request) && empty($files)) { return; }
 		
-		if(!is_array($request)) {
-			$request = get_object_vars($request);
+		if(empty($converter)) {
+			$converter = function($field, $src, $value, $form, $origin) { return $value; };
 		}
 		
 		$clazz          = get_class($this);
 		$fileFormFields = $this->files();
-		foreach ($this AS $field => $value) {
-			$alias = isset($aliases[$field]) ? $aliases[$field] : $field ;
+		foreach ($this AS $field => $origin) {
+			$this->$field = $converter($field, $request, $this->_get($request, $field), $this, $origin);
 			
-			if(empty($alias)) { continue; }
-			if(isset($request[$alias])) {
-				$this->$field = $request[$alias];
-			}
-			
-			if(isset($files[$alias])) {
-				$this->$field = new UploadFile($clazz, $field, $files[$alias]);
+			if(isset($files[$field])) {
+				$this->$field = new UploadFile($clazz, $field, $files[$field]);
 			} else {
 				if(UploadFile::exists($clazz, $field)) {
 					$this->$field = UploadFile::load($clazz, $field);
@@ -159,38 +154,52 @@ abstract class Form
 	}
 	
 	/**
-	 * 指定の DTO オブジェクトを生成し、自身の値をコピーします。
+	 * 指定の DTO オブジェクトに、自身の値をコピーします。
 	 *
-	 * @param string $clazz   DTOオブジェクトクラス名
-	 * @param array  $aliases dto_filed_name => form_filed_name の対応付け（値に null 指定で exclude）
+	 * @param obj      $dto コピー対象DTOオブジェクト
+	 * @param function $converter function($field, $form, $value, $dto, $origin) { return property_exists(get_class($form), $field) ? $value : $origin ; } コンバータの戻り値が設定されます
 	 */
-	public function describe($clazz, $aliases = array()) {
-		$thisClazz = get_class($this);
-		$dto       = new $clazz();
-		foreach ($dto AS $field => $value) {
-			$alias = isset($aliases[$field]) ? $aliases[$field] : $field ;
-			if(!empty($alias) && property_exists($thisClazz, $alias)) {
-				$dto->$field = $this->$alias;
-			}
+	public function inject($dto, $converter = null) {
+		if(empty($converter)) {
+			$converter = function($field, $form, $value, $dto, $origin) { return property_exists(get_class($form), $field) ? $value : $origin ; };
 		}
+		
+		foreach ($dto AS $field => $origin) {
+			$dto->$field = $converter($field, $this, $this->_get($this, $field), $dto, $origin);
+		}
+		
 		return $dto;
 	}
 	
 	/**
-	 * 指定の DTO オブジェクトに、自身の値をコピーします。
+	 * 指定の DTO オブジェクトを生成し、自身の値をコピーします。
 	 *
-	 * @param obj   $dto コピー対象DTOオブジェクト
-	 * @param array $aliases form_filed_name => dto_filed_name の対応付け（値に null 指定で exclude）
+	 * @param string    $clazz     DTOオブジェクトクラス名
+	 * @param function  $converter function($field, $form, $value, $dto, $origin) { return property_exists(get_class($form), $field) ? $value : $origin ; } コンバータの戻り値が設定されます
 	 */
-	public function inject($dto, $aliases = array()) {
-		$dtoClazz = get_class($dto);
-		foreach ($this AS $field => $value) {
-			$alias = isset($aliases[$field]) ? $aliases[$field] : $field ;
-			if(!empty($alias) && property_exists($dtoClazz, $alias)) {
-				$dto->$alias = $value;
-			}
+	public function describe($clazz, $converter = null) {
+		return $this->inject(new $clazz(), $converter);
+	}
+	
+	/**
+	 * 配列又はオブジェクトから値を取得します。
+	 * 
+	 * @param  array|obj $obj     配列 or オブジェクト
+	 * @param  mixed     $key     キー名
+	 * @param  mixed     $default デフォルト値
+	 * @return mixed 値
+	 */
+	private function _get($obj, $key, $default = null) {
+		if($obj == null) { return $default; }
+		if(is_array($obj)) {
+			if(!isset($obj[$key])) { return $default; }
+			return $obj[$key] === null ? $default : $obj[$key] ;
 		}
-		return $dto;
+		if(!($obj instanceof stdClass)) {
+			$clazz = get_class($obj);
+			if(!property_exists($clazz, $key)) { return $default; }
+		}
+		return $obj->$key === null ? $default : $obj->$key ;
 	}
 	
 	/**

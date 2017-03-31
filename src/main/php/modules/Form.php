@@ -128,21 +128,21 @@ abstract class Form
 	/**
 	 * リクエストデータ又はDtoオブジェクトから自身のインスタンス変数に値をコピーします。
 	 * 
-	 * @param array|obj $request   リクエストデータ(=$_REQUEST)又はDtoオブジェクト
+	 * @param array|obj $src       コピー元データ。リクエストデータ(=$_REQUEST)又はDtoオブジェクト
 	 * @param array     $files     アップロードファイル情報(=$_FILES)
-	 * @param function  $converter function($field, $src, $value, $form, $origin) { return $value; } コンバータの戻り値が設定されます
+	 * @param function  $converter コンバータの戻り値が設定されます ： デフォルト function($field, $defined, $src, $value, $form, $origin) { return $defined ? $value : $origin ; } 
 	 */
-	public function popurate($request, $files = null, $converter = null) {
-		if(empty($request) && empty($files)) { return; }
+	public function popurate($src, $files = null, $converter = null) {
+		if(empty($src) && empty($files)) { return; }
 		
 		if(empty($converter)) {
-			$converter = function($field, $src, $value, $form, $origin) { return $value; };
+			$converter = function($field, $defined, $src, $value, $form, $origin) { return $defined ? $value : $origin ; };
 		}
 		
 		$clazz          = get_class($this);
 		$fileFormFields = $this->files();
 		foreach ($this AS $field => $origin) {
-			$this->$field = $converter($field, $request, $this->_get($request, $field), $this, $origin);
+			$this->$field = $converter($field, $src, $this->_has($src, $field), $this->_get($src, $field), $this, $origin);
 			
 			if(isset($files[$field])) {
 				$this->$field = new UploadFile($clazz, $field, $files[$field]);
@@ -160,15 +160,16 @@ abstract class Form
 	 * 指定の DTO オブジェクトに、自身の値をコピーします。
 	 *
 	 * @param obj      $dto コピー対象DTOオブジェクト
-	 * @param function $converter function($field, $form, $value, $dto, $origin) { return property_exists(get_class($form), $field) ? $value : $origin ; } コンバータの戻り値が設定されます
+	 * @param function  $converter コンバータの戻り値が設定されます ： デフォルト function($field, $defined, $form, $value, $dto, $origin) { return $defined ? $value : $origin ; } 
 	 */
 	public function inject($dto, $converter = null) {
 		if(empty($converter)) {
-			$converter = function($field, $form, $value, $dto, $origin) { return property_exists(get_class($form), $field) ? $value : $origin ; };
+			$converter = function($field, $defined, $form, $value, $dto, $origin) { return $defined ? $value : $origin ; };
 		}
 		
+		$thisClazz = get_class($this);
 		foreach ($dto AS $field => $origin) {
-			$dto->$field = $converter($field, $this, $this->_get($this, $field), $dto, $origin);
+			$dto->$field = $converter($field, property_exists($thisClazz, $field), $this, $this->_get($this, $field), $dto, $origin);
 		}
 		
 		return $dto;
@@ -178,7 +179,7 @@ abstract class Form
 	 * 指定の DTO オブジェクトを生成し、自身の値をコピーします。
 	 *
 	 * @param string    $clazz     DTOオブジェクトクラス名
-	 * @param function  $converter function($field, $form, $value, $dto, $origin) { return property_exists(get_class($form), $field) ? $value : $origin ; } コンバータの戻り値が設定されます
+	 * @param function  $converter コンバータの戻り値が設定されます ： デフォルト function($field, $defined, $form, $value, $dto, $origin) { return $defined ? $value : $origin ; } 
 	 */
 	public function describe($clazz, $converter = null) {
 		return $this->inject(new $clazz(), $converter);
@@ -203,6 +204,25 @@ abstract class Form
 			if(!property_exists($clazz, $key)) { return $default; }
 		}
 		return $obj->$key === null ? $default : $obj->$key ;
+	}
+	
+	/**
+	 * 配列又はオブジェクトが指定のプロパティを持つか判定します
+	 * 
+	 * @param  array|obj $obj     配列 or オブジェクト
+	 * @param  mixed     $key     キー名
+	 * @return boolean true : 持つ, false : 持たない
+	 */
+	private function _has($obj, $key) {
+		if($obj == null) { return false; }
+		if(is_array($obj)) {
+			return isset($obj[$key]);
+		}
+		if(!($obj instanceof stdClass)) {
+			$clazz = get_class($obj);
+			return property_exists($clazz, $key);
+		}
+		return isset($obj->$key);
 	}
 	
 	/**

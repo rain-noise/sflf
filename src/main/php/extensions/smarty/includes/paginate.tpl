@@ -3,17 +3,17 @@
 ■パラメータ
  - pi     : PageInfo object
  - size   : Pager length size
- - method : GET or POST
- - url    : [GET]  URL like /user/search?page= 
- - submit : [POST] submit button html tag selecter
- - hidden : [POST] hidden html tag selecter of page
+ - type   : URL or FORM
+ - url    : [URL]  URL like /user/search?page= 
+ - submit : [FORM] submit button html tag selecter
+ - hidden : [FORM] hidden html tag selecter of page
  
 ■呼び出し例
-　○ GET形式
-　{include file='common/paginate.tpl' pi=$pi size=5 method='GET' url='/user/search?page='}
+　○ URL形式
+　{include file='common/paginate.tpl' pi=$pi size=5 type='URL' url='/user/search?page='}
 
-　○ POST形式
-　{include file='common/paginate.tpl' pi=$pi size=5 method='POST' submit='#serch-button' hidden='[name=page]'}
+　○ FORM形式
+　{include file='common/paginate.tpl' pi=$pi size=5 type='FORM' submit='#serch-button' hidden='[name=page]'}
 
 ■スタイル定義例
 .paginate { margin-bottom: 50px; }
@@ -36,7 +36,7 @@
 @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
 =======================================================================
 *}
-{if $method == 'POST'}
+{if $type == 'FORM'}
 <script type="text/javascript">
 <!--
 	var pageJump = function(page) {
@@ -53,7 +53,7 @@
 	</div>
 	{if !$pi->isEmpty()}
 	<ul class="pager">
-		{if $method == 'GET'}
+		{if $type == 'URL'}
 			<li class="first-page">{if !$pi->isFirstPage()}<a href="{$url}1">先頭へ</a>{else}<span>先頭へ</span>{/if}</li>
 			<li class="prev-page">{if  $pi->hasPrevPage()}<a href="{$url}{$pi->page - 1}">前へ</a>{else}<span>前へ</span>{/if}</li>
 			{foreach from=$pi->getNeighborPages($size) item='page'}

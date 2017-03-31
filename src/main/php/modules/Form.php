@@ -83,13 +83,16 @@
  *     // Soemthing to do
  * }
  * 
+ * // for confirm action
+ * $form->avatar->saveTemporary("/path/to/temporary/dir");
+ * 
+ * // for complete action
  * $user = $form->describe(UserEntity::class);
- * $user->avatar_file   = "avater.{$form->avatar->suffix}";
+ * $user->avatar_file   = $form->avatar->publish("/path/to/publish/dir/{$userId}", "avater");
  * $user->registered_at = new DateTime();
  * $userId = Dao::insert('user', $user);
  * 
- * $form->avatar->publish("/path/to/publish/dir/{$userId}", "avater");
- * 
+ * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/function.hiddens.php    hiddenタグ出力用 Smarty タグ
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/function.errors.php     エラーメッセージ出力用 Smarty タグ
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/block.if_errors.php     エラー有無分岐用 Smarty タグ
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/block.unless_errors.php エラー有無分岐用 Smarty タグ

@@ -45,6 +45,14 @@
 	};
 //-->
 </script>
+{else}
+<script type="text/javascript">
+<!--
+	var pageJump = function(page) {
+		location.href = '{$url}' + page;
+	};
+//-->
+</script>
 {/if}
 <div class="paginate">
 	<div class="info">
@@ -53,31 +61,17 @@
 	</div>
 	{if !$pi->isEmpty()}
 	<ul class="pager">
-		{if $type == 'URL'}
-			<li class="first-page">{if !$pi->isFirstPage()}<a href="{$url}1">先頭へ</a>{else}<span>先頭へ</span>{/if}</li>
-			<li class="prev-page">{if  $pi->hasPrevPage()}<a href="{$url}{$pi->page - 1}">前へ</a>{else}<span>前へ</span>{/if}</li>
-			{foreach from=$pi->getNeighborPages($size) item='page'}
-				{if $pi->page == $page}
-					<li class="current-page"><span>{$page}</span></li>
-				{else}
-					<li class="page"><a href="{$url}{$page}">{$page}</a></li>
-				{/if}
-			{/foreach}
-			<li class="next-page">{if  $pi->hasNextPage()}<a href="{$url}{$pi->page + 1}">次へ</a>{else}<span>次へ</span>{/if}</li>
-			<li class="last-page">{if !$pi->isLastPage()}<a href="{$url}{$pi->maxPage}">最後へ</a>{else}<span>最後へ</span>{/if}</li>
-		{else}
-			<li class="first-page">{if !$pi->isFirstPage()}<a href="javascript:void(0);" onclick="pageJump(1)">先頭へ</a>{else}<span>先頭へ</span>{/if}</li>
-			<li class="prev-page">{if  $pi->hasPrevPage()}<a href="javascript:void(0);" onclick="pageJump({$pi->page - 1})">前へ</a>{else}<span>前へ</span>{/if}</li>
-			{foreach from=$pi->getNeighborPages($size) item='page'}
-				{if $pi->page == $page}
-					<li class="current-page"><span>{$page}</span></li>
-				{else}
-					<li class="page"><a href="javascript:void(0);" onclick="pageJump({$page});">{$page}</a></li>
-				{/if}
-			{/foreach}
-			<li class="next-page">{if  $pi->hasNextPage()}<a href="javascript:void(0);" onclick="pageJump({$pi->page + 1});">次へ</a>{else}<span>次へ</span>{/if}</li>
-			<li class="prev-page">{if !$pi->isLastPage()}<a href="javascript:void(0);" onclick="pageJump({$pi->maxPage});">最後へ</a>{else}<span>最後へ</span>{/if}</li>
-		{/if}
+		<li class="first-page">{if !$pi->isFirstPage()}<a href="javascript:void(0);" onclick="pageJump(1)">先頭へ</a>{else}<span>先頭へ</span>{/if}</li>
+		<li class="prev-page">{if  $pi->hasPrevPage()}<a href="javascript:void(0);" onclick="pageJump({$pi->page - 1})">前へ</a>{else}<span>前へ</span>{/if}</li>
+		{foreach from=$pi->getNeighborPages($size) item='page'}
+			{if $pi->page == $page}
+				<li class="current-page"><span>{$page}</span></li>
+			{else}
+				<li class="page"><a href="javascript:void(0);" onclick="pageJump({$page});">{$page}</a></li>
+			{/if}
+		{/foreach}
+		<li class="next-page">{if  $pi->hasNextPage()}<a href="javascript:void(0);" onclick="pageJump({$pi->page + 1});">次へ</a>{else}<span>次へ</span>{/if}</li>
+		<li class="prev-page">{if !$pi->isLastPage()}<a href="javascript:void(0);" onclick="pageJump({$pi->maxPage});">最後へ</a>{else}<span>最後へ</span>{/if}</li>
 	</ul>
 	{/if}
 </div>

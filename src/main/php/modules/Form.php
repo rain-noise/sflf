@@ -142,7 +142,7 @@ abstract class Form
 		$clazz          = get_class($this);
 		$fileFormFields = $this->files();
 		foreach ($this AS $field => $origin) {
-			$this->$field = $converter($field, $src, $this->_has($src, $field), $this->_get($src, $field), $this, $origin);
+			$this->$field = $converter($field, $this->_has($src, $field), $src, $this->_get($src, $field), $this, $origin);
 			
 			if(isset($files[$field])) {
 				$this->$field = new UploadFile($clazz, $field, $files[$field]);

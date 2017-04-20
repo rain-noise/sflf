@@ -13,7 +13,7 @@
  *      Log::LEVEL_TRACE
  *     ,"/path/to/application.log"
  *     ,"_Ym"
- *     , Log::DISPLAY_IMMEDIATELY
+ *     , Log::DISPLAY_FINALLY
  *     ,'/^Undefined index: /'
  * );
  * 
@@ -30,9 +30,6 @@
  *     ,"/path/to/batchName.log"
  *     ,"_Ymd"
  * );
- * 
- * // 画面出力制御を Log::DISPLAY_TRIGGER にした場合、下記の処理を実行したタイミングでログの画面出力がされます。
- * Log::display();
  * 
  * @package   SFLF
  * @author    github.com/rain-noise
@@ -53,6 +50,7 @@ class Log {
 	const DISPLAY_NONE        = 1; // ブラウザ画面への表示を行わない
 	const DISPLAY_IMMEDIATELY = 2; // ログ出力が呼ばれる度にブラウザ画面に出力
 	const DISPLAY_TRIGGER     = 3; // ログ内容をストックし、 Log::display() のコールでブラウザ画面に出力
+	const DISPLAY_FINALLY     = 4; // ログ内容をストックし、 シャットダウン時にブラウザ画面に出力
 	
 	/**
 	 * インスタンス化禁止
@@ -95,6 +93,10 @@ class Log {
 		self::$_LOG_FILE_SUFFIX      = $suffix;
 		self::$_LOG_DISPLAY          = $display;
 		self::$_LOG_SUPPRESS_PATTERN = $suppressPattern;
+		
+		if(self::$_LOG_DISPLAY == self::DISPLAY_FINALLY) {
+			register_shutdown_function(function(){ Log::display(); });
+		}
 	}
 	
 	/**
@@ -237,7 +239,8 @@ EOS;
 				case self::DISPLAY_IMMEDIATELY:
 					echo $html;
 					break;
-				case self::DISPLAY_TRIGGER:
+				case self::DISPLAY_TRIGGER: // Do not break.
+				case self::DISPLAY_FINALLY:
 					self::$_OUT_BUFFER .= $html;
 					break;
 			}
@@ -250,9 +253,19 @@ EOS;
 	 * @return void
 	 */
 	public static function display() {
-		if(self::$_LOG_DISPLAY) {
+		if(!empty(self::$_OUT_BUFFER)) {
 			echo self::$_OUT_BUFFER;
+			self::$_OUT_BUFFER = "";
 		}
+	}
+	
+	/**
+	 * 画面表示用のディスプレイログをクリアします。
+	 * 
+	 * @return void
+	 */
+	public static function clear() {
+		self::$_OUT_BUFFER = "";
 	}
 	
 	/**
@@ -327,8 +340,12 @@ EOS;
 }
 
 // エラーハンドラ登録
-set_error_handler(function($errno, $errstr, $errfile, $errline)
+$old_handler = set_error_handler(null);
+set_error_handler(function($errno, $errstr, $errfile, $errline) use (&$old_handler)
 {
+	if(is_callable($old_handler)) {
+		$old_handler($errno, $errstr, $errfile, $errline);
+	}
 	Log::error_handle($errno, $errstr, $errfile, $errline);
 });
 

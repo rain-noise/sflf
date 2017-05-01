@@ -71,6 +71,7 @@
  *     public static function format($i){ return sprintf("%02s月",$i); }
  * }
  * 
+ * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/domain/*.php 汎用ドメイン
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/function.domains.php ドメイン整形出力用 Smarty タグ
  * 
  * @package   SFLF
@@ -93,6 +94,22 @@ abstract class Domain {
 		$this->label = $label;
 	}
 
+	/**
+	 * ドメインの値を検証します。
+	 * @param boolean true: 一致 / false: 不一致
+	 */
+	public function is($value) {
+		return $this->value == $value;
+	}
+	
+	/**
+	 * ドメインが指定の配列内に含まれるか検証します。
+	 * @param boolean true: 含まれる / false: 含まれない
+	 */
+	public function in(array $array) {
+		return in_array($this->value, $array);
+	}
+	
 	/**
 	 * ドメインを文字列します。
 	 */

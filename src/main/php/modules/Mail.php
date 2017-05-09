@@ -174,7 +174,7 @@ class Mail {
 		}
 		$headers[] = "Content-Type: text/plain; charset=UTF-8";
 		$headers[] = "Content-Transfer-Encoding: base64";
-		$body = wordwrap(base64_encode($this->_body), 70, PHP_EOL, true);
+		$body = wordwrap(base64_encode($this->_body), 70, "\n", true);
 		
 		// 宛先(Cc)
 		if(!empty($this->_cc)) {
@@ -194,7 +194,7 @@ class Mail {
 			$headers[] = "Bcc: ".join(",", $bccs);
 		}
 		
-		if(!mail($to, $subject, $body, join(PHP_EOL, $headers)) ) {
+		if(!mail($to, $subject, $body, join("\n", $headers)) ) {
 			throw new MailSendException("Mail send faild.");
 		}
 	}

@@ -9,9 +9,8 @@
  * require_once "/path/to/Dao.php"; // or use AutoLoader
  * require_once "/path/to/Log.php"; // or use AutoLoader
  *  
+ * Dao::connect('host', 'user', 'pass', 'dbName', $port, function($sql){ Log::debug("SQL :: {$sql}"); });
  * try {
- *     Dao::setSqlLogger(function($sql){ Log::debug("SQL :: {$sql}"); });
- *     Dao::connect('host', 'user', 'pass', 'dbName', $port);
  *     Dao::begin();
  *     $user = Dao::find('SELECT * FROM user WHERE id = :id',array(':id' => $id), UserEntiry::class);
  *     // You can set IN phrase like 'WHERE status IN (:status)'. ($status will be converted comma separated values when $status is array) 
@@ -23,6 +22,14 @@
  *     Dao::rollback();
  * }
  * 
+ * 又は
+ * 
+ * Dao::connect('host', 'user', 'pass', 'dbName', $port, function($sql){ Log::debug("SQL :: {$sql}"); });
+ * Dao::transaction(function(){
+ *     $user = Dao::find('SELECT * FROM user WHERE id = :id',array(':id' => $id), UserEntiry::class);
+ *     // Something to do
+ * });
+ * 
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/includes/paginate.tpl ページ送り Smarty テンプレート
  * 
  * @package   SFLF
@@ -32,6 +39,10 @@
  */
  class Dao
 {
+	const SHUTDOWN_MODE_DO_NOTHING = 1;
+	const SHUTDOWN_MODE_ROLLBACK   = 2;
+	const SHUTDOWN_MODE_COMMIT     = 3;
+	
 	/**
 	 * データベースオブジェクト
 	 * 
@@ -48,6 +59,14 @@
 	 * @var function function($sql){}
 	 */
 	private static $_SQL_LOG_CALLBACK = null;
+	
+	/**
+	 * シャットダウンモード
+	 * 
+	 * exit() / die() などが呼ばれた際のシャットダウン時のトランザクション挙動を定義します。
+	 * @var int Dao::SHUTDOWN_MODE_* （デフォルト： Dao::SHUTDOWN_MODE_DO_NOTHING）
+	 */
+	private static $_SHUTDOWN_MODE = self::SHUTDOWN_MODE_DO_NOTHING;
 	
 	/**
 	 * インスタンス化禁止
@@ -74,16 +93,21 @@
 	 * ※ autocommit は off になります。
 	 * ※ トランザクション分離レベル は READ COMMITTED になります。
 	 * 
-	 * @param  string  $host   接続ホスト
-	 * @param  string  $user   接続ユーザー名
-	 * @param  string  $pass   接続パスワード
-	 * @param  string  $dbName 接続データベース名
-	 * @param  string  $port   接続ポート番号     - デフォルト ini_get("mysqli.default_port")
+	 * @param  string   $host   接続ホスト
+	 * @param  string   $user   接続ユーザー名
+	 * @param  string   $pass   接続パスワード
+	 * @param  string   $dbName 接続データベース名
+	 * @param  string   $port   接続ポート番号     - デフォルト ini_get("mysqli.default_port")
+	 * @param  function $logger SQLログ出力用コールバック関数
 	 * @return boolean true : 新規接続時／false : 既存コネクション存在時
 	 * @throws DatabaseException データベース接続に失敗した場合
 	 */
-	public static function connect($host, $user, $pass, $dbName, $port = null) {
+	public static function connect($host, $user, $pass, $dbName, $port = null, $logger = null) {
 		if(!self::$_DB) {
+			if(isset($logger)) {
+				self::setSqlLogger($logger);
+			}
+			
 			$port = $port ? $port : ini_get("mysqli.default_port") ;
 			self::$_DB = new mysqli($host, $user, $pass, $dbName, $port);
 			if(self::$_DB->connect_error) {
@@ -92,6 +116,16 @@
 			
 			self::$_DB->query("SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED");
 			self::$_DB->autocommit(false);
+			
+			register_shutdown_function(function(){
+				switch (self::$_SHUTDOWN_MODE) {
+					case self::SHUTDOWN_MODE_ROLLBACK:
+						return self::rollback(true);
+					case self::SHUTDOWN_MODE_COMMIT:
+						return self::commit();
+				}
+			});
+			
 			return true;
 		}
 		
@@ -136,6 +170,24 @@
 	}
 	
 	/**
+	 * トランザクションを開始／ロールバック／コミットします。
+	 * 
+	 * @param function $callback      ひとまとまりの処理
+	 * @param int      $shutdown_mode シャットダウンモード Dao::SHUTDOWN_MODE_* (デフォルト： Dao::SHUTDOWN_MODE_COMMIT)
+	 */
+	public  static function transaction($callback, $shutdown_mode = self::SHUTDOWN_MODE_COMMIT) {
+		self::$_SHUTDOWN_MODE = $shutdown_mode;
+		try {
+			self::begin();
+			$callback();
+			self::commit();
+		} catch (Throwable $e) {
+			self::rollback(true);
+			throw $e;
+		}
+	}
+	
+	/**
 	 * 文字列をエスケープします。
 	 * 
 	 * @param  string $val
@@ -155,6 +207,15 @@
 	 */
 	public static function getInsertId() {
 		return self::$_DB->insert_id;
+	}
+	
+	/**
+	 * 直近の INSERT、 UPDATE、REPLACE あるいは DELETE クエリにより変更された行の数を返します。
+	 * 
+	 * @return long 更新件数
+	 */
+	public static function getAffectedRows() {
+		return self::$_DB->affected_rows;
 	}
 	
 	/**
@@ -306,7 +367,7 @@
 	/**
 	 * 対象のテーブルにデータを挿入します。
 	 * ※戻り値は insert_id になります。
-	 * ※エンティティに _IGNORE が定義されている場合、指定されたフィールドは INSERT 文から除外されます
+	 * ※エンティティに const DAO_IGNORE_FILED = ['exclude_col', ...] 定数フィールドが定義されている場合、指定されたフィールドは INSERT 文から除外されます
 	 * 
 	 * @param string    $tableName テーブル名
 	 * @param array|obj $entity    エンティティ情報
@@ -314,8 +375,8 @@
 	 * @throws DatabaseException
 	 */
 	public static function insert($tableName, $entity) {
-		$ignore = property_exists(get_class($entity), '_IGNORE') ? $entity->_IGNORE : array() ;
-		if(!empty($ignore)) { $ignore[] = '_IGNORE'; }
+		$reflect = new ReflectionClass(get_class($entity));
+		$ignore  = $reflect->hasConstant('DAO_IGNORE_FILED') ? $reflect->getConstant('DAO_IGNORE_FILED') : array() ;
 		$cols   = array();
 		$values = array();
 		foreach ($entity AS $col => $value) {
@@ -330,19 +391,19 @@
 	
 	/**
 	 * 対象のテーブルのデータを更新します。
-	 * ※エンティティに $_IGNORE = array('exclude_col', ...) フィールドが定義されている場合、指定されたフィールドは UPDATE 文から除外されます
+	 * ※エンティティに const DAO_IGNORE_FILED = ['exclude_col', ...] 定数フィールドが定義されている場合、指定されたフィールドは UPDATE 文から除外されます
 	 * 
 	 * @param string    $tableName テーブル名
 	 * @param array|obj $entity    エンティティ情報
 	 * @param string    $where     更新条件
 	 * @param array     $option    where   : array() where句用パラメータ       （未指定時は $entity が利用される）
-	 *                             include : array() set句に含めるフィールド名 （未指定時は $entity の _IGNORE 指定以外の全フィールド）
+	 *                             include : array() set句に含めるフィールド名 （未指定時は $entity の DAO_IGNORE_FILED 指定以外の全フィールド）
 	 *                             exclude : array() set句から除くフィールド名
 	 * @return long インサートID
 	 */
 	public static function update($tableName, $entity, $where, $option = array()) {
-		$ignore  = property_exists(get_class($entity), '_IGNORE') ? $entity->_IGNORE : array() ;
-		if(!empty($ignore)) { $ignore[] = '_IGNORE'; }
+		$reflect = new ReflectionClass(get_class($entity));
+		$ignore  = $reflect->hasConstant('DAO_IGNORE_FILED') ? $reflect->getConstant('DAO_IGNORE_FILED') : array() ;
 		$param   = isset($option['where']) ? $option['where'] : array() ;
 		$include = isset($option['include']) ? $option['include'] : array() ;
 		$exclude = isset($option['exclude']) ? $option['exclude'] : array() ;

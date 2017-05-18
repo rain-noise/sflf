@@ -968,7 +968,7 @@ abstract class Form
 	const VALID_DATETIME = 'datetime';
 	protected function valid_datetime($field, $label, $value, $format, $formatLabel=null) {
 		if($this->_empty($value)) { return null; }
-		$date = DateTime::createFromFormat($format, $value);
+		$date = DateTime::createFromFormat("!{$format}", $value);
 		$le   = DateTime::getLastErrors();
 		if($date === false || !empty($le['errors']) || !empty($le['warnings'])) { return "{$label}は".($formatLabel ? $formatLabel : "{$format} 形式")."で入力して下さい。"; }
 		return null;
@@ -982,9 +982,9 @@ abstract class Form
 		if($this->_empty($value)) { return null; }
 		$preCheck = $this->valid_datetime($field, $label, $value, $format, $formatLabel);
 		if(!empty($preCheck)) { return $preCheck; }
-		$target = DateTime::createFromFormat($format, $value);
+		$target = DateTime::createFromFormat("!{$format}", $value);
 		$point  = new DateTime($pointTime);
-		if($target < $point) { return "{$label}は ".$point->format($format)." よりも未来日を指定して下さい。"; }
+		if($target <= $point) { return "{$label}は ".$point->format($format)." よりも未来日を指定して下さい。"; }
 		return null;
 	}
 	
@@ -996,9 +996,9 @@ abstract class Form
 		if($this->_empty($value)) { return null; }
 		$preCheck = $this->valid_datetime($field, $label, $value, $format, $formatLabel);
 		if(!empty($preCheck)) { return $preCheck; }
-		$target = DateTime::createFromFormat($format, $value);
+		$target = DateTime::createFromFormat("!{$format}", $value);
 		$point  = new DateTime($pointTime);
-		if($target <= $point) { return "{$label}は ".$point->format($format)." よりも未来日(当日含む)を指定して下さい。"; }
+		if($target < $point) { return "{$label}は ".$point->format($format)." よりも未来日(当日含む)を指定して下さい。"; }
 		return null;
 	}
 	
@@ -1010,9 +1010,9 @@ abstract class Form
 		if($this->_empty($value)) { return null; }
 		$preCheck = $this->valid_datetime($field, $label, $value, $format, $formatLabel);
 		if(!empty($preCheck)) { return $preCheck; }
-		$target = DateTime::createFromFormat($format, $value);
+		$target = DateTime::createFromFormat("!{$format}", $value);
 		$point  = new DateTime($pointTime);
-		if($target > $point) { return "{$label}は ".$point->format($format)." よりも過去日を指定して下さい。"; }
+		if($target >= $point) { return "{$label}は ".$point->format($format)." よりも過去日を指定して下さい。"; }
 		return null;
 	}
 		
@@ -1024,9 +1024,9 @@ abstract class Form
 		if($this->_empty($value)) { return null; }
 		$preCheck = $this->valid_datetime($field, $label, $value, $format, $formatLabel);
 		if(!empty($preCheck)) { return $preCheck; }
-		$target = DateTime::createFromFormat($format, $value);
+		$target = DateTime::createFromFormat("!{$format}", $value);
 		$point  = new DateTime($pointTime);
-		if($target >= $point) { return "{$label}は ".$point->format($format)." よりも過去日(当日含む)を指定して下さい。"; }
+		if($target > $point) { return "{$label}は ".$point->format($format)." よりも過去日(当日含む)を指定して下さい。"; }
 		return null;
 	}
 	
@@ -1038,7 +1038,7 @@ abstract class Form
 		if($this->_empty($value)) { return null; }
 		$preCheck = $this->valid_datetime($field, $label, $value, $format, $formatLabel);
 		if(!empty($preCheck)) { return $preCheck; }
-		$target = DateTime::createFromFormat($format, $value);
+		$target = DateTime::createFromFormat("!{$format}", $value);
 		$point  = new DateTime("-{$age} year");
 		if($target > $point) { return "{$age}歳未満の方はご利用頂けません。"; }
 		return null;
@@ -1052,7 +1052,7 @@ abstract class Form
 		if($this->_empty($value)) { return null; }
 		$preCheck = $this->valid_datetime($field, $label, $value, $format, $formatLabel);
 		if(!empty($preCheck)) { return $preCheck; }
-		$target = DateTime::createFromFormat($format, $value);
+		$target = DateTime::createFromFormat("!{$format}", $value);
 		$point  = new DateTime("-{$age} year");
 		if($target < $point) { return ($age + 1)."歳以上の方はご利用頂けません。"; }
 		return null;
@@ -1224,8 +1224,8 @@ abstract class Form
 		if($this->_empty($value)) { return null; }
 		$preCheck = $this->valid_datetime($field, $label, $value, $format, $formatLabel);
 		if(!empty($preCheck)) { return $preCheck; }
-		$target = DateTime::createFromFormat($format, $value);
-		$point  = DateTime::createFromFormat($format, $this->$other);
+		$target = DateTime::createFromFormat("!{$format}", $value);
+		$point  = DateTime::createFromFormat("!{$format}", $this->$other);
 		if($target < $point) {
 			$labels = $this->labels();
 			return "{$label}は{$labels[$other]}よりも未来日を指定して下さい。";
@@ -1310,8 +1310,8 @@ abstract class Form
 		if($this->_empty($value)) { return null; }
 		$preCheck = $this->valid_datetime($field, $label, $value, $format, $formatLabel);
 		if(!empty($preCheck)) { return $preCheck; }
-		$target = DateTime::createFromFormat($format, $value);
-		$point  = DateTime::createFromFormat($format, $this->$other);
+		$target = DateTime::createFromFormat("!{$format}", $value);
+		$point  = DateTime::createFromFormat("!{$format}", $this->$other);
 		if($target <= $point) {
 			$labels = $this->labels();
 			return "{$label}は{$labels[$other]}よりも未来日(当日含む)を指定して下さい。";
@@ -1327,8 +1327,8 @@ abstract class Form
 		if($this->_empty($value)) { return null; }
 		$preCheck = $this->valid_datetime($field, $label, $value, $format, $formatLabel);
 		if(!empty($preCheck)) { return $preCheck; }
-		$target = DateTime::createFromFormat($format, $value);
-		$point  = DateTime::createFromFormat($format, $this->$other);
+		$target = DateTime::createFromFormat("!{$format}", $value);
+		$point  = DateTime::createFromFormat("!{$format}", $this->$other);
 		if($target > $point) {
 			$labels = $this->labels();
 			return "{$label}は{$labels[$other]}よりも過去日を指定して下さい。";
@@ -1344,8 +1344,8 @@ abstract class Form
 		if($this->_empty($value)) { return null; }
 		$preCheck = $this->valid_datetime($field, $label, $value, $format, $formatLabel);
 		if(!empty($preCheck)) { return $preCheck; }
-		$target = DateTime::createFromFormat($format, $value);
-		$point  = DateTime::createFromFormat($format, $this->$other);
+		$target = DateTime::createFromFormat("!{$format}", $value);
+		$point  = DateTime::createFromFormat("!{$format}", $this->$other);
 		if($target >= $point) {
 			$labels = $this->labels();
 			return "{$label}は{$labels[$other]}よりも過去日(当日含む)を指定して下さい。";

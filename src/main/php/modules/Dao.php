@@ -529,7 +529,7 @@
 				
 			case MYSQLI_TYPE_DATE:
 			case MYSQLI_TYPE_NEWDATE:
-				return $value == '0000-00-00' ? null : DateTime::createFromFormat('Y-m-d', $value) ;
+				return $value == '0000-00-00' ? null : DateTime::createFromFormat('!Y-m-d', $value) ;
 				
 			case MYSQLI_TYPE_YEAR:
 				return intval($value);

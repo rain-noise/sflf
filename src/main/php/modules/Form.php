@@ -1197,6 +1197,19 @@ abstract class Form
 	}
 
 	//-------------------------------------------------------------------------
+	// フィールド比較：異なる値
+	//-------------------------------------------------------------------------
+	const VALID_FIELD_NOT_SAME = 'field_not_same';
+	protected function valid_field_not_same($field, $label, $value, $other) {
+		if($this->_empty($value)) { return null; }
+		if($value == $this->$other) {
+			$labels = $this->labels();
+			return "{$label}の値に{$labels[$other]}と同じ値は指定できません。";
+		}
+		return null;
+	}
+
+	//-------------------------------------------------------------------------
 	// フィールド比較：重複不可
 	//-------------------------------------------------------------------------
 	const VALID_FIELD_UNIQUE = 'field_unique';
@@ -1226,7 +1239,7 @@ abstract class Form
 		if(!empty($preCheck)) { return $preCheck; }
 		$target = DateTime::createFromFormat("!{$format}", $value);
 		$point  = DateTime::createFromFormat("!{$format}", $this->$other);
-		if($target < $point) {
+		if($target <= $point) {
 			$labels = $this->labels();
 			return "{$label}は{$labels[$other]}よりも未来日を指定して下さい。";
 		}
@@ -1312,7 +1325,7 @@ abstract class Form
 		if(!empty($preCheck)) { return $preCheck; }
 		$target = DateTime::createFromFormat("!{$format}", $value);
 		$point  = DateTime::createFromFormat("!{$format}", $this->$other);
-		if($target <= $point) {
+		if($target < $point) {
 			$labels = $this->labels();
 			return "{$label}は{$labels[$other]}よりも未来日(当日含む)を指定して下さい。";
 		}
@@ -1329,7 +1342,7 @@ abstract class Form
 		if(!empty($preCheck)) { return $preCheck; }
 		$target = DateTime::createFromFormat("!{$format}", $value);
 		$point  = DateTime::createFromFormat("!{$format}", $this->$other);
-		if($target > $point) {
+		if($target >= $point) {
 			$labels = $this->labels();
 			return "{$label}は{$labels[$other]}よりも過去日を指定して下さい。";
 		}
@@ -1346,7 +1359,7 @@ abstract class Form
 		if(!empty($preCheck)) { return $preCheck; }
 		$target = DateTime::createFromFormat("!{$format}", $value);
 		$point  = DateTime::createFromFormat("!{$format}", $this->$other);
-		if($target >= $point) {
+		if($target > $point) {
 			$labels = $this->labels();
 			return "{$label}は{$labels[$other]}よりも過去日(当日含む)を指定して下さい。";
 		}

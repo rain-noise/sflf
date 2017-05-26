@@ -190,19 +190,31 @@ class Log {
 		$body = date("Y-m-d H:i:s", $now)." ".getmypid()." [".self::$_LOG_LEVEL_LABEL[$level]."] ".$message;
 		
 		if($params) {
-			$body .=  "\n*** PARAM ***"
-					 ."\n".var_export($params, true);
+			$body .= self::_indent(
+				 "\n*** PARAM ***"
+				."\n".var_export($params, true)
+				, 1
+				,'>> '
+			);
 		}
 		
 		if($level >= self::LEVEL_DEBUG && self::$_LOG_LEVEL >= self::LEVEL_TRACE) {
-			$body .=  "\n*** DEBUG TRACE ***"
-				     ."\n".self::_traceToString(debug_backtrace(), false);
+			$body .= self::_indent(
+				 "\n*** DEBUG TRACE ***"
+				."\n".self::_traceToString(debug_backtrace(), false)
+				, 1
+				,'-- '
+			);
 		}
 		
 		if($exception) {
-			$body .=  "\n*** STACK TRACE ***"
-					 ."\n".$exception->getMessage(). " (".$exception->getFile().":".$exception->getLine().")"
-					 ."\n".$exception->getTraceAsString();
+			$body .= self::_indent(
+				 "\n*** STACK TRACE ***"
+				."\n".$exception->getMessage(). " (".$exception->getFile().":".$exception->getLine().")"
+				."\n".$exception->getTraceAsString()
+				, 1
+				,'** '
+			);
 		}
 		
 		error_log($body."\n", 3, self::$_LOG_FILE.date(self::$_LOG_FILE_SUFFIX, $now));
@@ -245,6 +257,18 @@ EOS;
 					break;
 			}
 		}
+	}
+	
+	/**
+	 * 指定の文字列をインデントします。
+	 * ※対象の文字列が空の場合、インデントしません。
+	 * 
+	 * @param unknown $string
+	 */
+	private static function _indent($string, $depth = 1, $char = "\t") {
+		$indent = str_repeat($char, $depth);
+		if(empty($string)){ return $string; }
+		return str_replace("\n", "\n{$indent}", $string);
 	}
 	
 	/**

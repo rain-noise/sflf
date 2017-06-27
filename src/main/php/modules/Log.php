@@ -183,7 +183,7 @@ class Log {
 	private static function _log($level, $message, $params=null, $exception=null) {
 		
 		if(self::$_LOG_LEVEL < $level) { return; }
-		if(!is_string($message) && !method_exists($message, '__toString')) { $message = var_export($message, true); }
+		if(!is_string($message) && !method_exists($message, '__toString')) { $message = print_r($message, true); }
 		if(self::$_LOG_SUPPRESS_PATTERN && preg_match(self::$_LOG_SUPPRESS_PATTERN, $message)) { return; }
 		
 		$now  = strtotime("now");
@@ -192,7 +192,7 @@ class Log {
 		if($params) {
 			$body .= self::_indent(
 				 "\n*** PARAM ***"
-				."\n".var_export($params, true)
+				."\n".print_r($params, true)
 				, 1
 				,'>> '
 			);
@@ -355,7 +355,7 @@ EOS;
 			.(empty($value['class']) ? "" : $value['class']."@")
 			.$value['function']
 			.(empty($value['file']) ? "" : " (".$value['file'].":".$value['line'].")")
-			.($withArgs && !empty($value['args']) ? "\n-- ARGS --\n".var_export($value['args'], true) : "" )
+			.($withArgs && !empty($value['args']) ? "\n-- ARGS --\n".print_r($value['args'], true) : "" )
 			;
 		});
 		

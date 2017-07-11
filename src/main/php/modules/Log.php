@@ -186,8 +186,10 @@ class Log {
 		if(!is_string($message) && !method_exists($message, '__toString')) { $message = print_r($message, true); }
 		if(self::$_LOG_SUPPRESS_PATTERN && preg_match(self::$_LOG_SUPPRESS_PATTERN, $message)) { return; }
 		
-		$now  = strtotime("now");
-		$body = date("Y-m-d H:i:s", $now)." ".getmypid()." [".self::$_LOG_LEVEL_LABEL[$level]."] ".$message;
+		$microtime = explode('.', microtime(true));
+		$now       = $microtime[0];
+		$ms        = $microtime[1];
+		$body      = date("Y-m-d H:i:s", $now).".".str_pad($ms, 4, '0')." ".getmypid()." [".self::$_LOG_LEVEL_LABEL[$level]."] ".$message;
 		
 		if($params) {
 			$body .= self::_indent(

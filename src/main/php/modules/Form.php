@@ -2,7 +2,7 @@
 /**
  * Single File Low Functionality Class Tools
  * 
- * ■単一ファイル低機能 Validation機能付きフォーム 基底クラス
+ * ■単一ファイル低機能 Validation 機能付きフォーム 基底クラス
  * 
  * 【使い方】
  * require_once "/path/to/Form.php"; // or use AutoLoader
@@ -15,48 +15,67 @@
  *     public $password_confirm;
  *     public $avatar;
  *     
- *     protected function labels() {
- *         return array(
- *              'user_id'          => '会員ID'
- *             ,'name'             => '氏名'
- *             ,'mail_address'     => 'メールアドレス'
- *             ,'password'         => 'パスワード'
- *             ,'password_confirm' => 'パスワード(確認)'
- *             ,'avatar'           => 'アバター画像'
- *         );
- *     }
+ *     public $bank;
+ *     public $shipping_addresses;
+ * 
+ *     // サブフォーム定義
+ *     // ※HTML name 属性は bank[xxxxx] （ bank[name], bank[branch], bank[holder], bank[number] ）
+ *     const SUB_FORM = [
+ *         'bank' => BankForm.class // or function($parent){ $bank = new BankForm(); ... something to init sub form ... ; return $bank; }
+ *     ];
+ * 
+ *     // サブフォームリスト定義
+ *     // ※HTML name 属性は shipping_addresses[{$index}][xxxxx] （ shipping_addresses[0][zip], shipping_addresses[1][zip], shipping_addresses[1][street] ）
+ *     const SUB_FORM_LIST = [
+ *         'shipping_addresses' => AddressForm.class // or function($parent){ $address = new AddressForm(); ... something to init sub form ... ; return $address; }
+ *     ];
+ * 
+ *     // ファイルフォーム定義
+ *     const FILES = ['avatar'];
  *     
- *     protected function files() {
- *         return array('avatar');
+ *     protected function labels() {
+ *         return [
+ *              'user_id'            => '会員ID'
+ *             ,'name'               => '氏名'
+ *             ,'mail_address'       => 'メールアドレス'
+ *             ,'password'           => 'パスワード'
+ *             ,'password_confirm'   => 'パスワード(確認)'
+ *             ,'avatar'             => 'アバター画像'
+ *             ,'bank'               => '口座情報'
+ *             ,'shipping_addresses' => '配送先'
+ *         ];
  *     }
  *     
  *     protected function rules() {
- *         return array(
- *              'user_id' => array(
- *                   array(Form::VALID_REQUIRED, Form::APPLY_REFER | Form::EXIT_ON_FAILED)
- *             )
- *             ,'name' => array(
- *                   array(Form::VALID_REQUIRED, Form::APPLY_SAVE | Form::EXIT_ON_FAILED)
- *                  ,array(Form::VALID_MAX_LENGTH, 20, Form::APPLY_SAVE)
- *                  ,array(Form::VALID_DEPENDENCE_CHAR, Form::APPLY_SAVE)
- *             )
- *             ,'mail_address' => array(
- *                  array(Form::VALID_REQUIRED, Form::APPLY_SAVE | Form::EXIT_ON_FAILED)
- *                 ,array(Form::VALID_MAIL_ADDRESS, Form::APPLY_SAVE)
- *                 ,array('mail_address_exists', Form::APPLY_SAVE | Form::EXIT_IF_ALREADY_HAS_ERROR) // カスタム Validation の実行
- *             )
- *             ,'password' => array(
- *                  array( Form::VALID_REQUIRED, Form::APPLY_CREATE | Form::EXIT_ON_FAILED)
- *                 ,array( Form::VALID_MIN_LENGTH, 8, Form::APPLY_SAVE )
- *             )
- *             ,'password_confirm' => array(
- *                  array( Form::VALID_REQUIRED, Form::APPLY_CREATE | Form::EXIT_ON_FAILED)
- *                 ,array( Form::VALID_FIELD_SAME, 'password', Form::APPLY_SAVE )
- *             )
- *             ,'avatar' => array(
- *                  array(Form::VALID_FILE_SIZE, 2 * UploadFile::MB, Form::APPLY_SAVE)
- *                 ,array(Form::VALID_FILE_WEB_IMAGE_SUFFIX, Form::APPLY_SAVE)
- *             )
+ *         return [
+ *             'user_id' => [
+ *                 [Form::VALID_REQUIRED, Form::APPLY_REFER | Form::EXIT_ON_FAILED]
+ *             ],
+ *             'name' => [
+ *                 [Form::VALID_REQUIRED, Form::APPLY_SAVE | Form::EXIT_ON_FAILED],
+ *                 [Form::VALID_MAX_LENGTH, 20, Form::APPLY_SAVE],
+ *                 [Form::VALID_DEPENDENCE_CHAR, Form::APPLY_SAVE]
+ *             ],
+ *             'mail_address' => [
+ *                 [Form::VALID_REQUIRED, Form::APPLY_SAVE | Form::EXIT_ON_FAILED],
+ *                 [Form::VALID_MAIL_ADDRESS, Form::APPLY_SAVE],
+ *                 ['mail_address_exists', Form::APPLY_SAVE | Form::EXIT_IF_ALREADY_HAS_ERROR] // カスタム Validation の実行
+ *             ],
+ *             'password' => [
+ *                 [Form::VALID_REQUIRED, Form::APPLY_CREATE | Form::EXIT_ON_FAILED],
+ *                 [Form::VALID_MIN_LENGTH, 8, Form::APPLY_SAVE ]
+ *             ],
+ *             'password_confirm' => [
+ *                 [Form::VALID_REQUIRED, Form::APPLY_CREATE | Form::EXIT_ON_FAILED],
+ *                 [Form::VALID_SAME_AS_INPUTTED, 'password', Form::APPLY_SAVE ]
+ *             ],
+ *             'avatar' => [
+ *                 [Form::VALID_FILE_SIZE, 2 * UploadFile::MB, Form::APPLY_SAVE],
+ *                 [Form::VALID_FILE_WEB_IMAGE_SUFFIX, Form::APPLY_SAVE]
+ *             ],
+ *             'shipping_addresses' => [
+ *                 [Form::VALID_REQUIRED, Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+ *             ]
  *         );
  *     }
  *     
@@ -64,9 +83,9 @@
  *     protected function valid_mail_address_exists($field, $label, $value) {
  *         if($this->_empty($value)) { return null; }
  *         if(Dao::exists(
- *              "SELECT * FROM user WHERE mail_address=:mail_address" . (!empty($this->user_id) ? " AND user_id<>:user_id" : "")
- *             ,array(':mail_address' => $value, ':user_id' => $this->user_id))
- *         ) {
+ *             "SELECT * FROM user WHERE mail_address=:mail_address" . (!empty($this->user_id) ? " AND user_id<>:user_id" : ""),
+ *             [':mail_address' => $value, ':user_id' => $this->user_id]
+ *         )) {
  *             return "ご指定の{$label}は既に存在しています。";
  *         }
  *         return null;
@@ -84,13 +103,35 @@
  * }
  * 
  * // for confirm action
- * $form->avatar->saveTemporary("/path/to/temporary/dir");
+ * $form->avatar->saveTemporary("/path/to/temporary/dir"); // You can skip this step if your app doesn't have confirm action.
  * 
  * // for complete action
- * $user = $form->describe(UserEntity::class);
- * $user->avatar_file   = $form->avatar->publish("/path/to/publish/dir/{$userId}", "avater");
- * $user->registered_at = new DateTime();
+ * $now = new DateTime();
+ * $user = $form->describe(UserEntity::class);  // or $form->inject($user = new UserEntity()); <- this way you can use code completion by IDE
+ * $user->avatar_file   = $form->avatar->getPublishFileName();
+ * $user->registered_at = $now;
  * $userId = Dao::insert('user', $user);
+ * $form->avatar->publish("/path/to/publish/dir/{$userId}");
+ * 
+ * if(!empty($form->bank)) {
+ *     $bank = $form->bank->describe(BankEntity::class); // or $form->bank->inject($bank = new BankEntity());
+ *     $bank->user_id       = $userId;
+ *     $bank->registered_at = $now;
+ *     Dao::insert('bank', $bank);
+ * }
+ * 
+ * Dao::query('DELETE FROM shipping_address WHERE user_id = :user_id', [':user_id' => $userId]);
+ * foreach($form->shipping_addresses AS $i => $addressForm) {
+ *     $address = $addressForm->describe(AddressEntity::class); // or $addressForm->inject($address = new AddressEntity());
+ *     $address->user_id       = $userId;
+ *     $address->shipping_no   = $i + 1;
+ *     $address->registered_at = $now;
+ *     Dao::insert('shipping_address', $address);
+ * }
+ *
+ * 
+ * @todo multiple file form 対応
+ * @todo sub form の file form / multiple file form 対応
  * 
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/function.hiddens.php    hiddenタグ出力用 Smarty タグ
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/function.errors.php     エラーメッセージ出力用 Smarty タグ
@@ -125,9 +166,27 @@ abstract class Form
 	// validation 中断用の特殊コマンド
 	const VALIDATE_COMMAND_EXIT = "@EXIT@"; // この値が返ると以降の validate を 中断 する
 	
+	// ----------------------------------------------------
+	// サブフォーム定義
+	// ----------------------------------------------------
+	// サブフォームを使用する場合、サブクラスでサブフォームを定義して下さい
+	// 例） 'fieldName' => SubForm.class or 'fieldName' => function($parent){ $subForm = new SubForm(); ... something to init sub form ... ; return $subForm; }
+	const SUB_FORM      = [];
+	const SUB_FORM_LIST = [];
+	
+	// ----------------------------------------------------
+	// ファイルフォーム定義
+	// ----------------------------------------------------
+	// ファイルフォームを使用する場合、サブクラスでファイルフォームを定義して下さい
+	// 例） 'banner', 'avater'
+	const FILES = [];
+
+	// このフォームがサブフォームの場合、親フォームが格納される
+	protected $_parent_;
+	
 	/**
-	 * リクエストデータ又はDtoオブジェクトから自身のインスタンス変数に値をコピーします。
-	 * 
+	 * リクエストデータ又は Dto オブジェクトから自身のインスタンス変数に値をコピーします。
+	 *  
 	 * @param array|obj $src       コピー元データ。リクエストデータ(=$_REQUEST)又はDtoオブジェクト
 	 * @param array     $files     アップロードファイル情報(=$_FILES)
 	 * @param function  $converter コンバータの戻り値が設定されます ： デフォルト function($field, $defined, $src, $value, $form, $origin) { return $defined ? $value : $origin ; } 
@@ -139,9 +198,26 @@ abstract class Form
 			$converter = function($field, $defined, $src, $value, $form, $origin) { return $defined ? $value : $origin ; };
 		}
 		
-		$clazz          = get_class($this);
-		$fileFormFields = $this->files();
+		$clazz = get_class($this);
 		foreach ($this AS $field => $origin) {
+			
+			// サブフォームの解析
+			if(array_key_exists($field, static::SUB_FORM)) {
+				$this->$field = $this->_genarateSubForm(static::SUB_FORM[$field], $this, $this->_get($src, $field));
+				continue;
+			}
+			
+			// サブフォームリストの解析
+			if(array_key_exists($field, static::SUB_FORM_LIST)) {
+				$this->$field = array();
+				$items = $this->_get($src, $field);
+				if(empty($items)) { continue; }
+				foreach ($items AS $item) {
+					$this->$field[] = $this->_genarateSubForm(static::SUB_FORM_LIST[$field], $this, $item);
+				}
+				continue;
+			}
+			
 			$this->$field = $converter($field, $this->_has($src, $field), $src, $this->_get($src, $field), $this, $origin);
 			
 			if(isset($files[$field])) {
@@ -149,7 +225,7 @@ abstract class Form
 			} else {
 				if(UploadFile::exists($clazz, $field)) {
 					$this->$field = UploadFile::load($clazz, $field);
-				} else if(in_array($field, $fileFormFields) && empty($this->$field)) {
+				} else if(in_array($field, static::FILES) && empty($this->$field)) {
 					$this->$field = UploadFile::createEmpty($clazz, $field);
 				}
 			}
@@ -157,18 +233,34 @@ abstract class Form
 	}
 	
 	/**
+	 * サブフォームを生成します。
+	 * 
+	 * @param unknown $generator
+	 * @param unknown $parent
+	 * @param unknown $src
+	 */
+	private function _genarateSubForm($generator, $parent, $src) {
+		$subForm = is_callable($generator) ? $generator($parent) : new $generator() ;
+		$subForm->_parent_ = $parent;
+		$subForm->popurate($src);
+		return $subForm;
+	}
+	
+	/**
 	 * 指定の DTO オブジェクトに、自身の値をコピーします。
+	 * ※サブフォームは処理されません
 	 *
 	 * @param obj      $dto コピー対象DTOオブジェクト
 	 * @param function  $converter コンバータの戻り値が設定されます ： デフォルト function($field, $defined, $form, $value, $dto, $origin) { return $defined ? $value : $origin ; } 
 	 */
-	public function inject($dto, $converter = null) {
+	public function inject(&$dto, $converter = null) {
 		if(empty($converter)) {
 			$converter = function($field, $defined, $form, $value, $dto, $origin) { return $defined ? $value : $origin ; };
 		}
 		
 		$thisClazz = get_class($this);
 		foreach ($dto AS $field => $origin) {
+			if(array_key_exists($field, static::SUB_FORM) || array_key_exists($field, static::SUB_FORM_LIST)) { continue; }
 			$dto->$field = $converter($field, property_exists($thisClazz, $field), $this, $this->_get($this, $field), $dto, $origin);
 		}
 		
@@ -177,6 +269,7 @@ abstract class Form
 	
 	/**
 	 * 指定の DTO オブジェクトを生成し、自身の値をコピーします。
+	 * ※サブフォームは処理されません
 	 *
 	 * @param string    $clazz     DTOオブジェクトクラス名
 	 * @param function  $converter コンバータの戻り値が設定されます ： デフォルト function($field, $defined, $form, $value, $dto, $origin) { return $defined ? $value : $origin ; } 
@@ -228,12 +321,14 @@ abstract class Form
 	/**
 	 * 指定のルールに従って validation を実施します。
 	 * 
-	 * @param  array $errors エラー情報格納オブジェクト
-	 * @param  int   $option Form::APPLY_* 及び Form::EXIT_* の Form オプションクラス定数の論理和
+	 * @param  array  $errors     エラー情報格納オブジェクト
+	 * @param  int    $apply      Form::APPLY_* の Form オプションクラス定数の論理和
+	 * @param  string $parentName サブフォーム時の親 name 名
+	 * @param  int    $index      サブフォームリスト時のインデックス
 	 * @return void
 	 * @throws InvalidValidateRuleException
 	 */
-	public function validate(&$errors, $apply) {
+	public function validate(&$errors, $apply, $parentName='', $index=null) {
 		$this->before($apply);
 		
 		$labels = $this->labels();
@@ -263,12 +358,15 @@ abstract class Form
 					$args = array_merge($args, array_slice($validate, 1, $size-2));
 				}
 				
+				// エラーキー構築
+				$errorKey = empty($parentName) ? $target : "{$parentName}[{$target}]" ;
+				
 				// オプション取得
 				$option = $validate[$size-1];
 				
 				// オプション処理
 				if(!($option & $apply)) { continue; }
-				if($option & Form::EXIT_IF_ALREADY_HAS_ERROR && isset($errors[$target]) && !empty($errors[$target])) { break; }
+				if($option & Form::EXIT_IF_ALREADY_HAS_ERROR && isset($errors[$errorKey]) && !empty($errors[$errorKey])) { break; }
 				
 				// Validation 実行
 				$method  = "valid_{$check}";
@@ -280,19 +378,38 @@ abstract class Form
 					if($error == self::VALIDATE_COMMAND_EXIT) { break; }
 					
 					$hasError = true;
-					if(!isset($errors[$target])) {
-						$errors[$target] = array();
+					if(!isset($errors[$errorKey])) {
+						$errors[$errorKey] = array();
 					}
 					if(is_array($error)) {
-						$errors[$target] = array_merge($errors[$target], $error);
+						$errors[$errorKey] = array_merge($errors[$errorKey], $error);
 					} else {
-						$errors[$target][] = $error;
+						$errors[$errorKey][] = $error;
 					}
 					
 					if($option & Form::EXIT_ON_FAILED) { break; }
 				} else {
 					if($option & Form::EXIT_ON_SUCCESS) { break; }
 				}
+			}
+		}
+		
+		// サブフォームを処理
+		foreach (array_keys(static::SUB_FORM) AS $field) {
+			$sub_form = $this->$field;
+			if(!empty($sub_form) && $sub_form instanceof Form) {
+				$sub_form->validate($errors, $apply, empty($parentName) ? $field : "{$parentName}[{$field}]");
+			}
+		}
+		
+		// サブフォームリストを処理
+		foreach (array_keys(static::SUB_FORM_LIST) AS $field) {
+			if(!empty($this->$field)) {
+				foreach ($this->$field AS $i => $sub_form) {
+					if(!empty($sub_form) && $sub_form instanceof Form) {
+						$sub_form->validate($errors, $apply, empty($parentName) ? "{$field}[{$i}]" : "{$parentName}[{$field}][{$i}]", $i);
+					}
+				}	
 			}
 		}
 		
@@ -312,16 +429,6 @@ abstract class Form
 	 * @return array フィールド名 と ラベル の連想配列
 	 */
 	abstract protected function labels();
-	
-	/**
-	 * ファイルアップロードフォーム名を返します。
-	 * ※詳細はクラスコメントの【使い方】を参照
-	 * 
-	 * @return array ファイルアップロードフォーム名の配列
-	 */
-	protected function files() {
-		return array();
-	}
 	
 	/**
 	 * Validate ルールを返します。
@@ -365,95 +472,125 @@ abstract class Form
 		// 何もしない
 	}
 	
-	//#########################################################################
-	// 以下、validation メソッド定義
-	//#########################################################################
-	
-	//-------------------------------------------------------------------------
-	// 未入力の定義
-	//-------------------------------------------------------------------------
+	/**
+	 * 未入力の定義
+	 * 各種 valid_* の validation メソッドでの入力判定は本メソッドを使用して下さい。
+	 * 
+	 * @param UploadFile $value
+	 * @return type
+	 */
 	protected function _empty($value) {
 		if($value instanceof UploadFile) { return $value->isEmpty(); }
 		return $value == null || $value == '';
 	}
 	
-	//-------------------------------------------------------------------------
-	// 処理中断：指定のフィールドが空の場合
-	//-------------------------------------------------------------------------
+	//##########################################################################
+	// 以下、validation メソッド定義
+	//##########################################################################
+	// 中断系 Validation
+	// 　⇒ VALID_EXIT_*
+	// 相互関係チェック系 Validation
+	// 　⇒ VALID_RELATION_*
+	// 　⇒ 相互関係チェック系の validation はフィールド指定されている自身の value をチェックしません
+	// アップロードファイル系 Validation
+	// 　⇒ VALID_FILE_*
+	// フィールド比較系 Validation
+	// 　⇒ VALID_*_INPUTTED
+	// 通常系 Validation
+	// 　⇒ 上記以外の VALID_*
+	//==========================================================================
+
+	//--------------------------------------------------------------------------
+	/**
+	 * 処理中断：指定のフィールドが空の場合
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_EXIT_EMPTY, 'target_field', Form::APPLY_*]
+	 * </pre>
+	 */
 	const VALID_EXIT_EMPTY = 'exit_empty';
 	protected function valid_exit_empty($field, $label, $value, $other) {
 		if($this->_empty($this->$other)) { return self::VALIDATE_COMMAND_EXIT; }
 		return null;
 	}
 	
-	//-------------------------------------------------------------------------
-	// 処理中断：指定のフィールドが空でない場合
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * 処理中断：指定のフィールドが空でない場合
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_EXIT_NOT_EMPTY, 'target_field', Form::APPLY_*]
+	 * </pre>
+	 */
 	const VALID_EXIT_NOT_EMPTY = 'exit_not_empty';
 	protected function valid_exit_not_empty($field, $label, $value, $other) {
 		if(!$this->_empty($this->$other)) { return self::VALIDATE_COMMAND_EXIT; }
 		return null;
 	}
 	
-	//-------------------------------------------------------------------------
-	// 処理中断：指定のフィールドが指定の値の場合
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * 処理中断：指定のフィールドが指定の値の場合
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_EXIT_IF, 'target_field', except_value, Form::APPLY_*]
+	 * </pre>
+	 */
 	const VALID_EXIT_IF = 'exit_if';
 	protected function valid_exit_if($field, $label, $value, $other, $except) {
 		if($this->$other == $except) { return self::VALIDATE_COMMAND_EXIT; }
 		return null;
 	}
 	
-	//-------------------------------------------------------------------------
-	// SKIP：指定のフィールドが指定の値以外の場合
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * 処理中断：指定のフィールドが指定の値以外の場合
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_EXIT_UNLESS, 'target_field', except_value, Form::APPLY_*]
+	 * </pre>
+	 */
 	const VALID_EXIT_UNLESS = 'exit_unless';
 	protected function valid_exit_unless($field, $label, $value, $other, $except) {
 		if($this->$other != $except) { return self::VALIDATE_COMMAND_EXIT; }
 		return null;
 	}
 	
-	//-------------------------------------------------------------------------
-	// SKIP：指定のフィールドが指定の値の何れかの場合
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * 処理中断：指定のフィールドが指定の値の何れかの場合
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_EXIT_IN, 'target_field', [except_value, ...], Form::APPLY_*]
+	 * </pre>
+	 */
 	const VALID_EXIT_IN = 'exit_in';
 	protected function valid_exit_in($field, $label, $value, $other, $excepts) {
 		if(in_array($this->$other, $excepts)) { return self::VALIDATE_COMMAND_EXIT; }
 		return null;
 	}
 	
-	//-------------------------------------------------------------------------
-	// 必須入力
-	//-------------------------------------------------------------------------
-	const VALID_REQUIRED = 'required';
-	protected function valid_required($field, $label, $value) {
-		if($this->_empty($value)) { return "{$label}を入力して下さい。"; }
-		return null;
-	}
-	
-	//-------------------------------------------------------------------------
-	// 必須入力(指定フィールドが入力されている場合)
-	//-------------------------------------------------------------------------
-	const VALID_REQUIRED_DEPEND = 'required_depend';
-	protected function valid_required_depend($field, $label, $value, $depends) {
-		$isset = false;
-		foreach (explode(',', $depends) AS $depend) {
-			$isset |= !$this->_empty($this->$depend);
-		}
-		if(!$isset) { return; }
-		if($this->_empty($value)) { return "{$label}を入力して下さい。"; }
-		return null;
-	}
-	
-	//-------------------------------------------------------------------------
-	// 必須入力(指定フィールドが入力されている場合)
-	//-------------------------------------------------------------------------
-	const VALID_REQUIRED_AT_LEAST = 'required_at_least';
-	protected function valid_required_at_least($field, $label, $value, $count, $depends) {
+	//--------------------------------------------------------------------------
+	/**
+	 * 相互関係：条件付き必須入力：指定フィールドの内、少なくともN項目以上入力すること
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_RELATION_REQUIRED_AT_LEAST_IN, 2, 'target1,target2,...', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * [Form::VALID_RELATION_REQUIRED_AT_LEAST_IN, 2, ['target1', 'target2', ...], Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * </pre>
+	 */
+	const VALID_RELATION_REQUIRED_AT_LEAST_IN = 'relation_required_at_least_in';
+	protected function valid_relation_required_at_least_in($field, $label, $value, $count, $depends) {
 		$labels       = $this->labels();
 		$dependsLabel = array();
 		$setCount     = 0;
-		foreach (explode(',', $depends) AS $depend) {
+		foreach (is_array($depends) ? $depends : explode(',', $depends) AS $depend) {
 			if(!$this->_empty($this->$depend)) { $setCount++; }
 			$dependsLabel[] = isset($labels[$depend]) ? $labels[$depend] : $depend ;
 		}
@@ -461,9 +598,79 @@ abstract class Form
 		return null;
 	}
 	
-	//-------------------------------------------------------------------------
-	// 必須入力(指定フィールが指定の値の場合)
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * 相互関係：重複不可
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_RELATION_UNIQUE, 'target1,target2,...', Form::APPLY_SAVE]
+	 * [Form::VALID_RELATION_UNIQUE, ['target1', 'target2', ...], Form::APPLY_SAVE]
+	 * </pre>
+	 */
+	const VALID_RELATION_UNIQUE = 'relation_unique';
+	protected function valid_relation_unique($field, $label, $value, $depends) {
+		$labels       = $this->labels();
+		$dependsLabel = array();
+		$values       = array();
+		$emptyAll     = true;
+		foreach (is_array($depends) ? $depends : explode(',', $depends) AS $depend) {
+			$emptyAll      &= $this->_empty($this->$depend);
+			$values[]       = $this->$depend;
+			$dependsLabel[] = isset($labels[$depend]) ? $labels[$depend] : $depend ;
+		}
+		if($emptyAll) { return null; }
+		$unique = array_unique($values, SORT_STRING);
+		if(count($values) != count($unique)) { return join(', ', $dependsLabel)." は異なる値を入力して下さい。"; }
+		return null;
+	}
+	
+	//--------------------------------------------------------------------------
+	/**
+	 * 必須入力
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_REQUIRED, Form::APPLY_REFER | Form::EXIT_ON_FAILED]
+	 * </pre>
+	 */
+	const VALID_REQUIRED = 'required';
+	protected function valid_required($field, $label, $value) {
+		if($this->_empty($value)) { return "{$label}を入力して下さい。"; }
+		return null;
+	}
+	
+	//--------------------------------------------------------------------------
+	/**
+	 * 条件付き必須入力：指定フィールドの何れかが入力されている場合
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_REQUIRED_IF_INPUTTED_IN, 'target_field', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * [Form::VALID_REQUIRED_IF_INPUTTED_IN, 'target1,target2,...', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * [Form::VALID_REQUIRED_IF_INPUTTED_IN, ['target1', 'target2', ...], Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * </pre>
+	 */
+	const VALID_REQUIRED_IF_INPUTTED_IN = 'required_if_inputted_in';
+	protected function valid_required_if_inputted_in($field, $label, $value, $depends) {
+		$isset = false;
+		foreach (is_array($depends) ? $depends : explode(',', $depends) AS $depend) {
+			$isset |= !$this->_empty($this->$depend);
+		}
+		if(!$isset) { return; }
+		if($this->_empty($value)) { return "{$label}を入力して下さい。"; }
+		return null;
+	}
+	
+	//--------------------------------------------------------------------------
+	/**
+	 * 条件付き必須入力：指定フィールが指定の値の場合
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_REQUIRED_IF, 'target_field', except_value, Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * </pre>
+	 */
 	const VALID_REQUIRED_IF = 'required_if';
 	protected function valid_required_if($field, $label, $value, $depend, $except) {
 		if($this->_empty($this->$depend) || $this->$depend != $except) { return; }
@@ -471,9 +678,15 @@ abstract class Form
 		return null;
 	}
 	
-	//-------------------------------------------------------------------------
-	// 必須入力(指定フィールが指定の値以外の場合)
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * 条件付き必須入力：指定フィールが指定の値以外の場合
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_REQUIRED_UNLESS, 'target_field', except_value, Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * </pre>
+	 */
 	const VALID_REQUIRED_UNLESS = 'required_unless';
 	protected function valid_required_unless($field, $label, $value, $depend, $except) {
 		if($this->_empty($this->$depend) || $this->$depend == $except) { return; }
@@ -481,9 +694,15 @@ abstract class Form
 		return null;
 	}
 	
-	//-------------------------------------------------------------------------
-	// 空欄必須(指定フィールが指定の値の場合)
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * 条件付き空欄必須：指定フィールが指定の値の場合
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_EMPTY_IF, 'target_field', except_value, Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_EMPTY_IF = 'empty_if';
 	protected function valid_empty_if($field, $label, $value, $depend, $except) {
 		if($this->_empty($this->$depend) || $this->$depend != $except) { return; }
@@ -491,9 +710,15 @@ abstract class Form
 		return null;
 	}
 	
-	//-------------------------------------------------------------------------
-	// 空欄必須(指定フィールが指定の値以外の場合)
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * 条件付き空欄必須：指定フィールが指定の値以外の場合
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_EMPTY_UNLESS, 'target_field', except_value, Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_EMPTY_UNLESS = 'empty_unless';
 	protected function valid_empty_unless($field, $label, $value, $depend, $except) {
 		if($this->_empty($this->$depend) || $this->$depend == $except) { return; }
@@ -501,9 +726,15 @@ abstract class Form
 		return null;
 	}
 	
-	//-------------------------------------------------------------------------
-	// 正規表現
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * 正規表現
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_REGEX, 'pattern', 'label_of_pattern', Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_REGEX = 'regex';
 	protected function valid_regex($field, $label, $value, $pattern, $patternLabel) {
 		if($this->_empty($value)) { return null; }
@@ -511,9 +742,15 @@ abstract class Form
 		return null;
 	}
 	
-	//-------------------------------------------------------------------------
-	// 文字列長：最大
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * 文字列長：最大
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_MAX_LENGTH, length, Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_MAX_LENGTH = 'max_length';
 	protected function valid_max_length($field, $label, $value, $length) {
 		if($this->_empty($value)) { return null; }
@@ -521,9 +758,15 @@ abstract class Form
 		return null;
 	}
 	
-	//-------------------------------------------------------------------------
-	// 文字列長：一致
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * 文字列長：一致
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_LENGTH, length, Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_LENGTH = 'length';
 	protected function valid_length($field, $label, $value, $length) {
 		if($this->_empty($value)) { return null; }
@@ -531,9 +774,15 @@ abstract class Form
 		return null;
 	}
 	
-	//-------------------------------------------------------------------------
-	// 文字列長：最小
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * 文字列長：最小
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_MIN_LENGTH, length, Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_MIN_LENGTH = 'min_length';
 	protected function valid_min_length($field, $label, $value, $length) {
 		if($this->_empty($value)) { return null; }
@@ -541,37 +790,60 @@ abstract class Form
 		return null;
 	}
 	
-	//-------------------------------------------------------------------------
-	// 数値
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * 数値
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_NUMBER, Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_NUMBER = 'number';
 	protected function valid_number($field, $label, $value) {
 		if($this->_empty($value)) { return null; }
 		return $this->valid_regex($field, $label, $value, "/^[+-]?[0-9]*[\.]?[0-9]+$/u", "数値");
 	}
 	
-	//-------------------------------------------------------------------------
-	// 整数
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * 整数
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_INTEGER, Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_INTEGER = 'integer';
 	protected function valid_integer($field, $label, $value) {
 		if($this->_empty($value)) { return null; }
 		return $this->valid_regex($field, $label, $value, "/^[+-]?[0-9]+$/u", "整数");
 	}
 	
-	//-------------------------------------------------------------------------
-	// 実数（小数点N桁まで）
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * 実数：小数点N桁まで
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_FLOAT, decimal, Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_FLOAT = 'float';
 	protected function valid_float($field, $label, $value, $decimal) {
 		if($this->_empty($value)) { return null; }
 		return $this->valid_regex($field, $label, $value, "/^[+-]?[0-9]+([\.][0-9]{0,{$decimal}})?$/u", "実数（小数点{$decimal}桁まで）");
 	}
 	
-	
-	//-------------------------------------------------------------------------
-	// 整数範囲：最大
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * 整数範囲：最大
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_MAX_RANGE, max, Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_MAX_RANGE = 'max_range';
 	protected function valid_max_range($field, $label, $value, $max) {
 		if($this->_empty($value)) { return null; }
@@ -581,9 +853,15 @@ abstract class Form
 		return null;
 	}
 	
-	//-------------------------------------------------------------------------
-	// 整数範囲：最小
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * 整数範囲：最小
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_MIN_RANGE, min, Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_MIN_RANGE = 'min_range';
 	protected function valid_min_range($field, $label, $value, $min) {
 		if($this->_empty($value)) { return null; }
@@ -593,9 +871,15 @@ abstract class Form
 		return null;
 	}
 	
-	//-------------------------------------------------------------------------
-	// メールアドレス
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * メールアドレス
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_MAIL_ADDRESS, Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_MAIL_ADDRESS = 'mail_address';
 	protected function valid_mail_address($field, $label, $value) {
 		if($this->_empty($value)) { return null; }
@@ -603,26 +887,45 @@ abstract class Form
 		return null;
 	}
 	
-	//-------------------------------------------------------------------------
-	// URL
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * URL
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_URL, Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_URL = 'url';
 	protected function valid_url($field, $label, $value) {
 		return $this->valid_regex($field, $label, $value, "/^(https?|ftp)(:\/\/[-_.!~*\'()a-zA-Z0-9;\/?:\@&=+\$,%#]+)$/u", "URL形式");
 	}
 	
-	//-------------------------------------------------------------------------
-	// IPv4アドレス
-	//-------------------------------------------------------------------------
-	const IP_V4_PATTERN       = '/^(([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]).){3}([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([1-9]|[1-2][0-9]|3[0-2]))?$/u';
+	//--------------------------------------------------------------------------
+	/**
+	 * IPv4(CIDR)アドレス
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_IP_V4_ADDRESS, Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_IP_V4_ADDRESS = 'ip_v4_address';
+	const IP_V4_PATTERN       = '/^(([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]).){3}([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([1-9]|[1-2][0-9]|3[0-2]))?$/u';
 	protected function valid_ip_v4_address($field, $label, $value) {
 		return $this->valid_regex($field, $label, $value, self::IP_V4_PATTERN, 'IPアドレス(CIDR)形式');
 	}
 	
-	//-------------------------------------------------------------------------
-	// IPv4アドレスリスト(デフォルト区切り：改行)
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * IPv4(CIDR)アドレスリスト（デフォルト区切り：改行)
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_IP_V4_ADDRESS_LIST, Form::APPLY_SAVE]
+	 * [Form::VALID_IP_V4_ADDRESS_LIST, 'delimiter', Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_IP_V4_ADDRESS_LIST = 'ip_v4_address_list';
 	protected function valid_ip_v4_address_list($field, $label, $value, $delimiter=PHP_EOL) {
 		if($this->_empty($value)) { return null; }
@@ -636,57 +939,101 @@ abstract class Form
 		return $errors;
 	}
 	
-	//-------------------------------------------------------------------------
-	// 半角数字
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * 半角数字
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_HALF_DIGIT, Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_HALF_DIGIT = 'half_digit';
 	protected function valid_half_digit($field, $label, $value) {
 		return $this->valid_regex($field, $label, $value, "/^[0-9]+$/u", "半角数字");
 	}
 	
-	//-------------------------------------------------------------------------
-	// 半角英字
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * 半角英字
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_HALF_ALPHA, Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_HALF_ALPHA = 'half_alpha';
 	protected function valid_half_alpha($field, $label, $value) {
 		return $this->valid_regex($field, $label, $value, "/^[a-zA-Z]+$/u", "半角英字");
 	}
 	
-	//-------------------------------------------------------------------------
-	// 半角英数字
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * 半角英数字
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_HALF_ALPHA_DIGIT, Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_HALF_ALPHA_DIGIT = 'half_digit_num';
 	protected function valid_half_alpha_digit($field, $label, $value) {
 		return $this->valid_regex($field, $label, $value, "/^[a-zA-Z0-9]+$/u", "半角英数字");
 	}
 	
-	//-------------------------------------------------------------------------
-	// 半角英数記号(デフォルト記号：!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~ )
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * 半角英数記号(デフォルト記号：!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~ )
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_HALF_ALPHA_DIGIT_MARK, Form::APPLY_SAVE]
+	 * [Form::VALID_HALF_ALPHA_DIGIT_MARK, 'mark', Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_HALF_ALPHA_DIGIT_MARK = 'half_alpha_digit_mark';
 	protected function valid_half_alpha_digit_mark($field, $label, $value, $mark='!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ ') {
 		return $this->valid_regex($field, $label, $value, "/^[a-zA-Z0-9".preg_quote($mark)."]+$/u", "半角英数記号（{$mark}を含む）");
 	}
 	
-	//-------------------------------------------------------------------------
-	// 全角ひらがな
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * 全角ひらがな
+	 * 
+	 * <pre>
+	 * ex)
+	 *  [Form::VALID_HIRAGANA, Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_HIRAGANA = 'hiragana';
 	protected function valid_hiragana($field, $label, $value, $extra='') {
 		return $this->valid_regex($field, $label, $value, "/^[\p{Hiragana}ー{$extra}]+$/u", "全角ひらがな");
 	}
 	
-	//-------------------------------------------------------------------------
-	// 全角カタカナ
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * 全角カタカナ
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_FULL_KANA, Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_FULL_KANA = 'full_kana';
 	protected function valid_full_kana($field, $label, $value, $extra='') {
 		return $this->valid_regex($field, $label, $value, "/^[ァ-ヾ{$extra}]+$/u", "全角カタカナ");
 	}
 	
-	//-------------------------------------------------------------------------
-	// 機種依存文字
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * 機種依存文字（デフォルトチェックエンコード：sjis-win）
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_DEPENDENCE_CHAR, Form::APPLY_SAVE]
+	 * [Form::VALID_DEPENDENCE_CHAR, 'encode', Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_DEPENDENCE_CHAR = 'dependence_char';
 	protected function valid_dependence_char($field, $label, $value, $encode='sjis-win') {
 		if($this->_empty($value)) { return null; }
@@ -712,17 +1059,33 @@ abstract class Form
 		return array();
 	}
 	
-	//-------------------------------------------------------------------------
-	// NGワード
-	// $ng_words は 配列 又は ワードリストのファイルパス
-	// ワードリストは改行区切りで定義。
-	// 
-	//  - 英数字は半角小文字
-	//  - 日本語は全角カタカナと漢字
-	//
-	// で登録すると曖昧検索になります。
-	// なお、短い単語は ^〇〇$ と定義することで全体一致検索にできます
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * NGワード
+	 * 
+	 * <pre>
+	 * $ng_words は 配列 又は ワードリストのファイルパス。
+	 * ワードリストは改行区切りで定義。
+	 * 
+	 * 　・英数字は半角小文字
+	 * 　・日本語は全角カタカナと漢字
+	 * 
+	 * で登録すると曖昧検索になります。
+	 * なお、短い単語は ^〇〇$ と定義することで全体一致検索にできます
+	 * 
+	 * ex) 
+	 * [Form::VALID_FULL_KANA, 'ng_words_file_path', Form::APPLY_SAVE]
+	 * [Form::VALID_FULL_KANA, ['ng_words', ...], Form::APPLY_SAVE]
+	 * [Form::VALID_FULL_KANA, ng_words, separateLetterPattern, blankLetterPattern, blankApplyLength, blankApplyRatio, Form::APPLY_SAVE]
+	 *  - <b>separateLetterPattern :</b> 区切り文字パターン／ここで指定した文字は区切り文字としてチェック時に無視されます（デフォルト：[\p{Common}]）
+	 *  - ex) d.u.m.m.y や d u m m y を dummy にマッチさせる為の '.' や ' ' に該当するパターンを指定
+	 *  - <b>blankLetterPattern :</b> 伏字文字パターン／ここで指定した文字は伏字としてチェック時に考慮されます（デフォルト：[\p{M}\p{S}〇*＊_＿]）
+	 *  - ex) d〇mmy や dum*y を dummy にマッチさせる為の '〇' や '*' に該当するパターンを指定
+	 *  - <b>blankApplyLength :</b> 伏字文字パターンチェックを適用する最低NGワード文字数（デフォルト：3）
+	 *  - <b>blankApplyRatio :</b> 伏字文字パターンチェックを適用するNGワードに対する伏字の割合（デフォルト：0.4）
+	 *  - ex) 0.4 設定の場合、 s〇x, dum〇y, d〇m〇y はそれぞれ sex, dummy にマッチするが 〇e〇, d〇〇〇y はマッチしない
+	 * </pre>
+	 */
 	const VALID_NG_WORD = 'ng_word';
 	protected function valid_ng_word($field, $label, $value, $ng_words, $separateLetterPattern='[\p{Common}]', $blankLetterPattern='[\p{M}\p{S}〇*＊_＿]', $blankApplyLength = 3, $blankApplyRatio = 0.4) {
 		if($this->_empty($value)) { return null; }
@@ -913,9 +1276,16 @@ abstract class Form
 		,'ー' => '([ー-])'
 	);
 	
-	//-------------------------------------------------------------------------
-	// リスト含有
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * リスト含有
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_CONTAINS, [except, ...], Form::APPLY_SAVE]
+	 * [Form::VALID_CONTAINS, XxxxDomain::values(), Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_CONTAINS = 'contains';
 	protected function valid_contains($field, $label, $value, $list) {
 		if($this->_empty($value)) { return null; }
@@ -929,9 +1299,15 @@ abstract class Form
 		return null;
 	}
 	
-	//-------------------------------------------------------------------------
-	// リスト選択数下限
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * リスト選択数：下限
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_MIN_SELECT_COUNT, min, Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_MIN_SELECT_COUNT = 'min_select_count';
 	protected function valid_min_select_count($field, $label, $value, $min) {
 		if($this->_empty($value)) { return null; }
@@ -940,9 +1316,15 @@ abstract class Form
 		return null;
 	}
 	
-	//-------------------------------------------------------------------------
-	// リスト選択数
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * リスト選択数：一致
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_SELECT_COUNT, count, Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_SELECT_COUNT = 'select_count';
 	protected function valid_select_count($field, $label, $value, $count) {
 		if($this->_empty($value)) { return null; }
@@ -951,9 +1333,15 @@ abstract class Form
 		return null;
 	}
 	
-	//-------------------------------------------------------------------------
-	// リスト選択数上限
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * リスト選択数：上限
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_MAX_SELECT_COUNT, max, Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_MAX_SELECT_COUNT = 'max_select_count';
 	protected function valid_max_select_count($field, $label, $value, $max) {
 		if($this->_empty($value)) { return null; }
@@ -962,105 +1350,205 @@ abstract class Form
 		return null;
 	}
 	
-	//-------------------------------------------------------------------------
-	// 日時フォーマット
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * 日時フォーマット
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_DATETIME, 'format', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * [Form::VALID_DATETIME, 'format', 'label_of_format', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * </pre>
+	 */
 	const VALID_DATETIME = 'datetime';
 	protected function valid_datetime($field, $label, $value, $format, $formatLabel=null) {
 		if($this->_empty($value)) { return null; }
-		$date = DateTime::createFromFormat("!{$format}", $value);
-		$le   = DateTime::getLastErrors();
-		if($date === false || !empty($le['errors']) || !empty($le['warnings'])) { return "{$label}は".($formatLabel ? $formatLabel : "{$format} 形式")."で入力して下さい。"; }
+		$date = $this->_createDateTime($format, $value);
+		if(empty($date)) { return "{$label}は".($formatLabel ? $formatLabel : " {$format} 形式")." （例：".(new DateTime())->format($format)."） で入力して下さい。"; }
 		return null;
 	}
 	
-	//-------------------------------------------------------------------------
-	// 日時：未来日(当日含まず)
-	//-------------------------------------------------------------------------
-	const VALID_FUTURE_THAN = 'future_than';
-	protected function valid_future_than($field, $label, $value, $pointTime, $format, $formatLabel=null) {
+	/**
+	 * DateTime オブジェクトを生成します。
+	 * 
+	 * @param type $format
+	 * @param type $value
+	 * @return array($datetime, $castComplete)
+	 */
+	protected function _createDateTime($format, $value) {
 		if($this->_empty($value)) { return null; }
-		$preCheck = $this->valid_datetime($field, $label, $value, $format, $formatLabel);
-		if(!empty($preCheck)) { return $preCheck; }
-		$target = DateTime::createFromFormat("!{$format}", $value);
-		$point  = new DateTime($pointTime);
+		$date = DateTime::createFromFormat("!{$format}", $value);
+		$le   = DateTime::getLastErrors();
+		return $date === false || !empty($le['errors']) || !empty($le['warnings']) ? null : $date ;
+	}
+	
+	//--------------------------------------------------------------------------
+	/**
+	 * 日時：未来日(当日含まず)
+	 * 
+	 * <pre>
+	 * 日時系 validation は指定フォーマットによる DateTime への型変換に失敗した場合、杓子定規なエラーメッセージを設定します。
+	 * これにより複数の日時系 validation が設定されている項目において型変換に失敗すると同一のエラーメッセージが複数表示されてしまいます。
+	 * その為、日時系 validation では以下の Form::EXIT_ON_FAILED 付きの validation チェックを事前に実施することが望ましいです。
+	 * - [Form::VALID_DATETIME, 'format', 'format_label', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * 
+	 * ex)
+	 * [Form::VALID_FUTURE_THAN, 'now', 'format', Form::APPLY_SAVE]
+	 * </pre>
+	 * 
+	 * @see Form::VALID_DATETIME
+	 */
+	const VALID_FUTURE_THAN = 'future_than';
+	protected function valid_future_than($field, $label, $value, $pointTime, $format) {
+		if($this->_empty($value)) { return null; }
+		$target = $this->_createDateTime($format, $value);
+		if(empty($target)) { return "{$label}は {$format} 形式 （例：".(new DateTime())->format($format)."） で入力して下さい。"; }
+		$point = new DateTime($pointTime);
 		if($target <= $point) { return "{$label}は ".$point->format($format)." よりも未来日を指定して下さい。"; }
 		return null;
 	}
 	
-	//-------------------------------------------------------------------------
-	// 日時：未来日(当日含む)
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * 日時：未来日(当日含む)
+	 * 
+	 * <pre>
+	 * 日時系 validation は指定フォーマットによる DateTime への型変換に失敗した場合、杓子定規なエラーメッセージを設定します。
+	 * これにより複数の日時系 validation が設定されている項目において型変換に失敗すると同一のエラーメッセージが複数表示されてしまいます。
+	 * その為、日時系 validation では以下の Form::EXIT_ON_FAILED 付きの validation チェックを事前に実施することが望ましいです。
+	 * - [Form::VALID_DATETIME, 'format', 'format_label', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * 
+	 * ex)
+	 * [Form::VALID_FUTURE_EQUAL, 'now', 'format', Form::APPLY_SAVE]
+	 * </pre>
+	 * 
+	 * @see Form::VALID_DATETIME
+	 */
 	const VALID_FUTURE_EQUAL = 'future_equal';
-	protected function valid_future_equal($field, $label, $value, $pointTime, $format, $formatLabel=null) {
+	protected function valid_future_equal($field, $label, $value, $pointTime, $format) {
 		if($this->_empty($value)) { return null; }
-		$preCheck = $this->valid_datetime($field, $label, $value, $format, $formatLabel);
-		if(!empty($preCheck)) { return $preCheck; }
-		$target = DateTime::createFromFormat("!{$format}", $value);
-		$point  = new DateTime($pointTime);
+		$target = $this->_createDateTime($format, $value);
+		if(empty($target)) { return "{$label}は {$format} 形式 （例：".(new DateTime())->format($format)."） で入力して下さい。"; }
+		$point = new DateTime($pointTime);
 		if($target < $point) { return "{$label}は ".$point->format($format)." よりも未来日(当日含む)を指定して下さい。"; }
 		return null;
 	}
 	
-	//-------------------------------------------------------------------------
-	// 日時：過去日(当日含まず)
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * 日時：過去日(当日含まず)
+	 * 
+	 * <pre>
+	 * 日時系 validation は指定フォーマットによる DateTime への型変換に失敗した場合、杓子定規なエラーメッセージを設定します。
+	 * これにより複数の日時系 validation が設定されている項目において型変換に失敗すると同一のエラーメッセージが複数表示されてしまいます。
+	 * その為、日時系 validation では以下の Form::EXIT_ON_FAILED 付きの validation チェックを事前に実施することが望ましいです。
+	 * - [Form::VALID_DATETIME, 'format', 'format_label', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * 
+	 * ex)
+	 * [Form::VALID_PAST_THAN, 'now', 'format', Form::APPLY_SAVE]
+	 * </pre>
+	 * 
+	 * @see Form::VALID_DATETIME
+	 */
 	const VALID_PAST_THAN = 'past_than';
-	protected function valid_past_than($field, $label, $value, $pointTime, $format, $formatLabel=null) {
+	protected function valid_past_than($field, $label, $value, $pointTime, $format) {
 		if($this->_empty($value)) { return null; }
-		$preCheck = $this->valid_datetime($field, $label, $value, $format, $formatLabel);
-		if(!empty($preCheck)) { return $preCheck; }
-		$target = DateTime::createFromFormat("!{$format}", $value);
-		$point  = new DateTime($pointTime);
+		$target = $this->_createDateTime($format, $value);
+		if(empty($target)) { return "{$label}は {$format} 形式 （例：".(new DateTime())->format($format)."） で入力して下さい。"; }
+		$point = new DateTime($pointTime);
 		if($target >= $point) { return "{$label}は ".$point->format($format)." よりも過去日を指定して下さい。"; }
 		return null;
 	}
 		
-	//-------------------------------------------------------------------------
-	// 日時：過去日(当日含む)
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * 日時：過去日(当日含む)
+	 * 
+	 * <pre>
+	 * 日時系 validation は指定フォーマットによる DateTime への型変換に失敗した場合、杓子定規なエラーメッセージを設定します。
+	 * これにより複数の日時系 validation が設定されている項目において型変換に失敗すると同一のエラーメッセージが複数表示されてしまいます。
+	 * その為、日時系 validation では以下の Form::EXIT_ON_FAILED 付きの validation チェックを事前に実施することが望ましいです。
+	 * - [Form::VALID_DATETIME, 'format', 'format_label', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * 
+	 * ex)
+	 * [Form::VALID_PAST_EQUAL, 'now', 'format', Form::APPLY_SAVE]
+	 * </pre>
+	 * 
+	 * @see Form::VALID_DATETIME
+	 */
 	const VALID_PAST_EQUAL = 'past_equal';
-	protected function valid_past_equal($field, $label, $value, $pointTime, $format, $formatLabel=null) {
+	protected function valid_past_equal($field, $label, $value, $pointTime, $format) {
 		if($this->_empty($value)) { return null; }
-		$preCheck = $this->valid_datetime($field, $label, $value, $format, $formatLabel);
-		if(!empty($preCheck)) { return $preCheck; }
-		$target = DateTime::createFromFormat("!{$format}", $value);
+		$target = $this->_createDateTime($format, $value);
+		if(empty($target)) { return "{$label}は {$format} 形式 （例：".(new DateTime())->format($format)."） で入力して下さい。"; }
 		$point  = new DateTime($pointTime);
 		if($target > $point) { return "{$label}は ".$point->format($format)." よりも過去日(当日含む)を指定して下さい。"; }
 		return null;
 	}
 	
-	//-------------------------------------------------------------------------
-	// 日時：年齢制限：以上
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * 日時：年齢制限：以上
+	 * 
+	 * <pre>
+	 * 日時系 validation は指定フォーマットによる DateTime への型変換に失敗した場合、杓子定規なエラーメッセージを設定します。
+	 * これにより複数の日時系 validation が設定されている項目において型変換に失敗すると同一のエラーメッセージが複数表示されてしまいます。
+	 * その為、日時系 validation では以下の Form::EXIT_ON_FAILED 付きの validation チェックを事前に実施することが望ましいです。
+	 * - [Form::VALID_DATETIME, 'format', 'format_label', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * 
+	 * ex)
+	 * [Form::VALID_AGE_GREATER_EQUAL, age, 'format', Form::APPLY_SAVE]
+	 * </pre>
+	 * 
+	 * @see Form::VALID_DATETIME
+	 */
 	const VALID_AGE_GREATER_EQUAL = 'age_greater_equal';
-	protected function valid_age_greater_equal($field, $label, $value, $age, $format, $formatLabel=null) {
+	protected function valid_age_greater_equal($field, $label, $value, $age, $format) {
 		if($this->_empty($value)) { return null; }
-		$preCheck = $this->valid_datetime($field, $label, $value, $format, $formatLabel);
-		if(!empty($preCheck)) { return $preCheck; }
-		$target = DateTime::createFromFormat("!{$format}", $value);
-		$point  = new DateTime("-{$age} year");
+		$target = $this->_createDateTime($format, $value);
+		if(empty($target)) { return "{$label}は {$format} 形式 （例：".(new DateTime())->format($format)."） で入力して下さい。"; }
+		$point = new DateTime("-{$age} year");
 		if($target > $point) { return "{$age}歳未満の方はご利用頂けません。"; }
 		return null;
 	}
 	
-	//-------------------------------------------------------------------------
-	// 日時：年齢制限：以下
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * 日時：年齢制限：以下
+	 * 
+	 * <pre>
+	 * 日時系 validation は指定フォーマットによる DateTime への型変換に失敗した場合、杓子定規なエラーメッセージを設定します。
+	 * これにより複数の日時系 validation が設定されている項目において型変換に失敗すると同一のエラーメッセージが複数表示されてしまいます。
+	 * その為、日時系 validation では以下の Form::EXIT_ON_FAILED 付きの validation チェックを事前に実施することが望ましいです。
+	 * - [Form::VALID_DATETIME, 'format', 'format_label', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * 
+	 * ex)
+	 * [Form::VALID_AGE_LESS_EQUAL, age, 'format', Form::APPLY_SAVE]
+	 * </pre>
+	 * 
+	 * @see Form::VALID_DATETIME
+	 */
 	const VALID_AGE_LESS_EQUAL = 'age_less_equal';
-	protected function valid_age_less_equal($field, $label, $value, $age, $format, $formatLabel=null) {
+	protected function valid_age_less_equal($field, $label, $value, $age, $format) {
 		if($this->_empty($value)) { return null; }
-		$preCheck = $this->valid_datetime($field, $label, $value, $format, $formatLabel);
-		if(!empty($preCheck)) { return $preCheck; }
-		$target = DateTime::createFromFormat("!{$format}", $value);
-		$point  = new DateTime("-{$age} year");
+		$target = $this->_createDateTime($format, $value);
+		if(empty($target)) { return  "{$label}は {$format} 形式 （例：".(new DateTime())->format($format)."） で入力して下さい。"; }
+		$point = new DateTime("-{$age} year");
 		if($target < $point) { return ($age + 1)."歳以上の方はご利用頂けません。"; }
 		return null;
 	}
 	
-	//-------------------------------------------------------------------------
-	// アップロードファイル：サイズ
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * アップロードファイル：サイズ
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_FILE_SIZE, size, Form::APPLY_SAVE]
+	 * [Form::VALID_FILE_SIZE, size, 'label_of_size', Form::APPLY_SAVE]
+	 * [Form::VALID_FILE_SIZE, 2 * UploadFile::MB, Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_FILE_SIZE = 'file_size';
 	protected function valid_file_size($field, $label, $value, $size, $sizeLabel=null) {
 		if($this->_empty($value)) { return null; }
@@ -1071,9 +1559,16 @@ abstract class Form
 		return null;
 	}
 
-	//-------------------------------------------------------------------------
-	// アップロードファイル：拡張子
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * アップロードファイル：拡張子
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_FILE_SUFFIX_MATCH, pattern, Form::APPLY_SAVE]
+	 * [Form::VALID_FILE_SUFFIX_MATCH, pattern, 'label_of_pattern', Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_FILE_SUFFIX_MATCH = 'file_suffix_match';
 	protected function valid_file_suffix_match($field, $label, $value, $pattern, $patternLabel=null) {
 		if($this->_empty($value)) { return null; }
@@ -1084,9 +1579,16 @@ abstract class Form
 		return null;
 	}
 
-	//-------------------------------------------------------------------------
-	// アップロードファイル：MimeType
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * アップロードファイル：MimeType
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_FILE_MIME_TYPE_MATCH, pattern, Form::APPLY_SAVE]
+	 * [Form::VALID_FILE_MIME_TYPE_MATCH, pattern, 'label_of_pattern', Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_FILE_MIME_TYPE_MATCH = 'file_mime_type_match';
 	protected function valid_file_mime_type_match($field, $label, $value, $pattern, $patternLabel=null) {
 		if($this->_empty($value)) { return null; }
@@ -1097,17 +1599,32 @@ abstract class Form
 		return null;
 	}
 
-	//-------------------------------------------------------------------------
-	// アップロードファイル：WEB画像拡張子
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * アップロードファイル：WEB画像拡張子
+	 * 
+	 * <pre>
+	 * 許可される拡張子パターンは以下の通りです
+	 * - /^(jpe?g|gif|png)$/iu
+	 * 
+	 * ex)
+	 * [Form::VALID_FILE_WEB_IMAGE_SUFFIX, Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_FILE_WEB_IMAGE_SUFFIX = 'file_web_image_suffix';
 	protected function valid_file_web_image_suffix($field, $label, $value) {
-		return $this->valid_file_suffix_match($field, $label, $value, '/^(jpe?g|gif|png|ico)$/iu', '画像形式[ jpg, jpeg, gif, png, ico]');
+		return $this->valid_file_suffix_match($field, $label, $value, '/^(jpe?g|gif|png)$/iu', '画像形式[jpg, jpeg, gif, png]');
 	}
 
-	//-------------------------------------------------------------------------
-	// アップロードファイル：画像：幅(最大値)
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * アップロードファイル：画像：幅：最大値
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_FILE_IMAGE_MAX_WIDTH, width, Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_FILE_IMAGE_MAX_WIDTH = 'file_image_max_width';
 	protected function valid_file_image_max_width($field, $label, $value, $width) {
 		if($this->_empty($value)) { return null; }
@@ -1118,9 +1635,15 @@ abstract class Form
 		return null;
 	}
 
-	//-------------------------------------------------------------------------
-	// アップロードファイル：画像：幅(指定値)
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * アップロードファイル：画像：幅：指定値
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_FILE_IMAGE_WIDTH, width, Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_FILE_IMAGE_WIDTH = 'file_image_width';
 	protected function valid_file_image_width($field, $label, $value, $width) {
 		if($this->_empty($value)) { return null; }
@@ -1131,9 +1654,15 @@ abstract class Form
 		return null;
 	}
 
-	//-------------------------------------------------------------------------
-	// アップロードファイル：画像：幅(最小値)
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * アップロードファイル：画像：幅：最小値
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_FILE_IMAGE_MIN_WIDTH, width, Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_FILE_IMAGE_MIN_WIDTH = 'file_image_min_width';
 	protected function valid_file_image_min_width($field, $label, $value, $width) {
 		if($this->_empty($value)) { return null; }
@@ -1144,9 +1673,15 @@ abstract class Form
 		return null;
 	}
 
-	//-------------------------------------------------------------------------
-	// アップロードファイル：画像：高さ(最大値)
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * アップロードファイル：画像：高さ：最大値
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_FILE_IMAGE_MAX_HEIGHT, height, Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_FILE_IMAGE_MAX_HEIGHT = 'file_image_max_height';
 	protected function valid_file_image_max_height($field, $label, $value, $height) {
 		if($this->_empty($value)) { return null; }
@@ -1157,9 +1692,15 @@ abstract class Form
 		return null;
 	}
 
-	//-------------------------------------------------------------------------
-	// アップロードファイル：画像：高さ(指定値)
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * アップロードファイル：画像：高さ：指定値
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_FILE_IMAGE_HEIGHT, height, Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_FILE_IMAGE_HEIGHT = 'file_image_height';
 	protected function valid_file_image_height($field, $label, $value, $height) {
 		if($this->_empty($value)) { return null; }
@@ -1170,9 +1711,15 @@ abstract class Form
 		return null;
 	}
 
-	//-------------------------------------------------------------------------
-	// アップロードファイル：画像：高さ(最小値)
-	//-------------------------------------------------------------------------
+	//--------------------------------------------------------------------------
+	/**
+	 * アップロードファイル：画像：高さ：最小値
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_FILE_IMAGE_MIN_HEIGHT, height, Form::APPLY_SAVE]
+	 * </pre>
+	 */
 	const VALID_FILE_IMAGE_MIN_HEIGHT = 'file_image_min_height';
 	protected function valid_file_image_min_height($field, $label, $value, $height) {
 		if($this->_empty($value)) { return null; }
@@ -1183,11 +1730,17 @@ abstract class Form
 		return null;
 	}
 	
-	//-------------------------------------------------------------------------
-	// フィールド比較：同じ値(再入力)
-	//-------------------------------------------------------------------------
-	const VALID_FIELD_SAME = 'field_same';
-	protected function valid_field_same($field, $label, $value, $other) {
+	//--------------------------------------------------------------------------
+	/**
+	 * フィールド比較：同じ値(再入力)
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_SAME_AS_INPUTTED, 'target_field', Form::APPLY_SAVE]
+	 * </pre>
+	 */
+	const VALID_SAME_AS_INPUTTED = 'same_as_inputted';
+	protected function valid_same_as_inputted($field, $label, $value, $other) {
 		if($this->_empty($value)) { return null; }
 		if($value != $this->$other) {
 			$labels = $this->labels();
@@ -1196,11 +1749,17 @@ abstract class Form
 		return null;
 	}
 
-	//-------------------------------------------------------------------------
-	// フィールド比較：異なる値
-	//-------------------------------------------------------------------------
-	const VALID_FIELD_NOT_SAME = 'field_not_same';
-	protected function valid_field_not_same($field, $label, $value, $other) {
+	//--------------------------------------------------------------------------
+	/**
+	 * フィールド比較：異なる値
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_NOT_SAME_AS_INPUTTED, 'target_field', Form::APPLY_SAVE]
+	 * </pre>
+	 */
+	const VALID_NOT_SAME_AS_INPUTTED = 'not_same_as_inputted';
+	protected function valid_not_same_as_inputted($field, $label, $value, $other) {
 		if($this->_empty($value)) { return null; }
 		if($value == $this->$other) {
 			$labels = $this->labels();
@@ -1209,48 +1768,17 @@ abstract class Form
 		return null;
 	}
 
-	//-------------------------------------------------------------------------
-	// フィールド比較：重複不可
-	//-------------------------------------------------------------------------
-	const VALID_FIELD_UNIQUE = 'field_unique';
-	protected function valid_field_unique($field, $label, $value, $depends) {
-		$labels       = $this->labels();
-		$dependsLabel = array();
-		$values       = array();
-		$emptyAll     = true;
-		foreach (explode(',', $depends) AS $depend) {
-			$emptyAll      &= $this->_empty($this->$depend);
-			$values[]       = $this->$depend;
-			$dependsLabel[] = isset($labels[$depend]) ? $labels[$depend] : $depend ;
-		}
-		if($emptyAll) { return null; }
-		$unique = array_unique($values, SORT_STRING);
-		if(count($values) != count($unique)) { return join(', ', $dependsLabel)." は異なる値を入力して下さい。"; }
-		return null;
-	}
-
-	//-------------------------------------------------------------------------
-	// フィールド比較：日時：未来日(当日含まず)
-	//-------------------------------------------------------------------------
-	const VALID_FIELD_FUTURE_THAN = 'field_future_than';
-	protected function valid_field_future_than($field, $label, $value, $other, $format, $formatLabel=null) {
-		if($this->_empty($value)) { return null; }
-		$preCheck = $this->valid_datetime($field, $label, $value, $format, $formatLabel);
-		if(!empty($preCheck)) { return $preCheck; }
-		$target = DateTime::createFromFormat("!{$format}", $value);
-		$point  = DateTime::createFromFormat("!{$format}", $this->$other);
-		if($target <= $point) {
-			$labels = $this->labels();
-			return "{$label}は{$labels[$other]}よりも未来日を指定して下さい。";
-		}
-		return null;
-	}
-	
-	//-------------------------------------------------------------------------
-	// フィールド比較：数値 (自身 >= 比較対象)
-	//-------------------------------------------------------------------------
-	const VALID_FIELD_GRATER_EQUAL = 'field_grater_equal';
-	protected function valid_field_grater_equal($field, $label, $value, $other) {
+	//--------------------------------------------------------------------------
+	/**
+	 * フィールド比較：数値 (自身 >= 比較対象)
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_GRATER_EQUAL_INPUTTED, 'target_field', Form::APPLY_SAVE]
+	 * </pre>
+	 */
+	const VALID_GRATER_EQUAL_INPUTTED = 'grater_equal_inputted';
+	protected function valid_grater_equal_inputted($field, $label, $value, $other) {
 		if($this->_empty($value)) { return null; }
 		$preCheck = $this->valid_number($field, $label, $value);
 		if(!empty($preCheck)) { return $preCheck; }
@@ -1263,11 +1791,17 @@ abstract class Form
 		return null;
 	}
 	
-	//-------------------------------------------------------------------------
-	// フィールド比較：数値 (自身 > 比較対象)
-	//-------------------------------------------------------------------------
-	const VALID_FIELD_GRATER_THAN = 'field_grater_than';
-	protected function valid_field_grater_than($field, $label, $value, $other) {
+	//--------------------------------------------------------------------------
+	/**
+	 * フィールド比較：数値 (自身 > 比較対象)
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_GRATER_THAN_INPUTTED, 'target_field', Form::APPLY_SAVE]
+	 * </pre>
+	 */
+	const VALID_GRATER_THAN_INPUTTED = 'grater_than_inputted';
+	protected function valid_grater_than_inputted($field, $label, $value, $other) {
 		if($this->_empty($value)) { return null; }
 		$preCheck = $this->valid_number($field, $label, $value);
 		if(!empty($preCheck)) { return $preCheck; }
@@ -1280,11 +1814,17 @@ abstract class Form
 		return null;
 	}
 	
-	//-------------------------------------------------------------------------
-	// フィールド比較：数値 (自身 <= 比較対象)
-	//-------------------------------------------------------------------------
-	const VALID_FIELD_LESS_EQUAL = 'field_less_equal';
-	protected function valid_field_less_equal($field, $label, $value, $other) {
+	//--------------------------------------------------------------------------
+	/**
+	 * フィールド比較：数値 (自身 <= 比較対象)
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_LESS_EQUAL_INPUTTED, 'target_field', Form::APPLY_SAVE]
+	 * </pre>
+	 */
+	const VALID_LESS_EQUAL_INPUTTED = 'less_equal_inputted';
+	protected function valid_less_equal_inputted($field, $label, $value, $other) {
 		if($this->_empty($value)) { return null; }
 		$preCheck = $this->valid_number($field, $label, $value);
 		if(!empty($preCheck)) { return $preCheck; }
@@ -1297,11 +1837,17 @@ abstract class Form
 		return null;
 	}
 	
-	//-------------------------------------------------------------------------
-	// フィールド比較：数値 (自身 < 比較対象)
-	//-------------------------------------------------------------------------
-	const VALID_FIELD_LESS_THAN = 'field_less_than';
-	protected function valid_field_less_than($field, $label, $value, $other) {
+	//--------------------------------------------------------------------------
+	/**
+	 * フィールド比較：数値 (自身 < 比較対象)
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_LESS_THAN_INPUTTED, 'target_field', Form::APPLY_SAVE]
+	 * </pre>
+	 */
+	const VALID_LESS_THAN_INPUTTED = 'less_than_inputted';
+	protected function valid_less_than_inputted($field, $label, $value, $other) {
 		if($this->_empty($value)) { return null; }
 		$preCheck = $this->valid_number($field, $label, $value);
 		if(!empty($preCheck)) { return $preCheck; }
@@ -1314,52 +1860,116 @@ abstract class Form
 		return null;
 	}
 	
-	
-	//-------------------------------------------------------------------------
-	// フィールド比較：日時：未来日(当日含む)
-	//-------------------------------------------------------------------------
-	const VALID_FIELD_FUTURE_EQUAL = 'field_future_equal';
-	protected function valid_field_future_equal($field, $label, $value, $other, $format, $formatLabel=null) {
+	//--------------------------------------------------------------------------
+	/**
+	 * フィールド比較：日時：未来日(当日含まず)
+	 * 
+	 * <pre>
+	 * 日時系 validation は指定フォーマットによる DateTime への型変換に失敗した場合、杓子定規なエラーメッセージを設定します。
+	 * これにより複数の日時系 validation が設定されている項目において型変換に失敗すると同一のエラーメッセージが複数表示されてしまいます。
+	 * その為、日時系 validation では以下の Form::EXIT_ON_FAILED 付きの validation チェックを事前に実施することが望ましいです。
+	 * - [Form::VALID_DATETIME, 'format', 'format_label', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * 
+	 * ex)
+	 * [Form::VALID_FUTURE_THAN_INPUTTED, 'target_field', 'format', Form::APPLY_SAVE]
+	 * </pre>
+	 * 
+	 * @see Form::VALID_DATETIME
+	 */
+	const VALID_FUTURE_THAN_INPUTTED = 'future_than_inputted';
+	protected function valid_future_than_inputted($field, $label, $value, $other, $format) {
 		if($this->_empty($value)) { return null; }
-		$preCheck = $this->valid_datetime($field, $label, $value, $format, $formatLabel);
-		if(!empty($preCheck)) { return $preCheck; }
-		$target = DateTime::createFromFormat("!{$format}", $value);
-		$point  = DateTime::createFromFormat("!{$format}", $this->$other);
-		if($target < $point) {
+		$target = $this->_createDateTime($format, $value);
+		if(empty($target)) { return "{$label}は {$format} 形式 （例：".(new DateTime())->format($format)."） で入力して下さい。"; }
+		$point = $this->_createDateTime($format, $this->$other);
+		if(empty($point) || !($point < $target)) {
+			$labels = $this->labels();
+			return "{$label}は{$labels[$other]}よりも未来日を指定して下さい。";
+		}
+		return null;
+	}
+		
+	//--------------------------------------------------------------------------
+	/**
+	 * フィールド比較：日時：未来日(当日含む)
+	 * 
+	 * <pre>
+	 * 日時系 validation は指定フォーマットによる DateTime への型変換に失敗した場合、杓子定規なエラーメッセージを設定します。
+	 * これにより複数の日時系 validation が設定されている項目において型変換に失敗すると同一のエラーメッセージが複数表示されてしまいます。
+	 * その為、日時系 validation では以下の Form::EXIT_ON_FAILED 付きの validation チェックを事前に実施することが望ましいです。
+	 * - [Form::VALID_DATETIME, 'format', 'format_label', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * 
+	 * ex)
+	 * [Form::VALID_FUTURE_EQUAL_INPUTTED, 'target_field', 'format', Form::APPLY_SAVE]
+	 * </pre>
+	 * 
+	 * @see Form::VALID_DATETIME
+	 */
+	const VALID_FUTURE_EQUAL_INPUTTED = 'future_equal_inputted';
+	protected function valid_future_equal_inputted($field, $label, $value, $other, $format) {
+		if($this->_empty($value)) { return null; }
+		$target = $this->_createDateTime($format, $value);
+		if(empty($target)) { return "{$label}は {$format} 形式 （例：".(new DateTime())->format($format)."） で入力して下さい。"; }
+		$point = $this->_createDateTime($format, $this->$other);
+		if(empty($point) || !($point <= $target)) {
 			$labels = $this->labels();
 			return "{$label}は{$labels[$other]}よりも未来日(当日含む)を指定して下さい。";
 		}
 		return null;
 	}
 	
-	//-------------------------------------------------------------------------
-	// フィールド比較：日時：過去日(当日含まず)
-	//-------------------------------------------------------------------------
-	const VALID_FIELD_PAST_THAN = 'field_past_than';
-	protected function valid_field_past_than($field, $label, $value, $other, $format, $formatLabel=null) {
+	//--------------------------------------------------------------------------
+	/**
+	 * フィールド比較：日時：過去日(当日含まず)
+	 * 
+	 * <pre>
+	 * 日時系 validation は指定フォーマットによる DateTime への型変換に失敗した場合、杓子定規なエラーメッセージを設定します。
+	 * これにより複数の日時系 validation が設定されている項目において型変換に失敗すると同一のエラーメッセージが複数表示されてしまいます。
+	 * その為、日時系 validation では以下の Form::EXIT_ON_FAILED 付きの validation チェックを事前に実施することが望ましいです。
+	 * - [Form::VALID_DATETIME, 'format', 'format_label', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * 
+	 * ex)
+	 * [Form::VALID_PAST_THAN_INPUTTED, 'target_field', 'format', Form::APPLY_SAVE]
+	 * </pre>
+	 * 
+	 * @see Form::VALID_DATETIME
+	 */
+	const VALID_PAST_THAN_INPUTTED = 'past_than_inputted';
+	protected function valid_past_than_inputted($field, $label, $value, $other, $format) {
 		if($this->_empty($value)) { return null; }
-		$preCheck = $this->valid_datetime($field, $label, $value, $format, $formatLabel);
-		if(!empty($preCheck)) { return $preCheck; }
-		$target = DateTime::createFromFormat("!{$format}", $value);
-		$point  = DateTime::createFromFormat("!{$format}", $this->$other);
-		if($target >= $point) {
+		$target = $this->_createDateTime($format, $value);
+		if(empty($target)) { return "{$label}は {$format} 形式 （例：".(new DateTime())->format($format)."） で入力して下さい。"; }
+		$point = $this->_createDateTime($format, $this->$other);
+		if(empty($point) || !($target < $point)) {
 			$labels = $this->labels();
 			return "{$label}は{$labels[$other]}よりも過去日を指定して下さい。";
 		}
 		return null;
 	}
 	
-	//-------------------------------------------------------------------------
-	// フィールド比較：日時：過去日(当日含む)
-	//-------------------------------------------------------------------------
-	const VALID_FIELD_PAST_EQUAL = 'field_past_equal';
-	protected function valid_field_past_equal($field, $label, $value, $other, $format, $formatLabel=null) {
+	//--------------------------------------------------------------------------
+	/**
+	 * フィールド比較：日時：過去日(当日含む)
+	 * 
+	 * <pre>
+	 * 日時系 validation は指定フォーマットによる DateTime への型変換に失敗した場合、杓子定規なエラーメッセージを設定します。
+	 * これにより複数の日時系 validation が設定されている項目において型変換に失敗すると同一のエラーメッセージが複数表示されてしまいます。
+	 * その為、日時系 validation では以下の Form::EXIT_ON_FAILED 付きの validation チェックを事前に実施することが望ましいです。
+	 * - [Form::VALID_DATETIME, 'format', 'format_label', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * 
+	 * ex)
+	 * [Form::VALID_PAST_EQUAL_INPUTTED, 'target_field', 'format', Form::APPLY_SAVE]
+	 * </pre>
+	 * 
+	 * @see Form::VALID_DATETIME
+	 */
+	const VALID_PAST_EQUAL_INPUTTED = 'past_equal_inputted';
+	protected function valid_past_equal_inputted($field, $label, $value, $other, $format) {
 		if($this->_empty($value)) { return null; }
-		$preCheck = $this->valid_datetime($field, $label, $value, $format, $formatLabel);
-		if(!empty($preCheck)) { return $preCheck; }
-		$target = DateTime::createFromFormat("!{$format}", $value);
-		$point  = DateTime::createFromFormat("!{$format}", $this->$other);
-		if($target > $point) {
+		$target = $this->_createDateTime($format, $value);
+		if(empty($target)) { return "{$label}は {$format} 形式 （例：".(new DateTime())->format($format)."） で入力して下さい。"; }
+		$point = $this->_createDateTime($format, $this->$other);
+		if(empty($point) || !($target <= $point)) {
 			$labels = $this->labels();
 			return "{$label}は{$labels[$other]}よりも過去日(当日含む)を指定して下さい。";
 		}
@@ -1540,20 +2150,30 @@ class UploadFile {
 	}
 	
 	/**
+	 * 公開用のファイル名を取得します。
+	 * 
+	 * @param  string $baseName 公開用ファイルベース名 (デフォルト： フォームフィールド名)
+	 * @return string 公開ファイル名
+	 */
+	public function getPublishFileName($baseName = null) {
+		return empty($baseName) ? "{$this->field}.{$this->suffix}" : "{$baseName}.{$this->suffix}" ;
+	}
+	
+	/**
 	 * アップロードデータを公開領域に保存します。
 	 * 
 	 * @param  string $dir      公開ディレクトリ
 	 * @param  string $baseName 公開用ファイルベース名
 	 * @return string 公開ファイル名
 	 */
-	public function publish($dir, $baseName) {
+	public function publish($dir, $baseName = null) {
 		if($this->isEmpty()) { return null; }
 		
 		if(!file_exists($dir)) {
 			mkdir($dir, 0775, true);
 		}
 		
-		$file = "{$baseName}.{$this->suffix}";
+		$file = $this->getPublishFileName($baseName);
 		rename($this->tmp_name, "{$dir}/{$file}");
 		unset($_SESSION[self::_fileId($this->formName, $this->field)]);
 		

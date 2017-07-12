@@ -323,12 +323,24 @@ abstract class Form
 	 * 
 	 * @param  array  $errors     エラー情報格納オブジェクト
 	 * @param  int    $apply      Form::APPLY_* の Form オプションクラス定数の論理和
+	 * @return void
+	 * @throws InvalidValidateRuleException
+	 */
+	public function validate(&$errors, $apply) {
+		return $this->_validate($errors, $apply);
+	}
+	
+	/**
+	 * 指定のルールに従って validation を実施します。
+	 * 
+	 * @param  array  $errors     エラー情報格納オブジェクト
+	 * @param  int    $apply      Form::APPLY_* の Form オプションクラス定数の論理和
 	 * @param  string $parentName サブフォーム時の親 name 名
 	 * @param  int    $index      サブフォームリスト時のインデックス
 	 * @return void
 	 * @throws InvalidValidateRuleException
 	 */
-	public function validate(&$errors, $apply, $parentName='', $index=null) {
+	protected function _validate(&$errors, $apply, $parentName='', $index=null) {
 		$this->before($apply);
 		
 		$labels = $this->labels();
@@ -398,7 +410,7 @@ abstract class Form
 		foreach (array_keys(static::SUB_FORM) AS $field) {
 			$sub_form = $this->$field;
 			if(!empty($sub_form) && $sub_form instanceof Form) {
-				$sub_form->validate($errors, $apply, empty($parentName) ? $field : "{$parentName}[{$field}]");
+				$sub_form->_validate($errors, $apply, empty($parentName) ? $field : "{$parentName}[{$field}]");
 			}
 		}
 		
@@ -407,7 +419,7 @@ abstract class Form
 			if(!empty($this->$field)) {
 				foreach ($this->$field AS $i => $sub_form) {
 					if(!empty($sub_form) && $sub_form instanceof Form) {
-						$sub_form->validate($errors, $apply, empty($parentName) ? "{$field}[{$i}]" : "{$parentName}[{$field}][{$i}]", $i);
+						$sub_form->_validate($errors, $apply, empty($parentName) ? "{$field}[{$i}]" : "{$parentName}[{$field}][{$i}]", $i);
 					}
 				}	
 			}

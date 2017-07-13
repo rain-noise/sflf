@@ -33,6 +33,7 @@
  *     // ファイルフォーム定義
  *     const FILES = ['avatar'];
  *     
+ *     // フォームラベル定義
  *     protected function labels() {
  *         return [
  *              'user_id'            => '会員ID'
@@ -46,6 +47,17 @@
  *         ];
  *     }
  *     
+ *     // Validation ルール定義
+ *     // 定義済みの validation は Form::VALID_* で確認できます。（各種定義済み validation のパラメータは phpdoc を参照）
+ *     // また、大枠では下記のような命名規則になっていますので目的の validation を見つける際の参考にして下さい。
+ *     //
+ *     // 　中断制御系　　　　　　： From::VALID_EXIT_*
+ *     // 　アップロードファイル系： Form::VALID_FILE_*
+ *     // 　サブフォーム系　　　　： Form::VALID_SUB_FORM_*
+ *     // 　相互関係チェック系　　： Form::VALID_RELATION_* （相互関係チェック系の validation はフィールド指定されている自身の value をチェックしません）
+ *     // 　フィールド比較系　　　： Form::VALID_*_INPUTTED
+ *     // 　通常系　　　　　　　　： 上記以外の Form::VALID_*
+ *     // 　カスタム系　　　　　　： 任意の文字列 （valid_{任意の文字列}($field, $label, $value [, $param1, $param2, ...]) で validation メソッドを実装）
  *     protected function rules() {
  *         return [
  *             'user_id' => [
@@ -74,7 +86,9 @@
  *                 [Form::VALID_FILE_WEB_IMAGE_SUFFIX, Form::APPLY_SAVE]
  *             ],
  *             'shipping_addresses' => [
- *                 [Form::VALID_REQUIRED, Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+ *                 [Form::VALID_REQUIRED, Form::APPLY_SAVE | Form::EXIT_ON_FAILED],
+ *                 [Form::VALID_MAX_SELECT_COUNT, 5, Form::APPLY_SAVE | Form::EXIT_ON_FAILED],
+ *                 [Form::VALID_SUB_FORM_SERIAL_NO, 'shipping_no', Form::APPLY_SAVE]
  *             ]
  *         );
  *     }
@@ -286,7 +300,7 @@ abstract class Form
 	 * @param  mixed     $default デフォルト値
 	 * @return mixed 値
 	 */
-	private function _get($obj, $key, $default = null) {
+	protected function _get($obj, $key, $default = null) {
 		if($obj == null) { return $default; }
 		if(is_array($obj)) {
 			if(!isset($obj[$key])) { return $default; }
@@ -306,7 +320,7 @@ abstract class Form
 	 * @param  mixed     $key     キー名
 	 * @return boolean true : 持つ, false : 持たない
 	 */
-	private function _has($obj, $key) {
+	protected function _has($obj, $key) {
 		if($obj == null) { return false; }
 		if(is_array($obj)) {
 			return isset($obj[$key]);
@@ -317,6 +331,22 @@ abstract class Form
 		}
 		return isset($obj->$key);
 	}
+	
+	/**
+	 * 指定の配列から重複した値のリストを取得します。
+	 * 
+	 * @param type $array
+	 * @return type
+	 */
+	protected function _duplicate($array) {
+		$duplicate = array();
+		if(empty($array)) { return $duplicate; }
+		foreach (array_count_values($array) AS $v => $c) {
+			if(1 < $c) { $duplicate[] = $v; }
+		}
+		return $duplicate;
+	}
+	
 	
 	/**
 	 * 指定のルールに従って validation を実施します。
@@ -499,18 +529,6 @@ abstract class Form
 	//##########################################################################
 	// 以下、validation メソッド定義
 	//##########################################################################
-	// 中断系 Validation
-	// 　⇒ VALID_EXIT_*
-	// 相互関係チェック系 Validation
-	// 　⇒ VALID_RELATION_*
-	// 　⇒ 相互関係チェック系の validation はフィールド指定されている自身の value をチェックしません
-	// アップロードファイル系 Validation
-	// 　⇒ VALID_FILE_*
-	// フィールド比較系 Validation
-	// 　⇒ VALID_*_INPUTTED
-	// 通常系 Validation
-	// 　⇒ 上記以外の VALID_*
-	//==========================================================================
 
 	//--------------------------------------------------------------------------
 	/**
@@ -548,12 +566,12 @@ abstract class Form
 	 * 
 	 * <pre>
 	 * ex)
-	 * [Form::VALID_EXIT_IF, 'target_field', except_value, Form::APPLY_*]
+	 * [Form::VALID_EXIT_IF, 'target_field', expect_value, Form::APPLY_*]
 	 * </pre>
 	 */
 	const VALID_EXIT_IF = 'exit_if';
-	protected function valid_exit_if($field, $label, $value, $other, $except) {
-		if($this->$other == $except) { return self::VALIDATE_COMMAND_EXIT; }
+	protected function valid_exit_if($field, $label, $value, $other, $expect) {
+		if($this->$other == $expect) { return self::VALIDATE_COMMAND_EXIT; }
 		return null;
 	}
 	
@@ -563,12 +581,12 @@ abstract class Form
 	 * 
 	 * <pre>
 	 * ex)
-	 * [Form::VALID_EXIT_UNLESS, 'target_field', except_value, Form::APPLY_*]
+	 * [Form::VALID_EXIT_UNLESS, 'target_field', expect_value, Form::APPLY_*]
 	 * </pre>
 	 */
 	const VALID_EXIT_UNLESS = 'exit_unless';
-	protected function valid_exit_unless($field, $label, $value, $other, $except) {
-		if($this->$other != $except) { return self::VALIDATE_COMMAND_EXIT; }
+	protected function valid_exit_unless($field, $label, $value, $other, $expect) {
+		if($this->$other != $expect) { return self::VALIDATE_COMMAND_EXIT; }
 		return null;
 	}
 	
@@ -578,12 +596,12 @@ abstract class Form
 	 * 
 	 * <pre>
 	 * ex)
-	 * [Form::VALID_EXIT_IN, 'target_field', [except_value, ...], Form::APPLY_*]
+	 * [Form::VALID_EXIT_IN, 'target_field', [expect_value, ...], Form::APPLY_*]
 	 * </pre>
 	 */
 	const VALID_EXIT_IN = 'exit_in';
-	protected function valid_exit_in($field, $label, $value, $other, $excepts) {
-		if(in_array($this->$other, $excepts)) { return self::VALIDATE_COMMAND_EXIT; }
+	protected function valid_exit_in($field, $label, $value, $other, $expects) {
+		if(in_array($this->$other, $expects)) { return self::VALIDATE_COMMAND_EXIT; }
 		return null;
 	}
 	
@@ -619,6 +637,9 @@ abstract class Form
 	 * [Form::VALID_RELATION_UNIQUE, 'target1,target2,...', Form::APPLY_SAVE]
 	 * [Form::VALID_RELATION_UNIQUE, ['target1', 'target2', ...], Form::APPLY_SAVE]
 	 * </pre>
+	 * 
+	 * @see Form::VALID_UNIQUE          単一フィールドによる multiple セレクトの重複チェック
+	 * @see Form::VALID_SUB_FORM_UNIQUE 複数のサブフォームを跨る指定フィールドの重複チェック
 	 */
 	const VALID_RELATION_UNIQUE = 'relation_unique';
 	protected function valid_relation_unique($field, $label, $value, $depends) {
@@ -632,8 +653,11 @@ abstract class Form
 			$dependsLabel[] = isset($labels[$depend]) ? $labels[$depend] : $depend ;
 		}
 		if($emptyAll) { return null; }
-		$unique = array_unique($values, SORT_STRING);
-		if(count($values) != count($unique)) { return join(', ', $dependsLabel)." は異なる値を入力して下さい。"; }
+		
+		$duplicate = $this->_duplicate($values);
+		if(!empty($duplicate)) {
+			return join(', ', $dependsLabel)." にはそれぞれ異なる値を入力して下さい。[ ".join(',',$duplicate)." ] が重複しています。";
+		}		
 		return null;
 	}
 	
@@ -680,12 +704,12 @@ abstract class Form
 	 * 
 	 * <pre>
 	 * ex)
-	 * [Form::VALID_REQUIRED_IF, 'target_field', except_value, Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * [Form::VALID_REQUIRED_IF, 'target_field', expectexcept_value, Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
 	 * </pre>
 	 */
 	const VALID_REQUIRED_IF = 'required_if';
-	protected function valid_required_if($field, $label, $value, $depend, $except) {
-		if($this->_empty($this->$depend) || $this->$depend != $except) { return; }
+	protected function valid_required_if($field, $label, $value, $depend, $expect) {
+		if($this->_empty($this->$depend) || $this->$depend != $expect) { return; }
 		if($this->_empty($value)) { return "{$label}を入力して下さい。"; }
 		return null;
 	}
@@ -696,12 +720,12 @@ abstract class Form
 	 * 
 	 * <pre>
 	 * ex)
-	 * [Form::VALID_REQUIRED_UNLESS, 'target_field', except_value, Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * [Form::VALID_REQUIRED_UNLESS, 'target_field', expect_value, Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
 	 * </pre>
 	 */
 	const VALID_REQUIRED_UNLESS = 'required_unless';
-	protected function valid_required_unless($field, $label, $value, $depend, $except) {
-		if($this->_empty($this->$depend) || $this->$depend == $except) { return; }
+	protected function valid_required_unless($field, $label, $value, $depend, $expect) {
+		if($this->_empty($this->$depend) || $this->$depend == $expect) { return; }
 		if($this->_empty($value)) { return "{$label}を入力して下さい。"; }
 		return null;
 	}
@@ -712,12 +736,12 @@ abstract class Form
 	 * 
 	 * <pre>
 	 * ex)
-	 * [Form::VALID_EMPTY_IF, 'target_field', except_value, Form::APPLY_SAVE]
+	 * [Form::VALID_EMPTY_IF, 'target_field', expect_value, Form::APPLY_SAVE]
 	 * </pre>
 	 */
 	const VALID_EMPTY_IF = 'empty_if';
-	protected function valid_empty_if($field, $label, $value, $depend, $except) {
-		if($this->_empty($this->$depend) || $this->$depend != $except) { return; }
+	protected function valid_empty_if($field, $label, $value, $depend, $expect) {
+		if($this->_empty($this->$depend) || $this->$depend != $expect) { return; }
 		if(!$this->_empty($value)) { return "{$label}を空にして下さい。"; }
 		return null;
 	}
@@ -728,12 +752,12 @@ abstract class Form
 	 * 
 	 * <pre>
 	 * ex)
-	 * [Form::VALID_EMPTY_UNLESS, 'target_field', except_value, Form::APPLY_SAVE]
+	 * [Form::VALID_EMPTY_UNLESS, 'target_field', expect_value, Form::APPLY_SAVE]
 	 * </pre>
 	 */
 	const VALID_EMPTY_UNLESS = 'empty_unless';
-	protected function valid_empty_unless($field, $label, $value, $depend, $except) {
-		if($this->_empty($this->$depend) || $this->$depend == $except) { return; }
+	protected function valid_empty_unless($field, $label, $value, $depend, $expect) {
+		if($this->_empty($this->$depend) || $this->$depend == $expect) { return; }
 		if(!$this->_empty($value)) { return "{$label}を空にして下さい。"; }
 		return null;
 	}
@@ -1294,7 +1318,7 @@ abstract class Form
 	 * 
 	 * <pre>
 	 * ex)
-	 * [Form::VALID_CONTAINS, [except, ...], Form::APPLY_SAVE]
+	 * [Form::VALID_CONTAINS, [expect, ...], Form::APPLY_SAVE]
 	 * [Form::VALID_CONTAINS, XxxxDomain::values(), Form::APPLY_SAVE]
 	 * </pre>
 	 */
@@ -1359,6 +1383,27 @@ abstract class Form
 		if($this->_empty($value)) { return null; }
 		$size = is_array($value) ? count($value) : 1 ;
 		if($size > $max) { return "{$label}は {$max} 個以下で選択して下さい。"; }
+		return null;
+	}
+	
+	//--------------------------------------------------------------------------
+	/**
+	 * リスト選択：重複不可
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_UNIQUE, Form::APPLY_SAVE]
+	 * </pre>
+	 * 
+	 * @see Form::VALID_RELATION_UNIQUE 複数フィールドに跨る重複チェック
+	 * @see Form::VALID_SUB_FORM_UNIQUE 複数のサブフォームを跨る指定フィールドの重複チェック
+	 */
+	const VALID_UNIQUE = 'unique';
+	protected function valid_unique($field, $label, $value) {
+		$duplicate = $this->_duplicate($value);
+		if(!empty($duplicate)) {
+			return "{$label}には異なる値を入力して下さい。[ ".join(',',$duplicate)." ] が重複しています。";
+		}		
 		return null;
 	}
 	
@@ -1985,6 +2030,87 @@ abstract class Form
 			$labels = $this->labels();
 			return "{$label}は{$labels[$other]}よりも過去日(当日含む)を指定して下さい。";
 		}
+		return null;
+	}
+	
+	//--------------------------------------------------------------------------
+	/**
+	 * サブフォーム：重複不可
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_SUB_FORM_UNIQUE, 'target_field', Form::APPLY_SAVE]
+	 * </pre>
+	 * 
+	 * @see Form::VALID_UNIQUE          単一フィールドによる multiple セレクトの重複チェック
+	 * @see Form::VALID_RELATION_UNIQUE 複数フィールドに跨る重複チェック
+	 */
+	const VALID_SUB_FORM_UNIQUE = 'sub_form_unique';
+	protected function valid_sub_form_unique($field, $label, $value, $target) {
+		if($this->_empty($value)) { return null; }
+		$sub_values = array();
+		$sub_labels = array();
+		foreach ($value AS $sf) {
+			if(empty($sub_labels)) { $sub_labels = $sf->labels(); }
+			$sub_value = $this->_get($sf, $target);
+			if($this->_empty($sub_value)) { continue; }
+			if(is_array($sub_value)) {
+				$sub_values = array_merge($sub_values, $sub_value);
+			} else {
+				$sub_values[] = $sub_value;
+			}
+		}
+		
+		$duplicate = $this->_duplicate($sub_values);
+		if(!empty($duplicate)) {
+			$sub_label = $this->_get($sub_labels, $target, $target);
+			return "{$label}：{$sub_label}にはそれぞれ異なる値を入力して下さい。[ ".join(',',$duplicate)." ] が重複しています。";
+		}
+		
+		return null;
+	}
+	
+	//--------------------------------------------------------------------------
+	/**
+	 * サブフォーム：連番
+	 * 
+	 * <pre>
+	 * 指定のフィールドが指定番号からの連番で構成されているかチェックします。
+	 * - start のデフォルトは 1
+	 * - step のデフォルトは 1
+	 * 
+	 * ex)
+	 * [Form::VALID_SUB_FORM_SERIAL_NO, 'target_field', Form::APPLY_SAVE]
+	 * [Form::VALID_SUB_FORM_SERIAL_NO, 'target_field', start, Form::APPLY_SAVE]
+	 * [Form::VALID_SUB_FORM_SERIAL_NO, 'target_field', start, step, Form::APPLY_SAVE]
+	 * </pre>
+	 */
+	const VALID_SUB_FORM_SERIAL_NO = 'sub_form_serial_no';
+	protected function valid_sub_form_serial_no($field, $label, $value, $target, $start = 1, $step = 1) {
+		if($this->_empty($value)) { return null; }
+		$sub_values = array();
+		$sub_labels = array();
+		foreach ($value AS $sf) {
+			if(empty($sub_labels)) { $sub_labels = $sf->labels(); }
+			$sub_value = $this->_get($sf, $target);
+			if($this->_empty($sub_value)) { continue; }
+			if(is_array($sub_value)) {
+				$sub_values = array_merge($sub_values, $sub_value);
+			} else {
+				$sub_values[] = $sub_value;
+			}
+		}
+		
+		sort($sub_values, SORT_NUMERIC);
+		$expect = $start;
+		foreach ($sub_values AS $v) {
+			if($expect != $v) {
+				$sub_label = $this->_get($sub_labels, $target, $target);
+				return "{$label}：{$sub_label}が {$start} から始まる {$step} 刻みの連番になっていません。";
+			}
+			$expect += $step;
+		}
+		
 		return null;
 	}
 }

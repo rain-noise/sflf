@@ -217,7 +217,7 @@ abstract class Form
 			
 			// サブフォームの解析
 			if(array_key_exists($field, static::SUB_FORM)) {
-				$this->$field = $this->_genarateSubForm(static::SUB_FORM[$field], $this, $this->_get($src, $field));
+				$this->$field = $this->_genarateSubForm(static::SUB_FORM[$field], $this, $this->_get($src, $field), $converter);
 				continue;
 			}
 			
@@ -227,7 +227,7 @@ abstract class Form
 				$items = $this->_get($src, $field);
 				if(empty($items)) { continue; }
 				foreach ($items AS $item) {
-					$this->$field[] = $this->_genarateSubForm(static::SUB_FORM_LIST[$field], $this, $item);
+					$this->$field[] = $this->_genarateSubForm(static::SUB_FORM_LIST[$field], $this, $item, $converter);
 				}
 				continue;
 			}
@@ -252,11 +252,12 @@ abstract class Form
 	 * @param unknown $generator
 	 * @param unknown $parent
 	 * @param unknown $src
+	 * @param unknown $converter
 	 */
-	private function _genarateSubForm($generator, $parent, $src) {
+	private function _genarateSubForm($generator, $parent, $src, $converter) {
 		$subForm = is_callable($generator) ? $generator($parent) : new $generator() ;
 		$subForm->_parent_ = $parent;
-		$subForm->popurate($src);
+		$subForm->popurate($src, null, $converter);
 		return $subForm;
 	}
 	

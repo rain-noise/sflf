@@ -90,9 +90,12 @@ class Session {
 	 */
 	public static function regenerate($probability = 1, $interval = 0) {
 		if(mt_rand(1, $probability) == 1) {
-			$filemtime = filemtime(ini_get('session.save_path') . '/' . 'sess_'.session_id());
-			if($filemtime !== false && $filemtime + $interval < time()) {
-				session_regenerate_id( true );
+			$session_file = ini_get('session.save_path') . '/' . 'sess_'.session_id();
+			if(file_exists($session_file)) {
+				$filemtime = filemtime($session_file);
+				if($filemtime !== false && $filemtime + $interval < time()) {
+					session_regenerate_id( true );
+				}
 			}
 		}
 	}

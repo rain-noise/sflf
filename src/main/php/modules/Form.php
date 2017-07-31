@@ -350,6 +350,17 @@ abstract class Form
 	
 	
 	/**
+	 * 指定フィールドのラベルを取得します。
+	 * 
+	 * @param type $field フィールド名
+	 * @return type フィールドラベル
+	 */
+	protected function _label($field) {
+		return $this->_get($this->labels(), $field, $field);
+	}
+	
+	
+	/**
 	 * 指定のルールに従って validation を実施します。
 	 * 
 	 * @param  array  $errors     エラー情報格納オブジェクト
@@ -705,7 +716,7 @@ abstract class Form
 	 * 
 	 * <pre>
 	 * ex)
-	 * [Form::VALID_REQUIRED_IF, 'target_field', expectexcept_value, Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * [Form::VALID_REQUIRED_IF, 'target_field', expect_value, Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
 	 * </pre>
 	 */
 	const VALID_REQUIRED_IF = 'required_if';
@@ -760,6 +771,44 @@ abstract class Form
 	protected function valid_empty_unless($field, $label, $value, $depend, $expect) {
 		if($this->_empty($this->$depend) || $this->$depend == $expect) { return; }
 		if(!$this->_empty($value)) { return "{$label}を空にして下さい。"; }
+		return null;
+	}
+	
+	//--------------------------------------------------------------------------
+	/**
+	 * 一致
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_SAME_AS, expect_value, Form::APPLY_SAVE]
+	 * [Form::VALID_SAME_AS, expect_value, 'expect_label', Form::APPLY_SAVE]
+	 * </pre>
+	 */
+	const VALID_SAME_AS = 'same_as';
+	protected function valid_same_as($field, $label, $value, $expect, $expect_label=null) {
+		if($this->_empty($value)) { return null; }
+		if($value != $expect) {
+			return "{$label}は ".(empty($expect_label) ? $expect : $expect_label)." を入力して下さい。";
+		}
+		return null;
+	}
+	
+	//--------------------------------------------------------------------------
+	/**
+	 * 不一致
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_NOT_SAME_AS, expect_value, Form::APPLY_SAVE]
+	 * [Form::VALID_NOT_SAME_AS, expect_value, 'expect_label', Form::APPLY_SAVE]
+	 * </pre>
+	 */
+	const VALID_NOT_SAME_AS = 'not_same_as';
+	protected function valid_not_same_as($field, $label, $value, $expect, $expect_label=null) {
+		if($this->_empty($value)) { return null; }
+		if($value == $expect) {
+			return "{$label}は ".(empty($expect_label) ? $expect : $expect_label)." 以外を入力して下さい。";
+		}
 		return null;
 	}
 	

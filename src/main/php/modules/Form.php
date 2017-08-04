@@ -1396,9 +1396,8 @@ abstract class Form
 	 */
 	const VALID_MIN_SELECT_COUNT = 'min_select_count';
 	protected function valid_min_select_count($field, $label, $value, $min) {
-		if($this->_empty($value)) { return null; }
-		$size = is_array($value) ? count($value) : 1 ;
-		if($size < $min) { return "{$label}は {$min} 個以上で選択して下さい。"; }
+		$size = $this->_empty($value) ? 0 : (is_array($value) ? count($value) : 1) ;
+		if($size < $min) { return "{$label}を {$min} 個以上選択して下さい。"; }
 		return null;
 	}
 	
@@ -1413,8 +1412,7 @@ abstract class Form
 	 */
 	const VALID_SELECT_COUNT = 'select_count';
 	protected function valid_select_count($field, $label, $value, $count) {
-		if($this->_empty($value)) { return null; }
-		$size = is_array($value) ? count($value) : 1 ;
+		$size = $this->_empty($value) ? 0 : (is_array($value) ? count($value) : 1) ;
 		if($size != $count) { return "{$label}を {$count} 個選択して下さい。"; }
 		return null;
 	}
@@ -1430,8 +1428,7 @@ abstract class Form
 	 */
 	const VALID_MAX_SELECT_COUNT = 'max_select_count';
 	protected function valid_max_select_count($field, $label, $value, $max) {
-		if($this->_empty($value)) { return null; }
-		$size = is_array($value) ? count($value) : 1 ;
+		$size = $this->_empty($value) ? 0 : (is_array($value) ? count($value) : 1) ;
 		if($size > $max) { return "{$label}は {$max} 個以下で選択して下さい。"; }
 		return null;
 	}

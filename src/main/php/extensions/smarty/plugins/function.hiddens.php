@@ -1,6 +1,5 @@
 <?php
 /**
- * Smarty plugin
  * -------------------------------------------------------------
  * File:     function.hiddens.php
  * Type:     function
@@ -55,7 +54,7 @@ function smarty_function_hiddens__generate(&$hiddens, $form, $include, $exclude,
 				if($v instanceof Form) {
 					smarty_function_hiddens__generate($hiddens, $v, $include, $exclude, $date_format, "{$key}[{$i}]");
 				} else {
-					smarty_function_hiddens__append_tag($hiddens, "{$key}[]", $v, $date_format);
+					smarty_function_hiddens__append_tag($hiddens, "{$key}[{$i}]", $v, $date_format);
 				}
 			}
 		} else {

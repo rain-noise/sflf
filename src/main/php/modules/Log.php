@@ -188,7 +188,7 @@ class Log {
 		
 		$microtime = explode('.', microtime(true));
 		$now       = $microtime[0];
-		$ms        = $microtime[1];
+		$ms        = isset($microtime[1]) ? $microtime[1] : 0 ;
 		$body      = date("Y-m-d H:i:s", $now).".".str_pad($ms, 4, '0')." ".getmypid()." [".self::$_LOG_LEVEL_LABEL[$level]."] ".$message;
 		
 		if($params) {

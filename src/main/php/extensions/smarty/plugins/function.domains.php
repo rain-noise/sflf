@@ -16,6 +16,10 @@
  *  - exclude    (optional)          : comma separated exclude output value
  *  - delimiter  (optional)          : tag delimiter (default : ' ')
  *  - null_label (optional)          : null label (default : '')
+ *  - case       (optional)          : workflow - case code (default : null)
+ *  - current    (optional)          : workflow - current doamin value (default : null)
+ *  - prevtag    (optional)          : html code of previous position for each of items (default : '')
+ *  - posttag    (optional)          : html code of post position for each of items (default : '')
  *  - {tag_attr} (optional)          : html tag attribute and value like id, class, name, style, data-*
  * Purpose:  ドメイン選択フォーム及びラベルを表示する
  * -------------------------------------------------------------
@@ -43,10 +47,14 @@ function smarty_function_domains($params, &$smarty)
 	$exclude    = isset($params['exclude']) ? explode(',', $params['exclude']) : array() ;
 	$delimiter  = isset($params['delimiter']) ? $params['delimiter'] : ' ' ;
 	$null_label = isset($params['null_label']) ? $params['null_label'] : '' ;
+	$case       = isset($params['case']) ? $params['case'] : null ;
+	$current    = isset($params['current']) ? $params['current'] : null ;
+	$prevtag    = isset($params['prevtag']) ? $params['prevtag'] : '' ;
+	$posttag    = isset($params['posttag']) ? $params['posttag'] : '' ;
 	$name  = '';
 	$attrs = '';
 	foreach ($params AS $k => $v) {
-		if(in_array($k, array('id','domain','selected','value','label','check','type','include','exclude','delimiter','null_label'))) { continue; }
+		if(in_array($k, array('id','domain','selected','value','label','check','type','include','exclude','delimiter','null_label','case','current','prevtag','posttag'))) { continue; }
 		$attrs .= $k.'="'.$v.'" ';
 		if($k == 'name') { $name = $v; }
 	}
@@ -56,7 +64,7 @@ function smarty_function_domains($params, &$smarty)
 	// コンテンツ出力
 	// ---------------------------------------------------------
 	$html="";
-	foreach ($domain::lists() AS $d) {
+	foreach ($domain::nexts($current, $case) AS $d) {
 		$v = $d->$value;
 		$l = $d->$label;
 		$c = $d->$check;
@@ -67,22 +75,22 @@ function smarty_function_domains($params, &$smarty)
 		switch ($type) {
 			case 'option':
 				$select = in_array($v, $selected) ? ' selected' : '';
-				$html .= '<option '.$attrs.' value="'.htmlspecialchars($v).'"'.$select.'>'.htmlspecialchars($l).'</option>'.$delimiter;
+				$html .= '<option '.$attrs.' value="'.htmlspecialchars($v).'"'.$select.'>'.$prevtag.htmlspecialchars($l).$posttag.'</option>'.$delimiter;
 				break;
 			case 'checkbox':
 				$select = in_array($v, $selected) ? ' checked' : '';
-				$html .= '<input id="'.$name.'_'.$v.'" type="checkbox" '.$attrs.' value="'.htmlspecialchars($v).'"'.$select.'/><label for="'.$name.'_'.$v.'">'.htmlspecialchars($l).'</label>'.$delimiter;
+				$html .= $prevtag.'<input id="'.$name.'_'.$v.'" type="checkbox" '.$attrs.' value="'.htmlspecialchars($v).'"'.$select.'/><label for="'.$name.'_'.$v.'">'.htmlspecialchars($l).'</label>'.$posttag.$delimiter;
 				break;
 			case 'radio':
 				$select = in_array($v, $selected) ? ' checked' : '';
-				$html .= '<input id="'.$name.'_'.$v.'" type="radio" '.$attrs.' value="'.htmlspecialchars($v).'"'.$select.'/><label for="'.$name.'_'.$v.'">'.htmlspecialchars($l).'</label>'.$delimiter;
+				$html .= $prevtag.'<input id="'.$name.'_'.$v.'" type="radio" '.$attrs.' value="'.htmlspecialchars($v).'"'.$select.'/><label for="'.$name.'_'.$v.'">'.htmlspecialchars($l).'</label>'.$posttag.$delimiter;
 				break;
 			case 'plain':
-				$html .= htmlspecialchars(empty($l) ? $null_label : $l).$delimiter;
+				$html .= $prevtag.htmlspecialchars(empty($l) ? $null_label : $l).$posttag.$delimiter;
 				break;
 			case 'label':
 				if(in_array($v, $selected)) {
-					$html .= htmlspecialchars(empty($l) ? $null_label : $l).$delimiter;
+					$html .= $prevtag.htmlspecialchars(empty($l) ? $null_label : $l).$posttag.$delimiter;
 				}
 				break;
 		}

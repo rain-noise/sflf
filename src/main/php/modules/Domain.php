@@ -19,6 +19,29 @@
  * }
  * Sex::init();
  * 
+ * // 定数不要系
+ * class Sex extends Domain {
+ *     protected static function generate() {
+ *         return array(
+ *              new Sex('M', '男性')
+ *             ,new Sex('F', '女性')
+ *         );
+ *     }
+ * }
+ * 
+ * // メソッド拡張系
+ * class Sex extends Domain {
+ *     protected static function generate() {
+ *         return array(
+ *              new Sex(1, '男性')
+ *             ,new Sex(2, '女性')
+ *         );
+ *     }
+ * 
+ *     public function isMale()  { return $this->value === 1; }
+ *     public function isFeale() { return $this->value === 2; }
+ * }
+ * 
  * // フィールド拡張系
  * class UserSortOrder extends Domain {
  *     public static $NAME_ASC;
@@ -42,14 +65,32 @@
  * }
  * UserSortOrder::init();
  * 
- * // 定数不要系
- * class Sex extends Domain {
+ * // 匿名クラス拡張系
+ * abstract class JobOfferCsvFormat extends Domain {
  *     protected static function generate() {
- *         return array(
- *              new Sex(1, '男性')
- *             ,new Sex(2, '女性')
- *         );
+ *         return [
+ *              new class(1, '求人サイトA') extends JobOfferCsvFormat {
+ *                  public function convert($row){
+ *                      $form = new UserForm();
+ *                      (snip)
+ *                      $form->name = "{$row[0]} {$row[1]}"; // combine first name and last name column.
+ *                      (snip)
+ *                      return $form;
+ *                  }
+ *              },
+ *              new class(2, '求人サイトB') extends JobOfferCsvFormat {
+ *                  public function convert($row){
+ *                      $form = new UserForm();
+ *                      (snip)
+ *                      $form->name = $row[5]; // just use full name column.
+ *                      (snip)
+ *                      return $form;
+ *                  }
+ *              }
+ *         ];
  *     }
+ * 
+ *     public abstract function convert($row);
  * }
  * 
  * // DBマスタ参照系
@@ -59,7 +100,7 @@
  *     }
  *     
  *     protected static function generate() {
- *         return Dao::select('SELECT prefecture_id AS value, name AS label FROM prefecture ORDER BY prefecture_id ASC', array(), Prefecture::class);
+ *         return Dao::select('SELECT prefecture_id AS value, name AS label FROM prefecture ORDER BY prefecture_id ASC', [], Prefecture::class);
  *     }
  * }
  * 
@@ -98,7 +139,7 @@ abstract class Domain {
 	 * ドメインの値を検証します。
 	 * @param boolean true: 一致 / false: 不一致
 	 */
-	public function is($value) {
+	public function equals($value) {
 		return $this->value == $value;
 	}
 	
@@ -114,7 +155,7 @@ abstract class Domain {
 	 * ドメインを文字列します。
 	 */
 	public function __toString() {
-		return $this->label;
+		return (string)$this->label;
 	}
 	
 	/**
@@ -144,13 +185,14 @@ abstract class Domain {
 	}
 	
 	/**
-	 * $domain->value ⇒ $domain の連想配列を取得します。
+	 * $domain->$field ⇒ $domain の連想配列を取得します。
+	 * ※同じ値を持つドメインが存在する場合、 Domain::lists() の順序で後勝ちとなります
 	 */
-	public static function maps() {
+	public static function maps($field = 'value') {
 		$maps = array();
 		
 		foreach (self::lists() AS $domain) {
-			$maps[$domain->value] = $domain;
+			$maps[$domain->$field] = $domain;
 		}
 		
 		return $maps;
@@ -158,9 +200,26 @@ abstract class Domain {
 	
 	/**
 	 * 対象の値を持つドメインを取得します。
+	 * ※同じ値を持つドメインが存在する場合、 Domain::lists() の順序で後勝ちとなります
 	 */
 	public static function valueOf($value) {
-		$maps = self::maps();
+		return self::fieldOf('value', $value);
+	}
+	
+	/**
+	 * 対象のラベルを持つドメインを取得します。
+	 * ※同じ値を持つドメインが存在する場合、 Domain::lists() の順序で後勝ちとなります
+	 */
+	public static function labelOf($label) {
+		return self::fieldOf('label', $label);
+	}
+	
+	/**
+	 * 指定フィールドの値を持つドメインを取得します。
+	 * ※同じ値を持つドメインが存在する場合、 Domain::lists() の順序で後勝ちとなります
+	 */
+	public static function fieldOf($field, $value) {
+		$maps = self::maps($field);
 		return isset($maps[$value]) ? $maps[$value] : null ;
 	}
 	
@@ -190,6 +249,43 @@ abstract class Domain {
 			}
 		}
 		return $values;
+	}
+	
+	/**
+	 * ワークフロー：指定の状況(case)に応じたあるドメイン(current)から遷移可能な次のドメイン一覧を取得します。
+	 * 必要に応じてサブクラスでオーバーライドして下さい。
+	 * 
+	 * @param type $current
+	 * @param type $case
+	 */
+	public static function nexts($current, $case=null) {
+		return self::lists();
+	}
+	
+	/**
+	 * ワークフロー：指定フィールドの一覧を配列で取得します。
+	 * @param string $name
+	 */
+	public static function nextOf($name, $current, $case=null) {
+		$values = array();
+		foreach (static::nexts($current, $case) AS $domain) {
+			$values[] = $domain->$name;
+		}
+		return $values;
+	}
+	
+	/**
+	 * ワークフロー：値の一覧を配列で取得します。
+	 */
+	public static function nextValues($current, $case=null) {
+		return self::nextOf('value', $current, $case);
+	}
+	
+	/**
+	 * ワークフロー：ラベルの一覧を配列で取得します。
+	 */
+	public static function nextLabels($current, $case=null) {
+		return self::nextOf('label', $current, $case);
 	}
 }
 

@@ -493,6 +493,15 @@ class Util {
 	}
 	
 	/**
+	 * 多次元配列を一次元配列に変換します。
+	 * 
+	 * @param array $array
+	 */
+	public static function flatten(array $array) {
+		return iterator_to_array(new RecursiveIteratorIterator(new RecursiveArrayIterator($array)), false);
+	}
+	
+	/**
 	 * データを CSV形式 で書き出します。
 	 * ※本メソッドは exit を call します。
 	 * 

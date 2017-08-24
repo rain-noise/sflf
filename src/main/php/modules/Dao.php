@@ -382,7 +382,7 @@
 		foreach ($entity AS $col => $value) {
 			if(in_array($col, $ignore)) { continue; }
 			$cols[]   = $col;
-			$values[] = self::_convertToSql($value);
+			$values[] = self::convertToSql($value);
 		}
 		
 		self::query("INSERT INTO {$tableName} (".join(',',$cols).") VALUES (".join(',',$values).")") ;
@@ -414,13 +414,13 @@
 			foreach ($include AS $col) {
 				if(!property_exists($clazz, $col)) { continue; }
 				if(in_array($col, $ignore)) { continue; }
-				$set .= $col.'='.self::_convertToSql($entity->$col).', ';
+				$set .= $col.'='.self::convertToSql($entity->$col).', ';
 			}
 		} else {
 			foreach ($entity AS $col => $value) {
 				if(in_array($col, $exclude)) { continue; }
 				if(in_array($col, $ignore)) { continue; }
-				$set .= $col.'='.self::_convertToSql($value).', ';
+				$set .= $col.'='.self::convertToSql($value).', ';
 			}
 		}
 		
@@ -453,12 +453,12 @@
 			
 			if(is_array($value)) {
 				foreach ($value AS &$item) {
-					$item = self::_convertToSql($item);
+					$item = self::convertToSql($item);
 				}
 				
 				$value = join(', ', $value);
 			} else {
-				$value = self::_convertToSql($value);
+				$value = self::convertToSql($value);
 			}
 			
 			$sql = preg_replace("/{$key}(?=[^a-zA-Z0-9]|$)/", "{$value}", $sql);
@@ -473,7 +473,7 @@
 	 * @param null|int|long|float|double|string|DateTime $value
 	 * @return string
 	 */
-	private static function _convertToSql($value) {
+	public static function convertToSql($value) {
 		if($value === null || $value === '') {
 			return 'NULL';
 		}
@@ -582,7 +582,8 @@ class DatabaseException extends RuntimeException {
 	public function __construct ($message, $code=null, $previous=null) {
 		parent::__construct($message, $code, $previous);
 	}
-}
+}
+
 /**
  * Single File Low Functionality Class Tools
  * 

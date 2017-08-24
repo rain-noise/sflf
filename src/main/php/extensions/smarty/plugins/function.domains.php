@@ -12,8 +12,8 @@
  *  - value      (optional)          : value field name (default 'value')
  *  - label      (optional)          : label field name (default 'label')
  *  - check      (optional)          : check field name for include/exclude value check (default same of 'value' option)
- *  - include    (optional)          : comma separated include output value
- *  - exclude    (optional)          : comma separated exclude output value
+ *  - include    (optional)          : comma separated or array include output value
+ *  - exclude    (optional)          : comma separated or array exclude output value
  *  - delimiter  (optional)          : tag delimiter (default : ' ')
  *  - null_label (optional)          : null label (default : '')
  *  - case       (optional)          : workflow - case code (default : null)
@@ -43,8 +43,8 @@ function smarty_function_domains($params, &$smarty)
 	if(!in_array($type, array('option','checkbox','radio','plain','label'))) {
 		trigger_error("error: invalid 'type' parameter : {$type}", E_USER_NOTICE);
 	}
-	$include    = isset($params['include']) ? explode(',', $params['include']) : array() ;
-	$exclude    = isset($params['exclude']) ? explode(',', $params['exclude']) : array() ;
+	$include    = isset($params['include']) ? (is_array($params['include']) ? $params['include'] : explode(',', $params['include'])) : array() ;
+	$exclude    = isset($params['exclude']) ? (is_array($params['exclude']) ? $params['exclude'] : explode(',', $params['exclude'])) : array() ;
 	$delimiter  = isset($params['delimiter']) ? $params['delimiter'] : ' ' ;
 	$null_label = isset($params['null_label']) ? $params['null_label'] : '' ;
 	$case       = isset($params['case']) ? $params['case'] : null ;

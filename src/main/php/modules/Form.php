@@ -14,6 +14,8 @@
  *     public $password;
  *     public $password_confirm;
  *     public $avatar;
+ *     public $sex;
+ *     public $birthday;
  *     
  *     public $bank;
  *     public $shipping_addresses;
@@ -36,14 +38,16 @@
  *     // フォームラベル定義
  *     protected function labels() {
  *         return [
- *              'user_id'            => '会員ID'
- *             ,'name'               => '氏名'
- *             ,'mail_address'       => 'メールアドレス'
- *             ,'password'           => 'パスワード'
- *             ,'password_confirm'   => 'パスワード(確認)'
- *             ,'avatar'             => 'アバター画像'
- *             ,'bank'               => '口座情報'
- *             ,'shipping_addresses' => '配送先'
+ *             'user_id'            => '会員ID',
+ *             'name'               => '氏名',
+ *             'mail_address'       => 'メールアドレス',
+ *             'password'           => 'パスワード',
+ *             'password_confirm'   => 'パスワード(確認)',
+ *             'avatar'             => 'アバター画像',
+ *             'sex'                => '性別',
+ *             'birthday'           => '生年月日',
+ *             'bank'               => '口座情報',
+ *             'shipping_addresses' => '配送先'
  *         ];
  *     }
  *     
@@ -85,6 +89,16 @@
  *                 [Form::VALID_FILE_SIZE, 2 * UploadFile::MB, Form::APPLY_SAVE],
  *                 [Form::VALID_FILE_WEB_IMAGE_SUFFIX, Form::APPLY_SAVE]
  *             ],
+ *             'sex' => [
+ *                 [Form::VALID_REQUIRED, Form::APPLY_SAVE | Form::EXIT_ON_FAILED],
+ *                 [Form::VALID_CONTAINS, Sex::values(), Form::APPLY_SAVE ]
+ *             ],
+ *             'birthday' => [
+ *                 [Form::VALID_REQUIRED, Form::APPLY_SAVE | Form::EXIT_ON_FAILED],
+ *                 [Form::VALID_DATETIME, Form::APPLY_SAVE | Form::EXIT_ON_FAILED],
+ *                 [Form::VALID_AGE_GREATER_EQUAL, 18, Form::APPLY_SAVE ],
+ *                 [Form::VALID_AGE_LESS_EQUAL, 100, Form::APPLY_CREATE ]
+ *             ],
  *             'shipping_addresses' => [
  *                 [Form::VALID_REQUIRED, Form::APPLY_SAVE | Form::EXIT_ON_FAILED],
  *                 [Form::VALID_MAX_SELECT_COUNT, 5, Form::APPLY_SAVE | Form::EXIT_ON_FAILED],
@@ -104,6 +118,11 @@
  *         }
  *         return null;
  *     }
+ * 
+ *     // validation に成功したら、生年月日を DateTime型 に変換
+ *     protected function complete($apply) {
+ *         list($this->birthday, ) = $this->_createDateTime($this->birthday);
+ *     }
  * }
  * 
  * $form = new UserForm();
@@ -121,14 +140,14 @@
  * 
  * // for complete action
  * $now = new DateTime();
- * $user = $form->describe(UserEntity::class);  // or $form->inject($user = new UserEntity()); <- this way you can use code completion by IDE
+ * $user = $form->describe(UserEntity::class);  // or $user = new UserEntity(); $form->inject($user); <- this way you can use code completion by IDE
  * $user->avatar_file   = $form->avatar->getPublishFileName();
  * $user->registered_at = $now;
  * $userId = Dao::insert('user', $user);
  * $form->avatar->publish("/path/to/publish/dir/{$userId}");
  * 
  * if(!empty($form->bank)) {
- *     $bank = $form->bank->describe(BankEntity::class); // or $form->bank->inject($bank = new BankEntity());
+ *     $bank = $form->bank->describe(BankEntity::class); // or $bank = new BankEntity(); $form->bank->inject($bank);
  *     $bank->user_id       = $userId;
  *     $bank->registered_at = $now;
  *     Dao::insert('bank', $bank);
@@ -136,7 +155,7 @@
  * 
  * Dao::query('DELETE FROM shipping_address WHERE user_id = :user_id', [':user_id' => $userId]);
  * foreach($form->shipping_addresses AS $i => $addressForm) {
- *     $address = $addressForm->describe(AddressEntity::class); // or $addressForm->inject($address = new AddressEntity());
+ *     $address = $addressForm->describe(AddressEntity::class); // or $address = new AddressEntity(); $addressForm->inject($address);
  *     $address->user_id       = $userId;
  *     $address->shipping_no   = $i + 1;
  *     $address->registered_at = $now;
@@ -194,6 +213,29 @@ abstract class Form
 	// ファイルフォームを使用する場合、サブクラスでファイルフォームを定義して下さい
 	// 例） 'banner', 'avater'
 	const FILES = [];
+
+	// ----------------------------------------------------
+	// 日付フォーマット
+	// ----------------------------------------------------
+	// 受入れ可能な日付／日時フォーマットのリスト
+	// 日付／日時 validation で個別のフォーマットを指定しない場合、本フォーマットが受入れ対象となります。
+	// なお、本定義はサブクラスにてオーバーライド可能です。
+	const ACCEPTABLE_DATETIME_FORMAT = [
+		'Y年m月d日 H時i分s秒',
+		'Y年m月d日 H:i:s',
+		'Y-m-d H:i:s',
+		'Y/m/d H:i:s',
+		'YmdHis',
+		'Y年m月d日 H時i分',
+		'Y年m月d日 H:i',
+		'Y-m-d H:i',
+		'Y/m/d H:i',
+		'YmdHi',
+		'Y年m月d日',
+		'Y-m-d',
+		'Y/m/d',
+		'Ymd'
+	];
 
 	// このフォームがサブフォームの場合、親フォームが格納される
 	protected $_parent_;
@@ -959,7 +1001,7 @@ abstract class Form
 	
 	//--------------------------------------------------------------------------
 	/**
-	 * メールアドレス
+	 * メールアドレス：厳格なチェック
 	 * 
 	 * <pre>
 	 * ex)
@@ -971,6 +1013,21 @@ abstract class Form
 		if($this->_empty($value)) { return null; }
 		if(!filter_var($value, FILTER_VALIDATE_EMAIL)) { return "{$label}はメールアドレス形式で入力して下さい。"; }
 		return null;
+	}
+	
+	//--------------------------------------------------------------------------
+	/**
+	 * メールアドレス：緩いチェック
+	 * ※本 validation は過去に日本のキャリアにて作成できたRFCに準拠しないメールアドレス形式も許容します。
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_MAIL_ADDRESS_LOOSE, Form::APPLY_SAVE]
+	 * </pre>
+	 */
+	const VALID_MAIL_ADDRESS_LOOSE = 'mail_address_loose';
+	protected function valid_mail_address_loose($field, $label, $value) {
+		return $this->valid_regex($field, $label, $value, "/[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,64}/", "メールアドレス形式");
 	}
 	
 	//--------------------------------------------------------------------------
@@ -1460,27 +1517,54 @@ abstract class Form
 	 * 
 	 * <pre>
 	 * ex)
-	 * [Form::VALID_DATETIME, 'format', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
-	 * [Form::VALID_DATETIME, 'format', 'label_of_format', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * [Form::VALID_DATETIME, Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * [Form::VALID_DATETIME, 'main_format', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
 	 * </pre>
+	 * 
+	 * @see Form::ACCEPTABLE_DATETIME_FORMAT
 	 */
 	const VALID_DATETIME = 'datetime';
-	protected function valid_datetime($field, $label, $value, $format, $formatLabel=null) {
+	protected function valid_datetime($field, $label, $value, $main_format = null) {
 		if($this->_empty($value)) { return null; }
-		$date = $this->_createDateTime($format, $value);
-		if(empty($date)) { return "{$label}は".($formatLabel ? $formatLabel : " {$format} 形式")." （例：".(new DateTime())->format($format)."） で入力して下さい。"; }
+		list($date, ) = $this->_createDateTime($value, $main_format);
+		if(empty($date)) { return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。"; }
 		return null;
 	}
 	
 	/**
 	 * DateTime オブジェクトを生成します。
 	 * 
-	 * @param type $format
-	 * @param type $value
-	 * @return array($datetime, $castComplete)
+	 * @param string       $value
+	 * @param string|array $main_format
+	 * @return [DateTime or null, apply_format or null]
 	 */
-	protected function _createDateTime($format, $value) {
+	protected function _createDateTime($value, $main_format = null) {
 		if($this->_empty($value)) { return null; }
+		
+		$formats = static::ACCEPTABLE_DATETIME_FORMAT ;
+		if(!empty($main_format)) { array_unshift($formats, $main_format); }
+		
+		$date         = null;
+		$apply_format = null;
+		foreach ($formats AS $format) {
+			$date = $this->_tryToCreateDateTime($value, $format);
+			if(!empty($date)) {
+				$apply_format = $format;
+				break;
+			}
+		}
+		
+		return [$date, $apply_format];
+	}
+	
+	/**
+	 * DateTime オブジェクトを生成します。
+	 * 
+	 * @param string $value
+	 * @param string $format
+	 * @return DateTime or null
+	 */
+	private function _tryToCreateDateTime($value, $format) {
 		$date = DateTime::createFromFormat("!{$format}", $value);
 		$le   = DateTime::getLastErrors();
 		return $date === false || !empty($le['errors']) || !empty($le['warnings']) ? null : $date ;
@@ -1491,24 +1575,26 @@ abstract class Form
 	 * 日時：未来日(当日含まず)
 	 * 
 	 * <pre>
-	 * 日時系 validation は指定フォーマットによる DateTime への型変換に失敗した場合、杓子定規なエラーメッセージを設定します。
+	 * 日時系 validation は指定フォーマットによる DateTime への型変換に失敗した場合、型変換失敗のエラーメッセージを個別に設定します。
 	 * これにより複数の日時系 validation が設定されている項目において型変換に失敗すると同一のエラーメッセージが複数表示されてしまいます。
 	 * その為、日時系 validation では以下の Form::EXIT_ON_FAILED 付きの validation チェックを事前に実施することが望ましいです。
-	 * - [Form::VALID_DATETIME, 'format', 'format_label', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * - [Form::VALID_DATETIME, 'main_format', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
 	 * 
 	 * ex)
-	 * [Form::VALID_FUTURE_THAN, 'now', 'format', Form::APPLY_SAVE]
+	 * [Form::VALID_FUTURE_THAN, 'now', Form::APPLY_SAVE]
+	 * [Form::VALID_FUTURE_THAN, 'now', 'main_format', Form::APPLY_SAVE]
 	 * </pre>
 	 * 
 	 * @see Form::VALID_DATETIME
+	 * @see Form::ACCEPTABLE_DATETIME_FORMAT
 	 */
 	const VALID_FUTURE_THAN = 'future_than';
-	protected function valid_future_than($field, $label, $value, $pointTime, $format) {
+	protected function valid_future_than($field, $label, $value, $pointTime, $main_format = null) {
 		if($this->_empty($value)) { return null; }
-		$target = $this->_createDateTime($format, $value);
-		if(empty($target)) { return "{$label}は {$format} 形式 （例：".(new DateTime())->format($format)."） で入力して下さい。"; }
+		list($target, $apply_format) = $this->_createDateTime($value, $main_format);
+		if(empty($target)) { return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。"; }
 		$point = new DateTime($pointTime);
-		if($target <= $point) { return "{$label}は ".$point->format($format)." よりも未来日を指定して下さい。"; }
+		if($target <= $point) { return "{$label}は ".$point->format($apply_format)." よりも未来日を指定して下さい。"; }
 		return null;
 	}
 	
@@ -1517,24 +1603,26 @@ abstract class Form
 	 * 日時：未来日(当日含む)
 	 * 
 	 * <pre>
-	 * 日時系 validation は指定フォーマットによる DateTime への型変換に失敗した場合、杓子定規なエラーメッセージを設定します。
+	 * 日時系 validation は指定フォーマットによる DateTime への型変換に失敗した場合、型変換失敗のエラーメッセージを個別に設定します。
 	 * これにより複数の日時系 validation が設定されている項目において型変換に失敗すると同一のエラーメッセージが複数表示されてしまいます。
 	 * その為、日時系 validation では以下の Form::EXIT_ON_FAILED 付きの validation チェックを事前に実施することが望ましいです。
-	 * - [Form::VALID_DATETIME, 'format', 'format_label', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * - [Form::VALID_DATETIME, 'main_format', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
 	 * 
 	 * ex)
-	 * [Form::VALID_FUTURE_EQUAL, 'now', 'format', Form::APPLY_SAVE]
+	 * [Form::VALID_FUTURE_EQUAL, 'now', Form::APPLY_SAVE]
+	 * [Form::VALID_FUTURE_EQUAL, 'now', 'main_format', Form::APPLY_SAVE]
 	 * </pre>
 	 * 
 	 * @see Form::VALID_DATETIME
+	 * @see Form::ACCEPTABLE_DATETIME_FORMAT
 	 */
 	const VALID_FUTURE_EQUAL = 'future_equal';
-	protected function valid_future_equal($field, $label, $value, $pointTime, $format) {
+	protected function valid_future_equal($field, $label, $value, $pointTime, $main_format = null) {
 		if($this->_empty($value)) { return null; }
-		$target = $this->_createDateTime($format, $value);
-		if(empty($target)) { return "{$label}は {$format} 形式 （例：".(new DateTime())->format($format)."） で入力して下さい。"; }
+		list($target, $apply_format) = $this->_createDateTime($value, $main_format);
+		if(empty($target)) { return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。"; }
 		$point = new DateTime($pointTime);
-		if($target < $point) { return "{$label}は ".$point->format($format)." よりも未来日(当日含む)を指定して下さい。"; }
+		if($target < $point) { return "{$label}は ".$point->format($apply_format)." よりも未来日(当日含む)を指定して下さい。"; }
 		return null;
 	}
 	
@@ -1543,24 +1631,26 @@ abstract class Form
 	 * 日時：過去日(当日含まず)
 	 * 
 	 * <pre>
-	 * 日時系 validation は指定フォーマットによる DateTime への型変換に失敗した場合、杓子定規なエラーメッセージを設定します。
+	 * 日時系 validation は指定フォーマットによる DateTime への型変換に失敗した場合、型変換失敗のエラーメッセージを個別に設定します。
 	 * これにより複数の日時系 validation が設定されている項目において型変換に失敗すると同一のエラーメッセージが複数表示されてしまいます。
 	 * その為、日時系 validation では以下の Form::EXIT_ON_FAILED 付きの validation チェックを事前に実施することが望ましいです。
-	 * - [Form::VALID_DATETIME, 'format', 'format_label', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * - [Form::VALID_DATETIME, 'main_format', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
 	 * 
 	 * ex)
-	 * [Form::VALID_PAST_THAN, 'now', 'format', Form::APPLY_SAVE]
+	 * [Form::VALID_PAST_THAN, 'now', Form::APPLY_SAVE]
+	 * [Form::VALID_PAST_THAN, 'now', 'main_format', Form::APPLY_SAVE]
 	 * </pre>
 	 * 
 	 * @see Form::VALID_DATETIME
+	 * @see Form::ACCEPTABLE_DATETIME_FORMAT
 	 */
 	const VALID_PAST_THAN = 'past_than';
-	protected function valid_past_than($field, $label, $value, $pointTime, $format) {
+	protected function valid_past_than($field, $label, $value, $pointTime, $main_format = null) {
 		if($this->_empty($value)) { return null; }
-		$target = $this->_createDateTime($format, $value);
-		if(empty($target)) { return "{$label}は {$format} 形式 （例：".(new DateTime())->format($format)."） で入力して下さい。"; }
+		list($target, $apply_format) = $this->_createDateTime($value, $main_format);
+		if(empty($target)) { return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。"; }
 		$point = new DateTime($pointTime);
-		if($target >= $point) { return "{$label}は ".$point->format($format)." よりも過去日を指定して下さい。"; }
+		if($target >= $point) { return "{$label}は ".$point->format($apply_format)." よりも過去日を指定して下さい。"; }
 		return null;
 	}
 		
@@ -1569,24 +1659,26 @@ abstract class Form
 	 * 日時：過去日(当日含む)
 	 * 
 	 * <pre>
-	 * 日時系 validation は指定フォーマットによる DateTime への型変換に失敗した場合、杓子定規なエラーメッセージを設定します。
+	 * 日時系 validation は指定フォーマットによる DateTime への型変換に失敗した場合、型変換失敗のエラーメッセージを個別に設定します。
 	 * これにより複数の日時系 validation が設定されている項目において型変換に失敗すると同一のエラーメッセージが複数表示されてしまいます。
 	 * その為、日時系 validation では以下の Form::EXIT_ON_FAILED 付きの validation チェックを事前に実施することが望ましいです。
-	 * - [Form::VALID_DATETIME, 'format', 'format_label', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * - [Form::VALID_DATETIME, 'main_format', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
 	 * 
 	 * ex)
-	 * [Form::VALID_PAST_EQUAL, 'now', 'format', Form::APPLY_SAVE]
+	 * [Form::VALID_PAST_EQUAL, 'now', Form::APPLY_SAVE]
+	 * [Form::VALID_PAST_EQUAL, 'now', 'main_format', Form::APPLY_SAVE]
 	 * </pre>
 	 * 
 	 * @see Form::VALID_DATETIME
+	 * @see Form::ACCEPTABLE_DATETIME_FORMAT
 	 */
 	const VALID_PAST_EQUAL = 'past_equal';
-	protected function valid_past_equal($field, $label, $value, $pointTime, $format) {
+	protected function valid_past_equal($field, $label, $value, $pointTime, $main_format = null) {
 		if($this->_empty($value)) { return null; }
-		$target = $this->_createDateTime($format, $value);
-		if(empty($target)) { return "{$label}は {$format} 形式 （例：".(new DateTime())->format($format)."） で入力して下さい。"; }
+		list($target, $apply_format) = $this->_createDateTime($value, $main_format);
+		if(empty($target)) { return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。"; }
 		$point  = new DateTime($pointTime);
-		if($target > $point) { return "{$label}は ".$point->format($format)." よりも過去日(当日含む)を指定して下さい。"; }
+		if($target > $point) { return "{$label}は ".$point->format($apply_format)." よりも過去日(当日含む)を指定して下さい。"; }
 		return null;
 	}
 	
@@ -1595,22 +1687,24 @@ abstract class Form
 	 * 日時：年齢制限：以上
 	 * 
 	 * <pre>
-	 * 日時系 validation は指定フォーマットによる DateTime への型変換に失敗した場合、杓子定規なエラーメッセージを設定します。
+	 * 日時系 validation は指定フォーマットによる DateTime への型変換に失敗した場合、型変換失敗のエラーメッセージを個別に設定します。
 	 * これにより複数の日時系 validation が設定されている項目において型変換に失敗すると同一のエラーメッセージが複数表示されてしまいます。
 	 * その為、日時系 validation では以下の Form::EXIT_ON_FAILED 付きの validation チェックを事前に実施することが望ましいです。
-	 * - [Form::VALID_DATETIME, 'format', 'format_label', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * - [Form::VALID_DATETIME, 'main_format', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
 	 * 
 	 * ex)
-	 * [Form::VALID_AGE_GREATER_EQUAL, age, 'format', Form::APPLY_SAVE]
+	 * [Form::VALID_AGE_GREATER_EQUAL, age, Form::APPLY_SAVE]
+	 * [Form::VALID_AGE_GREATER_EQUAL, age, 'main_format', Form::APPLY_SAVE]
 	 * </pre>
 	 * 
 	 * @see Form::VALID_DATETIME
+	 * @see Form::ACCEPTABLE_DATETIME_FORMAT
 	 */
 	const VALID_AGE_GREATER_EQUAL = 'age_greater_equal';
-	protected function valid_age_greater_equal($field, $label, $value, $age, $format) {
+	protected function valid_age_greater_equal($field, $label, $value, $age, $main_format = null) {
 		if($this->_empty($value)) { return null; }
-		$target = $this->_createDateTime($format, $value);
-		if(empty($target)) { return "{$label}は {$format} 形式 （例：".(new DateTime())->format($format)."） で入力して下さい。"; }
+		list($target, ) = $this->_createDateTime($value, $main_format);
+		if(empty($target)) { return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。"; }
 		$point = new DateTime("-{$age} year");
 		if($target > $point) { return "{$age}歳未満の方はご利用頂けません。"; }
 		return null;
@@ -1621,22 +1715,24 @@ abstract class Form
 	 * 日時：年齢制限：以下
 	 * 
 	 * <pre>
-	 * 日時系 validation は指定フォーマットによる DateTime への型変換に失敗した場合、杓子定規なエラーメッセージを設定します。
+	 * 日時系 validation は指定フォーマットによる DateTime への型変換に失敗した場合、型変換失敗のエラーメッセージを個別に設定します。
 	 * これにより複数の日時系 validation が設定されている項目において型変換に失敗すると同一のエラーメッセージが複数表示されてしまいます。
 	 * その為、日時系 validation では以下の Form::EXIT_ON_FAILED 付きの validation チェックを事前に実施することが望ましいです。
-	 * - [Form::VALID_DATETIME, 'format', 'format_label', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * - [Form::VALID_DATETIME, 'main_format', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
 	 * 
 	 * ex)
-	 * [Form::VALID_AGE_LESS_EQUAL, age, 'format', Form::APPLY_SAVE]
+	 * [Form::VALID_AGE_LESS_EQUAL, age, Form::APPLY_CREATE]
+	 * [Form::VALID_AGE_LESS_EQUAL, age, 'main_format', Form::APPLY_CREATE]
 	 * </pre>
 	 * 
 	 * @see Form::VALID_DATETIME
+	 * @see Form::ACCEPTABLE_DATETIME_FORMAT
 	 */
 	const VALID_AGE_LESS_EQUAL = 'age_less_equal';
-	protected function valid_age_less_equal($field, $label, $value, $age, $format) {
+	protected function valid_age_less_equal($field, $label, $value, $age, $main_format = null) {
 		if($this->_empty($value)) { return null; }
-		$target = $this->_createDateTime($format, $value);
-		if(empty($target)) { return  "{$label}は {$format} 形式 （例：".(new DateTime())->format($format)."） で入力して下さい。"; }
+		list($target, ) = $this->_createDateTime($value, $main_format);
+		if(empty($target)) { return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。"; }
 		$point = new DateTime("-{$age} year");
 		if($target < $point) { return ($age + 1)."歳以上の方はご利用頂けません。"; }
 		return null;
@@ -1969,23 +2065,25 @@ abstract class Form
 	 * フィールド比較：日時：未来日(当日含まず)
 	 * 
 	 * <pre>
-	 * 日時系 validation は指定フォーマットによる DateTime への型変換に失敗した場合、杓子定規なエラーメッセージを設定します。
+	 * 日時系 validation は指定フォーマットによる DateTime への型変換に失敗した場合、型変換失敗のエラーメッセージを個別に設定します。
 	 * これにより複数の日時系 validation が設定されている項目において型変換に失敗すると同一のエラーメッセージが複数表示されてしまいます。
 	 * その為、日時系 validation では以下の Form::EXIT_ON_FAILED 付きの validation チェックを事前に実施することが望ましいです。
-	 * - [Form::VALID_DATETIME, 'format', 'format_label', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * - [Form::VALID_DATETIME, 'main_format', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
 	 * 
 	 * ex)
-	 * [Form::VALID_FUTURE_THAN_INPUTTED, 'target_field', 'format', Form::APPLY_SAVE]
+	 * [Form::VALID_FUTURE_THAN_INPUTTED, 'target_field', Form::APPLY_SAVE]
+	 * [Form::VALID_FUTURE_THAN_INPUTTED, 'target_field', 'main_format', Form::APPLY_SAVE]
 	 * </pre>
 	 * 
 	 * @see Form::VALID_DATETIME
+	 * @see Form::ACCEPTABLE_DATETIME_FORMAT
 	 */
 	const VALID_FUTURE_THAN_INPUTTED = 'future_than_inputted';
-	protected function valid_future_than_inputted($field, $label, $value, $other, $format) {
+	protected function valid_future_than_inputted($field, $label, $value, $other, $main_format = null) {
 		if($this->_empty($value)) { return null; }
-		$target = $this->_createDateTime($format, $value);
-		if(empty($target)) { return "{$label}は {$format} 形式 （例：".(new DateTime())->format($format)."） で入力して下さい。"; }
-		$point = $this->_createDateTime($format, $this->$other);
+		list($target, ) = $this->_createDateTime($value, $main_format);
+		if(empty($target)) { return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。"; }
+		list($point, ) = $this->_createDateTime($this->$other, $main_format);
 		if(empty($point) || !($point < $target)) {
 			$labels = $this->labels();
 			return "{$label}は{$labels[$other]}よりも未来日を指定して下さい。";
@@ -1998,23 +2096,25 @@ abstract class Form
 	 * フィールド比較：日時：未来日(当日含む)
 	 * 
 	 * <pre>
-	 * 日時系 validation は指定フォーマットによる DateTime への型変換に失敗した場合、杓子定規なエラーメッセージを設定します。
+	 * 日時系 validation は指定フォーマットによる DateTime への型変換に失敗した場合、型変換失敗のエラーメッセージを個別に設定します。
 	 * これにより複数の日時系 validation が設定されている項目において型変換に失敗すると同一のエラーメッセージが複数表示されてしまいます。
 	 * その為、日時系 validation では以下の Form::EXIT_ON_FAILED 付きの validation チェックを事前に実施することが望ましいです。
-	 * - [Form::VALID_DATETIME, 'format', 'format_label', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * - [Form::VALID_DATETIME, 'main_format', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
 	 * 
 	 * ex)
-	 * [Form::VALID_FUTURE_EQUAL_INPUTTED, 'target_field', 'format', Form::APPLY_SAVE]
+	 * [Form::VALID_FUTURE_EQUAL_INPUTTED, 'target_field', Form::APPLY_SAVE]
+	 * [Form::VALID_FUTURE_EQUAL_INPUTTED, 'target_field', 'main_format', Form::APPLY_SAVE]
 	 * </pre>
 	 * 
 	 * @see Form::VALID_DATETIME
+	 * @see Form::ACCEPTABLE_DATETIME_FORMAT
 	 */
 	const VALID_FUTURE_EQUAL_INPUTTED = 'future_equal_inputted';
-	protected function valid_future_equal_inputted($field, $label, $value, $other, $format) {
+	protected function valid_future_equal_inputted($field, $label, $value, $other, $main_format = null) {
 		if($this->_empty($value)) { return null; }
-		$target = $this->_createDateTime($format, $value);
-		if(empty($target)) { return "{$label}は {$format} 形式 （例：".(new DateTime())->format($format)."） で入力して下さい。"; }
-		$point = $this->_createDateTime($format, $this->$other);
+		list($target, ) = $this->_createDateTime($value, $main_format);
+		if(empty($target)) { return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。"; }
+		list($point, ) = $this->_createDateTime($this->$other, $main_format);
 		if(empty($point) || !($point <= $target)) {
 			$labels = $this->labels();
 			return "{$label}は{$labels[$other]}よりも未来日(当日含む)を指定して下さい。";
@@ -2027,23 +2127,25 @@ abstract class Form
 	 * フィールド比較：日時：過去日(当日含まず)
 	 * 
 	 * <pre>
-	 * 日時系 validation は指定フォーマットによる DateTime への型変換に失敗した場合、杓子定規なエラーメッセージを設定します。
+	 * 日時系 validation は指定フォーマットによる DateTime への型変換に失敗した場合、型変換失敗のエラーメッセージを個別に設定します。
 	 * これにより複数の日時系 validation が設定されている項目において型変換に失敗すると同一のエラーメッセージが複数表示されてしまいます。
 	 * その為、日時系 validation では以下の Form::EXIT_ON_FAILED 付きの validation チェックを事前に実施することが望ましいです。
-	 * - [Form::VALID_DATETIME, 'format', 'format_label', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * - [Form::VALID_DATETIME, 'main_format', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
 	 * 
 	 * ex)
-	 * [Form::VALID_PAST_THAN_INPUTTED, 'target_field', 'format', Form::APPLY_SAVE]
+	 * [Form::VALID_PAST_THAN_INPUTTED, 'target_field', Form::APPLY_SAVE]
+	 * [Form::VALID_PAST_THAN_INPUTTED, 'target_field', 'main_format', Form::APPLY_SAVE]
 	 * </pre>
 	 * 
 	 * @see Form::VALID_DATETIME
+	 * @see Form::ACCEPTABLE_DATETIME_FORMAT
 	 */
 	const VALID_PAST_THAN_INPUTTED = 'past_than_inputted';
-	protected function valid_past_than_inputted($field, $label, $value, $other, $format) {
+	protected function valid_past_than_inputted($field, $label, $value, $other, $main_format = null) {
 		if($this->_empty($value)) { return null; }
-		$target = $this->_createDateTime($format, $value);
-		if(empty($target)) { return "{$label}は {$format} 形式 （例：".(new DateTime())->format($format)."） で入力して下さい。"; }
-		$point = $this->_createDateTime($format, $this->$other);
+		list($target, ) = $this->_createDateTime($value, $main_format);
+		if(empty($target)) { return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。"; }
+		list($point, ) = $this->_createDateTime($this->$other, $main_format);
 		if(empty($point) || !($target < $point)) {
 			$labels = $this->labels();
 			return "{$label}は{$labels[$other]}よりも過去日を指定して下さい。";
@@ -2056,23 +2158,25 @@ abstract class Form
 	 * フィールド比較：日時：過去日(当日含む)
 	 * 
 	 * <pre>
-	 * 日時系 validation は指定フォーマットによる DateTime への型変換に失敗した場合、杓子定規なエラーメッセージを設定します。
+	 * 日時系 validation は指定フォーマットによる DateTime への型変換に失敗した場合、型変換失敗のエラーメッセージを個別に設定します。
 	 * これにより複数の日時系 validation が設定されている項目において型変換に失敗すると同一のエラーメッセージが複数表示されてしまいます。
 	 * その為、日時系 validation では以下の Form::EXIT_ON_FAILED 付きの validation チェックを事前に実施することが望ましいです。
-	 * - [Form::VALID_DATETIME, 'format', 'format_label', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * - [Form::VALID_DATETIME, 'main_format', Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
 	 * 
 	 * ex)
-	 * [Form::VALID_PAST_EQUAL_INPUTTED, 'target_field', 'format', Form::APPLY_SAVE]
+	 * [Form::VALID_PAST_EQUAL_INPUTTED, 'target_field', Form::APPLY_SAVE]
+	 * [Form::VALID_PAST_EQUAL_INPUTTED, 'target_field', 'main_format', Form::APPLY_SAVE]
 	 * </pre>
 	 * 
 	 * @see Form::VALID_DATETIME
+	 * @see Form::ACCEPTABLE_DATETIME_FORMAT
 	 */
 	const VALID_PAST_EQUAL_INPUTTED = 'past_equal_inputted';
-	protected function valid_past_equal_inputted($field, $label, $value, $other, $format) {
+	protected function valid_past_equal_inputted($field, $label, $value, $other, $main_format = null) {
 		if($this->_empty($value)) { return null; }
-		$target = $this->_createDateTime($format, $value);
-		if(empty($target)) { return "{$label}は {$format} 形式 （例：".(new DateTime())->format($format)."） で入力して下さい。"; }
-		$point = $this->_createDateTime($format, $this->$other);
+		list($target, ) = $this->_createDateTime($value, $main_format);
+		if(empty($target)) { return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。"; }
+		list($point, ) = $this->_createDateTime($this->$other, $main_format);
 		if(empty($point) || !($target <= $point)) {
 			$labels = $this->labels();
 			return "{$label}は{$labels[$other]}よりも過去日(当日含む)を指定して下さい。";

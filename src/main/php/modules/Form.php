@@ -352,6 +352,8 @@ abstract class Form
 		if(!($obj instanceof stdClass)) {
 			$clazz = get_class($obj);
 			if(!property_exists($clazz, $key)) { return $default; }
+		} else {
+			if(!property_exists($obj, $key)) { return $default; }
 		}
 		return $obj->$key === null ? $default : $obj->$key ;
 	}
@@ -1526,20 +1528,35 @@ abstract class Form
 	const VALID_DATETIME = 'datetime';
 	protected function valid_datetime($field, $label, $value, $main_format = null) {
 		if($this->_empty($value)) { return null; }
-		list($date, ) = $this->_createDateTime($value, $main_format);
+		$date = $this->_createDateTime($value, $main_format);
 		if(empty($date)) { return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。"; }
 		return null;
 	}
 	
 	/**
-	 * DateTime オブジェクトを生成します。
+	 * DateTime オブジェクトを解析します。
+	 * ※本メソッドは _analyzeDateTime() から日付フォーマット情報を除外して日付のみを返す簡易メソッドです。
+	 * 
+	 * @param string       $value
+	 * @param string|array $main_format
+	 * @return DateTime or null
+	 */
+	protected function _createDateTime($value, $main_format = null) {
+		list($date, ) = $this->_analyzeDateTime($value, $main_format);
+		return $date;
+	}
+	
+	/**
+	 * DateTime オブジェクトを解析します。
+	 * ※本メソッドは解析に成功した日付フォーマットも返します
 	 * 
 	 * @param string       $value
 	 * @param string|array $main_format
 	 * @return [DateTime or null, apply_format or null]
 	 */
-	protected function _createDateTime($value, $main_format = null) {
+	protected function _analyzeDateTime($value, $main_format = null) {
 		if($this->_empty($value)) { return null; }
+		if($value instanceof DateTime) { return [$value, null]; }
 		
 		$formats = static::ACCEPTABLE_DATETIME_FORMAT ;
 		if(!empty($main_format)) { array_unshift($formats, $main_format); }
@@ -1547,7 +1564,7 @@ abstract class Form
 		$date         = null;
 		$apply_format = null;
 		foreach ($formats AS $format) {
-			$date = $this->_tryToCreateDateTime($value, $format);
+			$date = $this->_tryToParseDateTime($value, $format);
 			if(!empty($date)) {
 				$apply_format = $format;
 				break;
@@ -1558,13 +1575,13 @@ abstract class Form
 	}
 	
 	/**
-	 * DateTime オブジェクトを生成します。
+	 * DateTime オブジェクトを生成を試みます。
 	 * 
 	 * @param string $value
 	 * @param string $format
 	 * @return DateTime or null
 	 */
-	private function _tryToCreateDateTime($value, $format) {
+	private function _tryToParseDateTime($value, $format) {
 		$date = DateTime::createFromFormat("!{$format}", $value);
 		$le   = DateTime::getLastErrors();
 		return $date === false || !empty($le['errors']) || !empty($le['warnings']) ? null : $date ;
@@ -1591,7 +1608,7 @@ abstract class Form
 	const VALID_FUTURE_THAN = 'future_than';
 	protected function valid_future_than($field, $label, $value, $pointTime, $main_format = null) {
 		if($this->_empty($value)) { return null; }
-		list($target, $apply_format) = $this->_createDateTime($value, $main_format);
+		list($target, $apply_format) = $this->_analyzeDateTime($value, $main_format);
 		if(empty($target)) { return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。"; }
 		$point = new DateTime($pointTime);
 		if($target <= $point) { return "{$label}は ".$point->format($apply_format)." よりも未来日を指定して下さい。"; }
@@ -1619,7 +1636,7 @@ abstract class Form
 	const VALID_FUTURE_EQUAL = 'future_equal';
 	protected function valid_future_equal($field, $label, $value, $pointTime, $main_format = null) {
 		if($this->_empty($value)) { return null; }
-		list($target, $apply_format) = $this->_createDateTime($value, $main_format);
+		list($target, $apply_format) = $this->_analyzeDateTime($value, $main_format);
 		if(empty($target)) { return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。"; }
 		$point = new DateTime($pointTime);
 		if($target < $point) { return "{$label}は ".$point->format($apply_format)." よりも未来日(当日含む)を指定して下さい。"; }
@@ -1647,7 +1664,7 @@ abstract class Form
 	const VALID_PAST_THAN = 'past_than';
 	protected function valid_past_than($field, $label, $value, $pointTime, $main_format = null) {
 		if($this->_empty($value)) { return null; }
-		list($target, $apply_format) = $this->_createDateTime($value, $main_format);
+		list($target, $apply_format) = $this->_analyzeDateTime($value, $main_format);
 		if(empty($target)) { return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。"; }
 		$point = new DateTime($pointTime);
 		if($target >= $point) { return "{$label}は ".$point->format($apply_format)." よりも過去日を指定して下さい。"; }
@@ -1675,7 +1692,7 @@ abstract class Form
 	const VALID_PAST_EQUAL = 'past_equal';
 	protected function valid_past_equal($field, $label, $value, $pointTime, $main_format = null) {
 		if($this->_empty($value)) { return null; }
-		list($target, $apply_format) = $this->_createDateTime($value, $main_format);
+		list($target, $apply_format) = $this->_analyzeDateTime($value, $main_format);
 		if(empty($target)) { return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。"; }
 		$point  = new DateTime($pointTime);
 		if($target > $point) { return "{$label}は ".$point->format($apply_format)." よりも過去日(当日含む)を指定して下さい。"; }
@@ -1703,7 +1720,7 @@ abstract class Form
 	const VALID_AGE_GREATER_EQUAL = 'age_greater_equal';
 	protected function valid_age_greater_equal($field, $label, $value, $age, $main_format = null) {
 		if($this->_empty($value)) { return null; }
-		list($target, ) = $this->_createDateTime($value, $main_format);
+		$target = $this->_createDateTime($value, $main_format);
 		if(empty($target)) { return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。"; }
 		$point = new DateTime("-{$age} year");
 		if($target > $point) { return "{$age}歳未満の方はご利用頂けません。"; }
@@ -1731,7 +1748,7 @@ abstract class Form
 	const VALID_AGE_LESS_EQUAL = 'age_less_equal';
 	protected function valid_age_less_equal($field, $label, $value, $age, $main_format = null) {
 		if($this->_empty($value)) { return null; }
-		list($target, ) = $this->_createDateTime($value, $main_format);
+		$target = $this->_createDateTime($value, $main_format);
 		if(empty($target)) { return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。"; }
 		$point = new DateTime("-{$age} year");
 		if($target < $point) { return ($age + 1)."歳以上の方はご利用頂けません。"; }
@@ -2081,9 +2098,9 @@ abstract class Form
 	const VALID_FUTURE_THAN_INPUTTED = 'future_than_inputted';
 	protected function valid_future_than_inputted($field, $label, $value, $other, $main_format = null) {
 		if($this->_empty($value)) { return null; }
-		list($target, ) = $this->_createDateTime($value, $main_format);
+		$target = $this->_createDateTime($value, $main_format);
 		if(empty($target)) { return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。"; }
-		list($point, ) = $this->_createDateTime($this->$other, $main_format);
+		$point = $this->_createDateTime($this->$other, $main_format);
 		if(empty($point) || !($point < $target)) {
 			$labels = $this->labels();
 			return "{$label}は{$labels[$other]}よりも未来日を指定して下さい。";
@@ -2112,9 +2129,9 @@ abstract class Form
 	const VALID_FUTURE_EQUAL_INPUTTED = 'future_equal_inputted';
 	protected function valid_future_equal_inputted($field, $label, $value, $other, $main_format = null) {
 		if($this->_empty($value)) { return null; }
-		list($target, ) = $this->_createDateTime($value, $main_format);
+		$target = $this->_createDateTime($value, $main_format);
 		if(empty($target)) { return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。"; }
-		list($point, ) = $this->_createDateTime($this->$other, $main_format);
+		$point = $this->_createDateTime($this->$other, $main_format);
 		if(empty($point) || !($point <= $target)) {
 			$labels = $this->labels();
 			return "{$label}は{$labels[$other]}よりも未来日(当日含む)を指定して下さい。";
@@ -2143,9 +2160,9 @@ abstract class Form
 	const VALID_PAST_THAN_INPUTTED = 'past_than_inputted';
 	protected function valid_past_than_inputted($field, $label, $value, $other, $main_format = null) {
 		if($this->_empty($value)) { return null; }
-		list($target, ) = $this->_createDateTime($value, $main_format);
+		$target = $this->_createDateTime($value, $main_format);
 		if(empty($target)) { return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。"; }
-		list($point, ) = $this->_createDateTime($this->$other, $main_format);
+		$point = $this->_createDateTime($this->$other, $main_format);
 		if(empty($point) || !($target < $point)) {
 			$labels = $this->labels();
 			return "{$label}は{$labels[$other]}よりも過去日を指定して下さい。";
@@ -2174,9 +2191,9 @@ abstract class Form
 	const VALID_PAST_EQUAL_INPUTTED = 'past_equal_inputted';
 	protected function valid_past_equal_inputted($field, $label, $value, $other, $main_format = null) {
 		if($this->_empty($value)) { return null; }
-		list($target, ) = $this->_createDateTime($value, $main_format);
+		$target = $this->_createDateTime($value, $main_format);
 		if(empty($target)) { return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。"; }
-		list($point, ) = $this->_createDateTime($this->$other, $main_format);
+		$point = $this->_createDateTime($this->$other, $main_format);
 		if(empty($point) || !($target <= $point)) {
 			$labels = $this->labels();
 			return "{$label}は{$labels[$other]}よりも過去日(当日含む)を指定して下さい。";

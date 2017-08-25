@@ -200,7 +200,7 @@ class Log {
 			);
 		}
 		
-		if($level >= self::LEVEL_DEBUG && self::$_LOG_LEVEL >= self::LEVEL_TRACE) {
+		if($level === self::LEVEL_DEBUG) {
 			$body .= self::_indent(
 				 "\n*** DEBUG TRACE ***"
 				."\n".self::_traceToString(debug_backtrace(), false)

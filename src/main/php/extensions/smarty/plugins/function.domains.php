@@ -63,10 +63,14 @@ function smarty_function_domains($params, &$smarty)
 	// ---------------------------------------------------------
 	// コンテンツ出力
 	// ---------------------------------------------------------
+	if($type === 'label' && empty($selected) && !empty($null_label)) {
+		return $prevtag.$null_label.$posttag;
+	}
+	
 	$html="";
 	foreach ($domain::nexts($current, $case) AS $d) {
 		$v = $d->$value;
-		$l = $d->$label;
+		$l = empty($d->$label) ? $null_label : $d->$label ;
 		$c = $d->$check;
 		
 		if(!empty($include) && !in_array($c, $include)) { continue; }
@@ -86,11 +90,11 @@ function smarty_function_domains($params, &$smarty)
 				$html .= $prevtag.'<input id="'.$name.'_'.$v.'" type="radio" '.$attrs.' value="'.htmlspecialchars($v).'"'.$select.'/><label for="'.$name.'_'.$v.'">'.htmlspecialchars($l).'</label>'.$posttag.$delimiter;
 				break;
 			case 'plain':
-				$html .= $prevtag.htmlspecialchars(empty($l) ? $null_label : $l).$posttag.$delimiter;
+				$html .= $prevtag.htmlspecialchars($l).$posttag.$delimiter;
 				break;
 			case 'label':
 				if(in_array($v, $selected)) {
-					$html .= $prevtag.htmlspecialchars(empty($l) ? $null_label : $l).$posttag.$delimiter;
+					$html .= $prevtag.htmlspecialchars($l).$posttag.$delimiter;
 				}
 				break;
 		}

@@ -441,6 +441,7 @@ abstract class Form
 		foreach ($rules AS $target => $validations) {
 			foreach ($validations AS $validate) {
 				// 定義内容チェック
+				if(empty($validate)) { continue; }
 				$size = count($validate);
 				if($size < 2) { throw new InvalidValidateRuleException("Validate rule has at least 2 or more options [ 'check_name', Form::APPLY_* | Form::EXIT_* ]"); }
 				

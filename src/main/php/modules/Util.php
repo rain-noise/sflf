@@ -502,6 +502,21 @@ class Util {
 	}
 	
 	/**
+	 * 指定のオブジェクト配列から指定の要素を抽出します。
+	 * 
+	 * @param array $array
+	 * @param string $field
+	 */
+	public static function pick(array $array, $field) {
+		if(empty($array) || empty($field)){ return []; }
+		$picks = [];
+		foreach ($array AS $value) {
+			$picks[] = self::get($value, $field);
+		}
+		return $picks;
+	}
+	
+	/**
 	 * データを CSV形式 で書き出します。
 	 * ※本メソッドは exit を call します。
 	 * 
@@ -683,7 +698,7 @@ class Util {
 	 * @param DateTime $at       起点日
 	 * @return int 起点日における年齢
 	 */
-	public static function ageAt(DateTime $birthday, DateTime $at = null) {
+	public static function ageAt(DateTime $birthday = null, DateTime $at = null) {
 		if(empty($birthday)) { return null; }
 		$at = self::nvl($at, new DateTime());
 		return floor(($at->format('Ymd') - $birthday->format('Ymd')) / 10000);

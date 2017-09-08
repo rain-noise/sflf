@@ -580,7 +580,7 @@ abstract class Form
 	 */
 	protected function _empty($value) {
 		if($value instanceof UploadFile) { return $value->isEmpty(); }
-		return $value == null || $value == '';
+		return $value === null || $value === '';
 	}
 	
 	//##########################################################################
@@ -885,6 +885,15 @@ abstract class Form
 	const VALID_MAX_LENGTH = 'max_length';
 	protected function valid_max_length($field, $label, $value, $length) {
 		if($this->_empty($value)) { return null; }
+		
+		if(is_array($value)) {
+			$errors = [];
+			foreach ($value AS $i => $v) {
+				if(mb_strlen($v) > $length) { $errors[] = ($i+1)."番目の{$label}「{$v}」は{$length}文字以下で入力して下さい。"; }
+			}
+			return $errors;
+		}
+		
 		if(mb_strlen($value) > $length) { return "{$label}は{$length}文字以下で入力して下さい。"; }
 		return null;
 	}
@@ -901,6 +910,15 @@ abstract class Form
 	const VALID_LENGTH = 'length';
 	protected function valid_length($field, $label, $value, $length) {
 		if($this->_empty($value)) { return null; }
+		
+		if(is_array($value)) {
+			$errors = [];
+			foreach ($value AS $i => $v) {
+				if(mb_strlen($v) != $length) { $errors[] = ($i+1)."番目の{$label}「{$v}」は{$length}文字で入力して下さい。"; }
+			}
+			return $errors;
+		}
+		
 		if(mb_strlen($value) != $length) { return "{$label}は{$length}文字で入力して下さい。"; }
 		return null;
 	}
@@ -917,6 +935,15 @@ abstract class Form
 	const VALID_MIN_LENGTH = 'min_length';
 	protected function valid_min_length($field, $label, $value, $length) {
 		if($this->_empty($value)) { return null; }
+		
+		if(is_array($value)) {
+			$errors = [];
+			foreach ($value AS $i => $v) {
+				if(mb_strlen($v) < $length) { $errors[] = ($i+1)."番目の{$label}「{$v}」は{$length}文字以上で入力して下さい。"; }
+			}
+			return $errors;
+		}
+		
 		if(mb_strlen($value) < $length) { return "{$label}は{$length}文字以上で入力して下さい。"; }
 		return null;
 	}
@@ -1183,6 +1210,16 @@ abstract class Form
 	const VALID_DEPENDENCE_CHAR = 'dependence_char';
 	protected function valid_dependence_char($field, $label, $value, $encode='sjis-win') {
 		if($this->_empty($value)) { return null; }
+		
+		if(is_array($value)) {
+			$errors = [];
+			foreach ($value AS $i => $v) {
+				$dependences = $this->_checkDependenceChar($v, $encode);
+				if(!empty($dependences)) { $errors[] = ($i+1)."番目の{$label}「{$v}」に機種依存文字 [".join(", ",$dependences)."] が含まれます。機種依存文字を除去又は代替文字に変更して下さい。"; }
+			}
+			return $errors;
+		}
+		
 		$dependences = $this->_checkDependenceChar($value, $encode);
 		if(!empty($dependences)) { return "{$label}に機種依存文字 [".join(", ",$dependences)."] が含まれます。機種依存文字を除去又は代替文字に変更して下さい。"; }
 		return null;

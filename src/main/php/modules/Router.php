@@ -129,7 +129,13 @@
 		$clazz   = $this->_getControllerName();
 		$method  = $this->_getMethodName();
 		$args    = $this->getArgs();
-		$invoker = new ReflectionMethod($clazz, $method);
+		
+		try {
+			$invoker = new ReflectionMethod($clazz, $method);
+		} catch(Throwable $e) {
+			throw new NoRouteException("Route Not Found : Controller [ {$clazz}->{$method}() ] can not invoke.", null, $e);
+		}
+		
 		$invoker->setAccessible($this->accessible);
 		return $invoker->invokeArgs($controller, $args);
 	}
@@ -264,5 +270,3 @@ class NoRouteException extends RuntimeException {
 		parent::__construct($message, $code, $previous);
 	}
 }
-
-

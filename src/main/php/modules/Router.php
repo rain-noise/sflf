@@ -136,6 +136,10 @@
 			throw new NoRouteException("Route Not Found : Controller [ {$clazz}->{$method}() ] can not invoke.", null, $e);
 		}
 		
+		if(count($args) < $invoker->getNumberOfRequiredParameters()) {
+			throw new NoRouteException("Route Not Found : Controller [ {$clazz}->{$method}() ] can not invoke, because of not enough required args count.");
+		}
+		
 		$invoker->setAccessible($this->accessible);
 		return $invoker->invokeArgs($controller, $args);
 	}

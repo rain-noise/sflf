@@ -241,17 +241,38 @@ abstract class Form
 	protected $_parent_;
 	
 	/**
+	 * 入力コンバータを取得します。
+	 * ※必要に応じてサブクラスでオーバーライドして下さい
+	 * 
+	 * @return function function($field, $defined, $src, $value, $form, $origin) { return $defined ? $value : $origin ; };
+	 */
+	protected function inputConverter() {
+		return function($field, $defined, $src, $value, $form, $origin) { return $defined ? $value : $origin ; };
+	}
+	
+	/**
+	 * 出力コンバータを取得します。
+	 * ※必要に応じてサブクラスでオーバーライドして下さい
+	 * 
+	 * @return function function($field, $defined, $form, $value, $dest, $origin) { return $defined ? $value : $origin ; };
+	 */
+	protected function outputConverter() {
+		return function($field, $defined, $form, $value, $dest, $origin) { return $defined ? $value : $origin ; };
+	}
+	
+	/**
 	 * リクエストデータ又は Dto オブジェクトから自身のインスタンス変数に値をコピーします。
 	 *  
 	 * @param array|obj $src       コピー元データ。リクエストデータ(=$_REQUEST)又はDtoオブジェクト
 	 * @param array     $files     アップロードファイル情報(=$_FILES)
-	 * @param function  $converter コンバータの戻り値が設定されます ： デフォルト function($field, $defined, $src, $value, $form, $origin) { return $defined ? $value : $origin ; } 
+	 * @param function  $converter 入力コンバータの戻り値が設定されます ： デフォルト Form::inputConverter()
+	 * @see Form::inputConverter()
 	 */
 	public function popurate($src, $files = null, $converter = null) {
 		if(empty($src) && empty($files)) { return; }
 		
 		if(empty($converter)) {
-			$converter = function($field, $defined, $src, $value, $form, $origin) { return $defined ? $value : $origin ; };
+			$converter = $this->inputConverter();
 		}
 		
 		$clazz = get_class($this);
@@ -308,11 +329,12 @@ abstract class Form
 	 * ※サブフォームは処理されません
 	 *
 	 * @param obj      $dto コピー対象DTOオブジェクト
-	 * @param function  $converter コンバータの戻り値が設定されます ： デフォルト function($field, $defined, $form, $value, $dto, $origin) { return $defined ? $value : $origin ; } 
+	 * @param function  $converter 出力コンバータの戻り値が設定されます ： デフォルト Form::outputConverter()
+	 * @see Form::outputConverter()
 	 */
 	public function inject(&$dto, $converter = null) {
 		if(empty($converter)) {
-			$converter = function($field, $defined, $form, $value, $dto, $origin) { return $defined ? $value : $origin ; };
+			$converter = $this->outputConverter();
 		}
 		
 		$thisClazz = get_class($this);
@@ -329,10 +351,13 @@ abstract class Form
 	 * ※サブフォームは処理されません
 	 *
 	 * @param string    $clazz     DTOオブジェクトクラス名
-	 * @param function  $converter コンバータの戻り値が設定されます ： デフォルト function($field, $defined, $form, $value, $dto, $origin) { return $defined ? $value : $origin ; } 
+	 * @param function  $converter 出力コンバータの戻り値が設定されます ： デフォルト Form::outputConverter()
+	 * @see Form::outputConverter()
 	 */
 	public function describe($clazz, $converter = null) {
-		return $this->inject(new $clazz(), $converter);
+		$entity = new $clazz();
+		$this->inject($entity, $converter);
+		return $entity;
 	}
 	
 	/**
@@ -1149,7 +1174,7 @@ abstract class Form
 	 * [Form::VALID_HALF_ALPHA_DIGIT, Form::APPLY_SAVE]
 	 * </pre>
 	 */
-	const VALID_HALF_ALPHA_DIGIT = 'half_digit_num';
+	const VALID_HALF_ALPHA_DIGIT = 'half_alpha_digit';
 	protected function valid_half_alpha_digit($field, $label, $value) {
 		return $this->valid_regex($field, $label, $value, "/^[a-zA-Z0-9]+$/u", "半角英数字");
 	}

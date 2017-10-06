@@ -243,7 +243,7 @@
 	}
 	
 	/**
-	 * 指定のSQLを実行し、結果を複数件取得します。
+	 * 指定のSQLを実行し、結果〔N行M列〕を取得します。
 	 * ※戻り値は array($clazz) になります。
 	 * 
 	 * @param  string    $sql    SQL文
@@ -274,7 +274,7 @@
 	}
 	
 	/**
-	 * 指定のSQLを実行し、指定列の結果を配列で取得します。
+	 * 指定のSQLを実行し、結果〔N行1列〕を配列で取得します。
 	 * 
 	 * @param  string    $col    列名
 	 * @param  string    $sql    SQL文
@@ -300,7 +300,7 @@
 	}
 	
 	/**
-	 * 指定のSQLを実行し、結果を1件取得します。
+	 * 指定のSQLを実行し、結果〔1行M列〕を1件取得します。
 	 * ※戻り値は $clazz or null になります。
 	 * 
 	 * @param  string    $sql    SQL文
@@ -316,17 +316,19 @@
 	}
 	
 	/**
-	 * 対象SQLの検索結果件数を取得します。
-	 * ※戻り値は int になります。
+	 * 指定のSQLを実行し、結果〔1行1列〕を取得します。
 	 * 
-	 * @param  string    $sql    SQL文
+	 * @param  string    $sql    集約SQL文
 	 * @param  array|obj $params パラメータ
-	 * @return int 検索結果件数
-	 * @throws DatabaseException
+	 * @return int|fload|DateTime|etc 集約結果
+	 * 
+	 * @see Dao::_convertToPhp()
 	 */
-	public static function count($sql, $params = array()) {
-		$row = self::find("SELECT count(*) AS count FROM ({$sql}) AS T", $params);
-		return $row ? intval($row->count) : 0 ;
+	public static function get($sql, $params = array()) {
+		$rs   = self::query($sql, $params);
+		$meta = $rs->fetch_field_direct(0);
+		$row  = $rs->fetch_row();
+		return $row ? self::_convertToPhp($row[0], $meta->type) : 0 ;
 	}
 	
 	/**
@@ -344,22 +346,37 @@
 	}
 	
 	/**
+	 * 対象SQLの検索結果件数を取得します。
+	 * ※戻り値は int になります。
+	 * 
+	 * @param  string    $sql    SQL文
+	 * @param  array|obj $params パラメータ
+	 * @return int 検索結果件数
+	 * @throws DatabaseException
+	 */
+	public static function count($sql, $params = array()) {
+		return self::get("SELECT count(*) FROM ({$sql}) AS T", $params);
+	}
+	
+	/**
 	 * 指定のSQLを実行し、結果を複数件取得します。
 	 * ※本処理はページング処理を行った検索を提供します。
 	 * ※戻り値は array(PageInfo, array($clazz)) です。
 	 * 
-	 * list($pi, $rs) = Dao::paginate(1, 25, "SELECT * FROM ...", array(':status' => 1), 'UserEntity');
+	 * list($pi, $rs) = Dao::paginate(1, 25, "SELECT * FROM ...", array(':status' => 1), UserEntity::class);
 	 * 
-	 * @param int       $page     取得ページ
-	 * @param int       $pageSize 1ページのサイズ(データ件数)
-	 * @param string    $sql      SQL文
-	 * @param array|obj $params   パラメータ
-	 * @param string    $clazz    結果セットのマッピング型 - デフォルト 'stdClass'
+	 * @param int       $page              取得ページ
+	 * @param int       $pageSize          1ページのサイズ(データ件数)
+	 * @param string    $sql               SQL文
+	 * @param array|obj $params            パラメータ
+	 * @param string    $clazz             結果セットのマッピング型 - デフォルト 'stdClass'
+	 * @param string    $optimizedCountSql ヒット件数検索用の最適化されたカウント用SQL - デフォルト null(= self::count() の利用)
 	 * @return array(PageInfo, array($clazz)) ページ情報と検索結果
 	 * @throws DatabaseException
 	 */
-	public static function paginate($page, $pageSize, $sql, $params = array(), $clazz  = 'stdClass') {
-		$pi = new PageInfo($page, $pageSize, self::count($sql, $params));
+	public static function paginate($page, $pageSize, $sql, $params = array(), $clazz  = 'stdClass', $optimizedCountSql = null) {
+		$hitCount = empty($optimizedCountSql) ? self::count($sql, $params) : self::get($optimizedCountSql, $params) ;
+		$pi = new PageInfo($page, $pageSize, $hitCount);
 		$rs = self::select("$sql LIMIT {$pi->offset}, {$pi->pageSize}", $params, $clazz);
 		return array($pi, $rs);
 	}

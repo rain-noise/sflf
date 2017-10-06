@@ -207,6 +207,7 @@ class Util {
 	 * @return void
 	 */
 	public static function removeDir($dir) {
+		if(!file_exists($dir)) { return; }
 		if ($handle = opendir("$dir")) {
 			while (false !== ($item = readdir($handle))) {
 				if ($item != "." && $item != "..") {

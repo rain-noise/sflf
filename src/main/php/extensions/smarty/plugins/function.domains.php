@@ -7,7 +7,7 @@
  * Name:     domains
  * Params:
  *  - type       (required)          : output type (option|checkbox|radio|plain|label)
- *  - domain     (required)          : domain class name
+ *  - domain     (required)          : domain class name or array of domains(any objects which has value and label field also ok)
  *  - selected   (optional)          : selected values (value or array : default no selected)
  *  - value      (optional)          : value field name (default 'value')
  *  - label      (optional)          : label field name (default 'label')
@@ -67,8 +67,9 @@ function smarty_function_domains($params, &$smarty)
 		return $prevtag.$null_label.$posttag;
 	}
 	
-	$html="";
-	foreach ($domain::nexts($current, $case) AS $d) {
+	$html  = "";
+	$lists = is_string($domain) ? in_array($type, ['plain', 'label']) ? $domain::lists() : $domain::nexts($current, $case) : $domain ;
+	foreach ($lists AS $d) {
 		$v = $d->$value;
 		$l = empty($d->$label) ? $null_label : $d->$label ;
 		$c = $d->$check;
@@ -79,7 +80,7 @@ function smarty_function_domains($params, &$smarty)
 		switch ($type) {
 			case 'option':
 				$select = in_array($v, $selected) ? ' selected' : '';
-				$html .= '<option '.$attrs.' value="'.htmlspecialchars($v).'"'.$select.'>'.$prevtag.htmlspecialchars($l).$posttag.'</option>'.$delimiter;
+				$html .= '<option '.$attrs.' value="'.htmlspecialchars($v).'"'.$select.'>'.$prevtag.$l.$posttag.'</option>'.$delimiter;
 				break;
 			case 'checkbox':
 				$select = in_array($v, $selected) ? ' checked' : '';

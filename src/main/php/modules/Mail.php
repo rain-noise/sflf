@@ -60,6 +60,12 @@ class Mail {
 	private $_from;
 	
 	/**
+	 * 返信先
+	 * @var string
+	 */
+	private $_replyTo;
+	
+	/**
 	 * 本文
 	 * @var array
 	 */
@@ -122,6 +128,16 @@ class Mail {
 	}
 	
 	/**
+	 * 返信先(Reply-To)を設定します。
+	 * 
+	 * @param  string $replyTo
+	 * @return void
+	 */
+	public function setReplyTo($replyTo) {
+		$this->_replyTo = $replyTo;
+	}
+	
+	/**
 	 * 本文を設定します。
 	 * 
 	 * @param  string $body
@@ -153,10 +169,11 @@ class Mail {
 		if(empty($this->_from)) {
 			throw new MailSendException("Mail 'from' not set.");
 		}
-		$from = $this->_mailAddressEncode($this->_from);
+		$from    = $this->_mailAddressEncode($this->_from);
+		$replyTo = $this->_mailAddressEncode($this->_replyTo);
 		$headers[] = "From: ".$from;
 		$headers[] = "Return-Path: ".$from;
-		$headers[] = "Reply-To: ".$from;
+		$headers[] = "Reply-To: ".(empty($replyTo) ? $from : $replyTo);
 		
 		// 宛先(To)
 		if(empty($this->_to)) {
@@ -174,7 +191,7 @@ class Mail {
 		}
 		$headers[] = "Content-Type: text/plain; charset=UTF-8";
 		$headers[] = "Content-Transfer-Encoding: base64";
-		$body = wordwrap(base64_encode($this->_body), 70, "\n", true);
+		$body = wordwrap(base64_encode($this->_body), 70, PHP_EOL, true);
 		
 		// 宛先(Cc)
 		if(!empty($this->_cc)) {
@@ -194,7 +211,7 @@ class Mail {
 			$headers[] = "Bcc: ".join(",", $bccs);
 		}
 		
-		if(!mail($to, $subject, $body, join("\n", $headers)) ) {
+		if(!mail($to, $subject, $body, join(PHP_EOL, $headers)) ) {
 			throw new MailSendException("Mail send faild.");
 		}
 	}
@@ -206,6 +223,7 @@ class Mail {
 	 * @return string エンコード済みメールアドレス
 	 */
 	private function _mailAddressEncode($address) {
+		if(empty($address)) { return null; }
 		$matches = array();
 		if(preg_match('/^("([^"].*)" *)|(([^<].*) *)<(.*)>$/', trim($address), $matches)) {
 			return mb_encode_mimeheader(trim(!empty($matches[2]) ? $matches[2] : $matches[4]), 'UTF-8', 'B', "\n")."<".$matches[5].">";

@@ -147,6 +147,27 @@ class Util {
 	}
 	
 	/**
+	 * 対象のリストから指定の件数だけランダムに選択します。
+	 * 
+	 * @param array $list         選択対象リスト
+	 * @param int   $select_count 選択数
+	 * @return array [ [選択された要素], [選択されなかった要素] ]
+	 */
+	public static function randomSelect(array $list, int $select_count) {
+		if(count($list) <= $select_count) { return [$list, []] ;}
+		
+		$selected = [];
+		for ($i=0; $i < $select_count; $i++) {
+			shuffle($list);
+			$idx       = mt_rand(0, count($list) - 1);
+			$selected[] = $list[$idx];
+			unset($list[$idx]);
+		}
+		
+		return [$selected, array_merge($list)];
+	}
+	
+	/**
 	 * 秘密鍵暗号で暗号化します。
 	 * 
 	 * @param  string $plain     平文

@@ -219,6 +219,7 @@ abstract class Domain {
 	 * ※同じ値を持つドメインが存在する場合、 Domain::lists() の順序で後勝ちとなります
 	 */
 	public static function fieldOf($field, $value) {
+		if($value instanceof static) { return $value; }
 		$maps = self::maps($field);
 		return isset($maps[$value]) ? $maps[$value] : null ;
 	}

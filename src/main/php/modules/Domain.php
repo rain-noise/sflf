@@ -126,6 +126,7 @@ abstract class Domain {
 	public $label;
 	
 	private static $DOMAIN_LIST_CACHE = array();
+	private static $DOMAIN_MAP_CACHE  = array();
 	
 	/**
 	 * ドメイン生成
@@ -189,11 +190,14 @@ abstract class Domain {
 	 * ※同じ値を持つドメインが存在する場合、 Domain::lists() の順序で後勝ちとなります
 	 */
 	public static function maps($field = 'value') {
-		$maps = array();
+		$key = get_called_class()."@".$field;
+		if(isset(self::$DOMAIN_MAP_CACHE[$key])){ return self::$DOMAIN_MAP_CACHE[$key]; }
 		
+		$maps = array();
 		foreach (self::lists() AS $domain) {
 			$maps[$domain->$field] = $domain;
 		}
+		self::$DOMAIN_MAP_CACHE[$key] = $maps;
 		
 		return $maps;
 	}

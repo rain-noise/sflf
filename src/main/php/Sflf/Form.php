@@ -1,4 +1,6 @@
 <?php
+//namespace Sflf; // 名前空間が必要な場合はコメントを解除して下さい。（任意の名前空間による設定も可）
+
 /**
  * Single File Low Functionality Class Tools
  * 
@@ -884,7 +886,7 @@ abstract class Form
 	
 	//--------------------------------------------------------------------------
 	/**
-	 * 正規表現：マッチのみ
+	 * 正規表現
 	 * 
 	 * <pre>
 	 * ex)
@@ -895,22 +897,6 @@ abstract class Form
 	protected function valid_regex($field, $label, $value, $pattern, $patternLabel) {
 		if($this->_empty($value)) { return null; }
 		if(!preg_match($pattern, $value)) { return "{$label}は{$patternLabel}で入力して下さい。"; }
-		return null;
-	}
-	
-	//--------------------------------------------------------------------------
-	/**
-	 * 正規表現：マッチ以外
-	 * 
-	 * <pre>
-	 * ex)
-	 * [Form::VALID_REGEX, 'pattern', 'label_of_pattern', Form::APPLY_SAVE]
-	 * </pre>
-	 */
-	const VALID_NOT_REGEX = 'not_regex';
-	protected function valid_not_regex($field, $label, $value, $pattern, $patternLabel) {
-		if($this->_empty($value)) { return null; }
-		if(preg_match($pattern, $value)) { return "{$label}は{$patternLabel}以外で入力して下さい。"; }
 		return null;
 	}
 	

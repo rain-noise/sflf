@@ -104,14 +104,6 @@
  *     }
  * }
  * 
- * // 数値範囲系
- * class Month extends RangeDomain {
- *     public static function start() { return  1; }
- *     public static function step()  { return  1; }
- *     public static function end()   { return 12; }
- *     public static function format($i){ return sprintf("%02s月",$i); }
- * }
- * 
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/domain/*.php 汎用ドメイン
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/function.domains.php ドメイン整形出力用 Smarty タグ
  * 
@@ -294,40 +286,3 @@ abstract class Domain {
 	}
 }
 
-/**
- * 範囲ドメイン
-*/
-abstract class RangeDomain extends Domain
-{
-	/**
-	 * 開始の数値を指定します
-	 */
-	abstract public static function start();
-	
-	/**
-	 * 変動値を指定します
-	 */
-	abstract public static function step();
-	
-	/**
-	 * 終了の数値を指定します
-	 */
-	abstract public static function end();
-	
-	/**
-	 * ラベルを value の数値でフォーマットして返します。
-	 * @return string
-	 */
-	abstract public static function format($i);
-	
-	/**
-	 * ドメインの一覧を生成します。
-	 */
-	protected static function generate() {
-		$list = array();
-		for ($i = static::start() ; $i <= static::end() ; $i += static::step()) {
-			$list[] = new static($i, static::format($i));
-		}
-		return $list;
-	}
-}

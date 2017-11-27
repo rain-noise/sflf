@@ -463,6 +463,33 @@ class Util {
 	}
 
 	/**
+	 * 簡易的な BASIC認証 を掛けます。
+	 * 
+	 * @param array    $auth_list
+	 * @param callable $to_hash
+	 * @param type     $realm
+	 * @param type     $failed_text
+	 * @param type     $charset
+	 * @return type
+	 */
+	public static function basicAuthenticate(array $auth_list, callable $to_hash = null, $realm="Enter your ID and PASSWORD.", $failed_text="Authenticate Failed.", $charset='utf-8') {
+		if(empty($to_hash)) {
+			$to_hash = function($password) { return $password; };
+		}
+		
+		$user      = self::get($_SERVER, 'PHP_AUTH_USER');
+		$pass      = $to_hash(self::get($_SERVER, 'PHP_AUTH_PW')) ;
+		$auth_pass = self::get($auth_list, $user);
+		if(!empty($user) && !empty($pass) && $auth_pass == $pass){ return $user; }
+
+		header('HTTP/1.0 401 Unauthorized');
+		header('WWW-Authenticate: Basic realm="'.$realm.'"');
+		header('Content-type: text/html; charset='.$charset);
+
+		die($failed_text);
+	}
+	
+	/**
 	 * ページをリダイレクトします。
 	 * ※本メソッドは exit を call します。
 	 * 

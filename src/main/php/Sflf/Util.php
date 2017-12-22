@@ -198,7 +198,7 @@ class Util {
 		$key       = substr(hash('sha256', $secretKey), 0, mcrypt_get_key_size($cipher, $mode));
 		$iv_size   = mcrypt_get_iv_size($cipher, $mode);
 		$iv        = substr($encrypted, 0 , $iv_size);
-		$encrypted = substr($encrypted, $iv_size , mb_strlen($encrypted));
+		$encrypted = substr($encrypted, $iv_size);
 		$decrypted = mcrypt_decrypt($cipher, $key, $encrypted , $mode, $iv);
 		return rtrim($decrypted, "\0");
 	}

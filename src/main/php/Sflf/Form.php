@@ -253,6 +253,53 @@ abstract class Form
 	}
 	
 	/**
+	 * 指定フィールドをコピー対象から除外するコンバータを取得します。
+	 * 
+	 * @param  可変長引数 $excludes コピー対象外フィールド名
+	 * @return colable 入力用コンバータ
+	 */
+	public static function converterInputExcludes(...$excludes) {
+		return function($field, $defined, $src, $value, $form, $origin) use ($excludes) {
+			if(in_array($field, $excludes)) { return $origin; }
+			return $defined ? $value : $origin ;
+		};
+	}
+	
+	/**
+	 * 指定フィールドのみをコピー対象とするコンバータを取得します。
+	 * 
+	 * @param 可変長引数 $includes コピー対象フィールド名
+	 * @return colable 入力用コンバータ
+	 */
+	public static function converterInputIncludes(...$includes) {
+		return function($field, $defined, $src, $value, $form, $origin) use ($includes) {
+			if(!in_array($field, $includes)) { return $origin; }
+			return $defined ? $value : $origin ;
+		};
+	}
+	
+	/**
+	 * 任意フィールドの値を別フィールドの値でコピーします。
+	 * ※指定の無いフィールドは通常通りコピーされます。
+	 * ※['field' => null] とすることでコピー対象から除外することも可能です。
+	 * ※['name' => function($src){ return "{$src->last_name} {$src->first_name}"; }] とすることで複数フィールドを対象にしたコピーなども可能です。
+	 * 
+	 * @param array $aliases コピー対象の別名指定連想配列
+	 * @return colable 入力用コンバータ
+	 */
+	public static function converterInputAlias(array $aliases) {
+		return function($field, $defined, $src, $value, $form, $origin) use ($aliases) {
+			if(isset($aliases[$field])) {
+				$alias = $aliases[$field];
+				if($alias === null) { return $origin; }
+				if(is_callable($alias)) { return $alias($src); }
+				return $this->_get($src, $alias);
+			}
+			return $defined ? $value : $origin ;
+		};
+	}
+	
+	/**
 	 * 出力コンバータを取得します。
 	 * ※必要に応じてサブクラスでオーバーライドして下さい
 	 * 
@@ -262,6 +309,53 @@ abstract class Form
 		return function($field, $defined, $form, $value, $dest, $origin) { return $defined ? $value : $origin ; };
 	}
 	
+	/**
+	 * 指定のフィールドをコピー対象から除外するコンバータを取得します。
+	 * 
+	 * @param 可変長引数 $excludes コピー対象外フィールド名
+	 * @return colable 出力用コンバータ
+	 */
+	public static function converterOutputExcludes(...$excludes) {
+		return function($field, $defined, $form, $value, $dest, $origin) use ($excludes) {
+			if(in_array($field, $excludes)) { return $origin; }
+			return $defined ? $value : $origin ; 
+		};
+	}
+	
+	/**
+	 * 指定のフィールドのみをコピー対象とするコンバータを取得します。
+	 * 
+	 * @param 可変長引数 $includes コピー対象フィールド名
+	 * @return colable 出力用コンバータ
+	 */
+	public static function converterOutputIncludes(...$includes) {
+		return function($field, $defined, $form, $value, $dest, $origin) use ($includes) {
+			if(!in_array($field, $includes)) { return $origin; }
+			return $defined ? $value : $origin ; 
+		};
+	}
+	
+	/**
+	 * 任意フィールドの値を別フィールドの値でコピーします。
+	 * ※指定の無いフィールドは通常通りコピーされます。
+	 * ※['field' => null] とすることでコピー対象から除外することも可能です。
+	 * ※['name' => function($form){ return "{$form->last_name} {$form->first_name}"; }] とすることで複数フィールドを対象にしたコピーなども可能です。
+	 * 
+	 * @param array $aliases コピー対象の別名指定連想配列
+	 * @return colable 出力用コンバータ
+	 */
+	public static function converterOutputAlias(array $aliases) {
+		return function($field, $defined, $form, $value, $dest, $origin) use ($aliases) {
+			if(isset($aliases[$field])) {
+				$alias = $aliases[$field];
+				if($alias === null) { return $origin; }
+				if(is_callable($alias)) { return $alias($form); }
+				return $this->_get($form, $alias);
+			}
+			return $defined ? $value : $origin ;
+		};
+	}
+
 	/**
 	 * リクエストデータ又は Dto オブジェクトから自身のインスタンス変数に値をコピーします。
 	 *  
@@ -2461,9 +2555,14 @@ class UploadFile {
 			$this->suffix = isset($pi['extension']) ? strtolower($pi['extension']) : null ;
 		}
 		if(strrpos($this->type, "image/", -strlen($this->type)) !== FALSE) {
-			$imagesize   = getimagesize($this->tmp_name);
-			$this->width  = isset($imagesize[0]) ? $imagesize[0] : null ;
-			$this->height = isset($imagesize[1]) ? $imagesize[1] : null ;
+			try {
+				$imagesize    = getimagesize($this->tmp_name);
+				$this->width  = isset($imagesize[0]) ? $imagesize[0] : null ;
+				$this->height = isset($imagesize[1]) ? $imagesize[1] : null ;
+			} catch (ErrorException $e) {
+				$this->width  = null ;
+				$this->height = null ;
+			}
 		}
 	}
 	

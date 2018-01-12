@@ -29,12 +29,12 @@ function smarty_function_date_diff($params, &$smarty)
 	$ignore_time    = isset($params['ignore_time']) ? $params['ignore_time'] : false ;
 	$from           = isset($params['from']) ? $params['from'] : null ;
 	if(!empty($from)) {
-		$from       = $from instanceof DateTime ? $from : new DateTime($from) ;
-		$from       = $ignore_time ? $from->setTime(0, 0, 0) : $from ;
+		$from       = $from instanceof DateTime ? clone $from : new DateTime($from) ;
+		$from       = $ignore_time ? clone $from->setTime(0, 0, 0) : $from ;
 	}
 	$to             = isset($params['to']) ? $params['to'] : null ;
 	if(!empty($to)) {
-		$to         = $to instanceof DateTime ? $to : new DateTime($to) ;
+		$to         = $to instanceof DateTime ? clone $to : new DateTime($to) ;
 		$to         = $ignore_time ? $to->setTime(0, 0, 0) : $to ;
 	}
 	$format         = isset($params['format']) ? $params['format'] : trigger_error("error: missing 'format' parameter", E_USER_NOTICE) ;

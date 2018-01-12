@@ -27,12 +27,12 @@
 function smarty_function_date_diff($params, &$smarty)
 {
 	$ignore_time    = isset($params['ignore_time']) ? $params['ignore_time'] : false ;
-	$from           = isset($params['from']) ? $params['from'] : trigger_error("error: missing 'from' parameter", E_USER_NOTICE) ;
+	$from           = isset($params['from']) || is_null($params['from']) ? $params['from'] : trigger_error("error: missing 'from' parameter", E_USER_NOTICE) ;
 	if(!empty($from)) {
 		$from       = $from instanceof DateTime ? clone $from : new DateTime($from) ;
 		$from       = $ignore_time ? clone $from->setTime(0, 0, 0) : $from ;
 	}
-	$to             = isset($params['to']) ? $params['to'] : trigger_error("error: missing 'to' parameter", E_USER_NOTICE) ;
+	$to             = isset($params['to']) || is_null($params['to']) ? $params['to'] : trigger_error("error: missing 'to' parameter", E_USER_NOTICE) ;
 	if(!empty($to)) {
 		$to         = $to instanceof DateTime ? clone $to : new DateTime($to) ;
 		$to         = $ignore_time ? $to->setTime(0, 0, 0) : $to ;

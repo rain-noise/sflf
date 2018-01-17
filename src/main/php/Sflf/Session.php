@@ -10,7 +10,7 @@
  * require_once "/path/to/Session.php"; // or use AutoLoader
  * 
  * Session::start(new RetrySessionHandler(3, 100));
- * Session::regenerate();
+ * Session::regenerate(30, 300);
  * Session::set('LOGIN', $user);
  * 
  * @package   SFLF
@@ -88,10 +88,10 @@ class Session {
 	/**
 	 * セッションを再生成します。
 	 * 
-	 * @param int $probability 生成確率母数 (デフォルト：1/30)
-	 * @param int $interval    生成間隔[秒] (デフォルト：300秒)
+	 * @param int $probability 生成確率母数 (デフォルト：1/1)
+	 * @param int $interval    生成間隔[秒] (デフォルト：0秒)
 	 */
-	public static function regenerate($probability = 30, $interval = 300) {
+	public static function regenerate($probability = 1, $interval = 0) {
 		if(mt_rand(1, $probability) == 1) {
 			$session_file = ini_get('session.save_path') . '/' . 'sess_'.session_id();
 			if(file_exists($session_file)) {

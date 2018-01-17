@@ -10,6 +10,7 @@
  * require_once "/path/to/Session.php"; // or use AutoLoader
  * 
  * Session::start(new RetrySessionHandler(3, 100));
+ * Session::regenerate();
  * Session::set('LOGIN', $user);
  * 
  * @package   SFLF
@@ -95,7 +96,7 @@ class Session {
 			$session_file = ini_get('session.save_path') . '/' . 'sess_'.session_id();
 			if(file_exists($session_file)) {
 				$filemtime = filemtime($session_file);
-				if($filemtime !== false && $filemtime + $interval < time()) {
+				if($filemtime !== false && $filemtime + $interval <= time()) {
 					session_regenerate_id( true );
 				}
 			}
@@ -164,9 +165,9 @@ class RetrySessionHandler extends SessionHandler
 	 * 
 	 * @param int $maxRetry 最大リトライ回数
 	 * @param int $interval リトライまでのインターバル[ミリ秒]
-	 * @param int $mode     リトライモード RetrySessionHandler::RETRY_* の論理和 （デフォルト：RETRY_READ）
+	 * @param int $mode     リトライモード RetrySessionHandler::RETRY_* の論理和 （デフォルト： RETRY_OPEN | RETRY_READ）
 	 */
-	public function __construct($maxRetry, $interval, $mode = self::RETRY_READ) {
+	public function __construct($maxRetry, $interval, $mode = self::RETRY_OPEN | self::RETRY_READ) {
         $this->maxRetry = $maxRetry;
         $this->interval = $interval;
         $this->mode     = $mode;
@@ -192,9 +193,13 @@ class RetrySessionHandler extends SessionHandler
 		$retry   = 0;
 
 		while(true) {
-			$isOpend = parent::open($savePath, $sessionName);
-			if($isOpend || $retry++ >= $this->maxRetry) { break; }
-			trigger_error("SessionHandler::open({$savePath}, {$sessionName}) failed, So retry open after {$this->interval} ms later. [{$retry}/{$this->maxRetry}]", E_USER_WARNING);
+			try {
+				$this->hasError = false;
+				$isOpend = parent::open($savePath, $sessionName);
+				if(!$this->hasError && ($isOpend || $retry++ >= $this->maxRetry)) { break; }
+			} catch (Throwable $t) {
+				if($retry++ >= $this->maxRetry) { throw $t; }
+			}
 			usleep($this->interval * 1000);
 		}
 
@@ -213,10 +218,13 @@ class RetrySessionHandler extends SessionHandler
 		$retry = 0;
 
 		while(true) {
-			$this->hasError = false;
-			$data = parent::read($id);
-			if(!$this->hasError || $retry++ >= $this->maxRetry) { break; }
-			trigger_error("SessionHandler::read({$id}) failed, So retry read after {$this->interval} ms later. [{$retry}/{$this->maxRetry}]", E_USER_WARNING);
+			try {
+				$this->hasError = false;
+				$data = parent::read($id);
+				if(!$this->hasError || $retry++ >= $this->maxRetry) { break; }
+			} catch (Throwable $t) {
+				if($retry++ >= $this->maxRetry) { throw $t; }
+			}
 			usleep($this->interval * 1000);
 		}
 
@@ -235,9 +243,13 @@ class RetrySessionHandler extends SessionHandler
 		$retry   = 0;
 
 		while(true) {
-			$isWrote = parent::write($id, $data);
-			if($isWrote || $retry++ >= $this->maxRetry) { break; }
-			trigger_error("SessionHandler::write({$id}, data...) failed, So retry write after {$this->interval} ms later. [{$retry}/{$this->maxRetry}]", E_USER_WARNING);
+			try {
+				$this->hasError = false;
+				$isWrote = parent::write($id, $data);
+				if(!$this->hasError && ($isWrote || $retry++ >= $this->maxRetry)) { break; }
+			} catch (Throwable $t) {
+				if($retry++ >= $this->maxRetry) { throw $t; }
+			}
 			usleep($this->interval * 1000);
 		}
 
@@ -256,9 +268,13 @@ class RetrySessionHandler extends SessionHandler
 		$retry       = 0;
 
 		while(true) {
-			$isDestroied = parent::destroy($sessionId);
-			if($isDestroied || $retry++ >= $this->maxRetry) { break; }
-			trigger_error("SessionHandler::destroy({$sessionId}) failed, So retry destroy after {$this->interval} ms later. [{$retry}/{$this->maxRetry}]", E_USER_WARNING);
+			try {
+				$this->hasError = false;
+				$isDestroied = parent::destroy($sessionId);
+				if(!$this->hasError && ($isDestroied || $retry++ >= $this->maxRetry)) { break; }
+			} catch (Throwable $t) {
+				if($retry++ >= $this->maxRetry) { throw $t; }
+			}
 			usleep($this->interval * 1000);
 		}
 

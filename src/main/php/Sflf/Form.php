@@ -883,11 +883,14 @@ abstract class Form
 	 * <pre>
 	 * ex)
 	 * [Form::VALID_REQUIRED_IF, 'target_field', expect_value, Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * [Form::VALID_REQUIRED_IF, 'target_field', [expect_value_1, expect_value_2, ...], Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
 	 * </pre>
 	 */
 	const VALID_REQUIRED_IF = 'required_if';
 	protected function valid_required_if($field, $label, $value, $depend, $expect) {
-		if($this->_empty($this->$depend) || $this->$depend != $expect) { return; }
+		if($this->_empty($this->$depend)) { return null; }
+		if(is_array($expect) && !in_array($this->$depend, $expect)) { return null; }
+		if($this->$depend != $expect) { return null; }
 		if($this->_empty($value)) { return "{$label}を入力して下さい。"; }
 		return null;
 	}
@@ -899,11 +902,14 @@ abstract class Form
 	 * <pre>
 	 * ex)
 	 * [Form::VALID_REQUIRED_UNLESS, 'target_field', expect_value, Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
+	 * [Form::VALID_REQUIRED_UNLESS, 'target_field', [expect_value_1, expect_value_2, ...], Form::APPLY_SAVE | Form::EXIT_ON_FAILED]
 	 * </pre>
 	 */
 	const VALID_REQUIRED_UNLESS = 'required_unless';
 	protected function valid_required_unless($field, $label, $value, $depend, $expect) {
-		if($this->_empty($this->$depend) || $this->$depend == $expect) { return; }
+		if($this->_empty($this->$depend)) { return null; }
+		if(is_array($expect) && in_array($this->$depend, $expect)) { return null; }
+		if($this->$depend == $expect) { return null; }
 		if($this->_empty($value)) { return "{$label}を入力して下さい。"; }
 		return null;
 	}

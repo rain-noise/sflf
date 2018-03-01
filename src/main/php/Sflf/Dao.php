@@ -320,17 +320,18 @@
 	/**
 	 * 指定のSQLを実行し、結果〔1行1列〕を取得します。
 	 * 
-	 * @param  string    $sql    集約SQL文
-	 * @param  array|obj $params パラメータ
+	 * @param  string    $sql     集約SQL文
+	 * @param  array|obj $params  パラメータ
+	 * @param  mixed     $default デフォルト値
 	 * @return int|fload|DateTime|etc 集約結果
 	 * 
 	 * @see Dao::_convertToPhp()
 	 */
-	public static function get($sql, $params = array()) {
+	public static function get($sql, $params = array(), $default = null) {
 		$rs   = self::query($sql, $params);
 		$meta = $rs->fetch_field_direct(0);
 		$row  = $rs->fetch_row();
-		return $row ? self::_convertToPhp($row[0], $meta->type) : 0 ;
+		return $row ? self::_convertToPhp($row[0], $meta->type) : $default ;
 	}
 	
 	/**
@@ -480,7 +481,7 @@
 				$value = self::convertToSql($value);
 			}
 			
-			$sql = preg_replace("/{$key}(?=[^a-zA-Z0-9]|$)/", "{$value}", $sql);
+			$sql = preg_replace("/{$key}(?=[^a-zA-Z0-9_]|$)/", "{$value}", $sql);
 		}
 		
 		return $sql;

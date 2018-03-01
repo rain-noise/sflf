@@ -2632,7 +2632,8 @@ class UploadFile {
 		$path   = "{$dir}/{$file}";
 		
 		if(is_uploaded_file($this->tmp_name)){
-			move_uploaded_file($this->tmp_name, "{$dir}/{$file}");
+			move_uploaded_file($this->tmp_name, $path);
+			chmod($path, 0664);
 		}
 		
 		$this->tmp_name = $path;
@@ -2666,7 +2667,9 @@ class UploadFile {
 		}
 		
 		$file = $this->getPublishFileName($baseName);
-		rename($this->tmp_name, "{$dir}/{$file}");
+		$path = "{$dir}/{$file}";
+		rename($this->tmp_name, $path);
+		chmod($path, 0664);
 		unset($_SESSION[self::_fileId($this->formName, $this->field)]);
 		
 		return $file;

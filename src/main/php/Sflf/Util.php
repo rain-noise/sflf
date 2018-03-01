@@ -250,12 +250,21 @@ class Util {
 	 * 配列又はオブジェクトから値を取得します。
 	 * 
 	 * @param  array|obj $obj     配列 or オブジェクト
-	 * @param  mixed     $key     キー名
+	 * @param  mixed     $key     キー名(.[dot]区切りでオブジェクトプロパティ階層指定可)
 	 * @param  mixed     $default デフォルト値
 	 * @return mixed 値
 	 */
 	public static function get($obj, $key, $default = null) {
 		if($obj == null) { return $default; }
+		
+		$nests = explode('.', $key);
+		if(count($nests) > 1) {
+			$current = array_shift($nests);
+			$target  = self::get($obj, $current);
+			if($target == null) { return $default; }
+			return self::get($target, join('.', $nests), $default);
+		}
+		
 		if(is_array($obj)) {
 			if(!isset($obj[$key])) { return $default; }
 			return self::nvl($obj[$key], $default);

@@ -174,6 +174,21 @@ class Log {
 	}
 	
 	/**
+	 * メモリ使用量を出力します。
+	 * 
+	 * @param string $message   ログメッセージ（デフォルト: 空文字）
+	 * @param int    $decimals  メモリ[MB]の小数点桁数（デフォルト: 2）
+	 * @return void
+	 */
+	public static function memory(string $message = '', int $decimals = 2) {
+		$current = number_format(memory_get_usage() / 1048576, $decimals);
+		$peak    = number_format(memory_get_peak_usage() / 1048576, $decimals);
+		$message = empty($message) ? "" : "{$message} : " ;
+		$message = $message."Memory {$current} MB / Peak Memory {$peak} MB";
+		self::_log(self::LEVEL_INFO, $message);
+	}
+	
+	/**
 	 * ログを出力します。
 	 * 
 	 * @param int                    $level     ログレベル
@@ -294,6 +309,16 @@ EOS;
 	 */
 	public static function clear() {
 		self::$_OUT_BUFFER = "";
+	}
+	
+	/**
+	 * 画面表示用ディスプレイログをクリアし、画面表示モードを DISPLAY_NONE に設定します。
+	 * 
+	 * @return void
+	 */
+	public static function quiet() {
+		self::clear();
+		self::$_LOG_DISPLAY = self::DISPLAY_NONE;
 	}
 	
 	/**

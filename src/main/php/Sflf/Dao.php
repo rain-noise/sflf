@@ -245,6 +245,36 @@
 	}
 	
 	/**
+	 * 指定のSQLを実行し、結果の各行に callback 関数を適用します。
+	 * ※大容量の CSV データ出力などメモリ使用量を押さえたい場合などに利用できます。
+	 * 
+	 * @param unknown $callback コールバック関数（$callback($i, $entity)）
+	 * @param unknown $sql
+	 * @param unknown $params
+	 * @param unknown $clazz
+	 * @throws DatabaseException
+	 */
+	public static function each(callable $callback, $sql, $params = array(), $clazz = 'stdClass') {
+		$rs = self::query($sql, $params);
+		if(is_bool($rs) || empty($rs)) { return; }
+		
+		$types = array();
+		foreach ($rs->fetch_fields() AS $meta) {
+			$types[$meta->name] = $meta->type;
+		}
+		
+		foreach ($rs AS $i => $row) {
+			$entity = new $clazz();
+			foreach ($row AS $col => $val) {
+				$entity->$col = self::_convertToPhp($val, $types[$col]) ;
+			}
+			$callback($i, $entity);
+		}
+		
+		return;
+	}
+	
+	/**
 	 * 指定のSQLを実行し、結果〔N行M列〕を取得します。
 	 * ※戻り値は array($clazz) になります。
 	 * 

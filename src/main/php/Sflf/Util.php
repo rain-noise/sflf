@@ -10,7 +10,7 @@
  * 
  * require_once "/path/to/Util.php"; // or use AutoLoader
  * 
- * if(Util::endWith($file, '.pdf')) {
+ * if(Util::endsWith($file, '.pdf')) {
  *     // Something to do
  * }
  * 
@@ -269,10 +269,8 @@ class Util {
 			if(!isset($obj[$key])) { return $default; }
 			return self::nvl($obj[$key], $default);
 		}
-		if(!($obj instanceof stdClass)) {
-			$clazz = get_class($obj);
-			if(!property_exists($clazz, $key)) { return $default; }
-		}
+
+		if(!property_exists($obj, $key)) { return $default; }
 		return self::nvl($obj->$key, $default);
 	}
 	

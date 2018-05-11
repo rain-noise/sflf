@@ -20,6 +20,7 @@
  *  - current    (optional)          : workflow - current doamin value (default : null)
  *  - prevtag    (optional)          : html code of previous position for each of items (default : '')
  *  - posttag    (optional)          : html code of post position for each of items (default : '')
+ *  - addable    (optional)          : add to select option using unexsits selected value (default : false)
  *  - {tag_attr} (optional)          : html tag attribute and value like id, class, name, style, data-*
  * Purpose:  ドメイン選択フォーム及びラベルを表示する
  * -------------------------------------------------------------
@@ -51,10 +52,11 @@ function smarty_function_domains($params, &$smarty)
 	$current    = isset($params['current']) ? $params['current'] : null ;
 	$prevtag    = isset($params['prevtag']) ? $params['prevtag'] : '' ;
 	$posttag    = isset($params['posttag']) ? $params['posttag'] : '' ;
+	$addable    = isset($params['addable']) ? $params['addable'] : false ;
 	$name  = '';
 	$attrs = '';
 	foreach ($params AS $k => $v) {
-		if(in_array($k, array('id','domain','selected','value','label','check','type','include','exclude','delimiter','null_label','case','current','prevtag','posttag'))) { continue; }
+		if(in_array($k, array('id','domain','selected','value','label','check','type','include','exclude','delimiter','null_label','case','current','prevtag','posttag','addable'))) { continue; }
 		$attrs .= $k.'="'.$v.'" ';
 		if($k == 'name') { $name = $v; }
 	}
@@ -98,6 +100,19 @@ function smarty_function_domains($params, &$smarty)
 					$html .= $prevtag.htmlspecialchars($l).$posttag.$delimiter;
 				}
 				break;
+		}
+	}
+	
+	if($addable && $type == 'option') {
+		$domain_values = [];
+		foreach ($lists AS $d) {
+			$domain_values[] = $d->value;
+		}
+
+		foreach ($selected as $v) {
+			if(!in_array($v, $domain_values)) {
+				$html .= '<option '.$attrs.' value="'.htmlspecialchars($v).'" selected>'.$prevtag.htmlspecialchars($v).$posttag.'</option>'.$delimiter;
+			}
 		}
 	}
 	

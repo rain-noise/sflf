@@ -28,6 +28,81 @@ class Util {
 	 */
 	private function __construct() {}
 
+	// ----------------------------------------------------
+	// 日付フォーマット
+	// ----------------------------------------------------
+	// 受入れ可能な日付／日時フォーマットのリスト
+	const ACCEPTABLE_DATETIME_FORMAT = [
+		'Y年m月d日 H時i分s秒',
+		'Y年m月d日 H:i:s',
+		'Y-m-d H:i:s',
+		'Y/m/d H:i:s',
+		'YmdHis',
+		'Y年m月d日 H時i分',
+		'Y年m月d日 H:i',
+		'Y-m-d H:i',
+		'Y/m/d H:i',
+		'YmdHi',
+		'Y年m月d日',
+		'Y-m-d',
+		'Y/m/d',
+		'Ymd'
+	];
+	
+	/**
+	 * DateTime オブジェクトを解析します。
+	 * ※本メソッドは analyzeDateTime() から日付フォーマット情報を除外して日付のみを返す簡易メソッドです。
+	 * 
+	 * @param string       $value
+	 * @param string|array $main_format
+	 * @return DateTime or null
+	 */
+	public static function createDateTime($value, $main_format = null) {
+		list($date, ) = self::analyzeDateTime($value, $main_format);
+		return $date;
+	}
+	
+	/**
+	 * DateTime オブジェクトを解析します。
+	 * ※本メソッドは解析に成功した日付フォーマットも返します
+	 * 
+	 * @param string       $value
+	 * @param string|array $main_format
+	 * @return [DateTime or null, apply_format or null]
+	 */
+	public static function analyzeDateTime($value, $main_format = null) {
+		if($value === null || $value === '') { return null; }
+		if($value instanceof DateTime) { return [$value, null]; }
+		
+		$formats = static::ACCEPTABLE_DATETIME_FORMAT ;
+		if(!empty($main_format)) { array_unshift($formats, $main_format); }
+		
+		$date         = null;
+		$apply_format = null;
+		foreach ($formats AS $format) {
+			$date = self::_tryToParseDateTime($value, $format);
+			if(!empty($date)) {
+				$apply_format = $format;
+				break;
+			}
+		}
+		
+		return [$date, $apply_format];
+	}
+	
+	/**
+	 * DateTime オブジェクトを生成を試みます。
+	 * 
+	 * @param string $value
+	 * @param string $format
+	 * @return DateTime or null
+	 */
+	private static function _tryToParseDateTime($value, $format) {
+		$date = DateTime::createFromFormat("!{$format}", $value);
+		$le   = DateTime::getLastErrors();
+		return $date === false || !empty($le['errors']) || !empty($le['warnings']) ? null : $date ;
+	}
+	
 	/**
 	 * 最も左側にある指定文字列より左側(Left Before)の文字をトリムします。
 	 *

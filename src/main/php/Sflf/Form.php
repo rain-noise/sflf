@@ -1959,6 +1959,47 @@ abstract class Form
 
 	//--------------------------------------------------------------------------
 	/**
+	 * アップロードファイル：ファイル名
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_FILE_NAME_MATCH, pattern, Form::APPLY_SAVE]
+	 * [Form::VALID_FILE_NAME_MATCH, pattern, 'label_of_pattern', Form::APPLY_SAVE]
+	 * </pre>
+	 */
+	const VALID_FILE_NAME_MATCH = 'file_name_match';
+	protected function valid_file_name_match($field, $label, $value, $pattern, $patternLabel=null) {
+		if($this->_empty($value)) { return null; }
+		if(!($value instanceof UploadFile)) { throw new InvalidValidateRuleException("{$label} in not UploadFile."); }
+		if(!$value->matchFileName($pattern)) {
+			return "{$label}のファイル名が ".($patternLabel ? $patternLabel : $pattern)." ではありません。";
+		}
+		return null;
+	}
+	
+	//--------------------------------------------------------------------------
+	/**
+	 * アップロードファイル：ファイル名：条件判定
+	 * 
+	 * <pre>
+	 * ex)
+	 * [Form::VALID_FILE_NAME_MATCH_IF, other_field, assumed, pattern, Form::APPLY_SAVE]
+	 * [Form::VALID_FILE_NAME_MATCH_IF, other_field, assumed, pattern, 'label_of_pattern', Form::APPLY_SAVE]
+	 * </pre>
+	 */
+	const VALID_FILE_NAME_MATCH_IF = 'file_name_match_if';
+	protected function valid_file_name_match_if($field, $label, $value, $other_field, $assumed, $pattern, $patternLabel=null) {
+		if($this->_empty($value)) { return null; }
+		if($this->{$other_field} != $assumed) { return null; }
+		if(!($value instanceof UploadFile)) { throw new InvalidValidateRuleException("{$label} in not UploadFile."); }
+		if(!$value->matchFileName($pattern)) {
+			return "{$label}のファイル名が ".($patternLabel ? $patternLabel : $pattern)." ではありません。";
+		}
+		return null;
+	}
+	
+	//--------------------------------------------------------------------------
+	/**
 	 * アップロードファイル：拡張子
 	 * 
 	 * <pre>
@@ -2588,6 +2629,16 @@ class UploadFile {
 	 */
 	public function hasError() {
 		return !empty($this->error);
+	}
+	
+	/**
+	 * ファイル名が指定の条件にマッチするかチェックします。
+	 * 
+	 * @param  string $pattern ファイル名を表す正規表現
+	 * @return boolean true : マッチ／false : アンマッチ
+	 */
+	public function matchFileName($pattern) {
+		return preg_match($pattern, $this->name);
 	}
 	
 	/**

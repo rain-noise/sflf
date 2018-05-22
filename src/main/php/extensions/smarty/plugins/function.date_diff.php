@@ -1,6 +1,9 @@
 <?php
 /**
- * Smarty plugin
+ * Single File Low Functionality Class Tools - Extensions : Smarty Plugin
+ * 
+ * ■日付差分表示ファンクション
+ * 
  * -------------------------------------------------------------
  * File:     function.date_diff.php
  * Type:     function
@@ -20,6 +23,7 @@
  * -------------------------------------------------------------
  * 
  * @package   SFLF
+ * @version   v1.0.0
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE

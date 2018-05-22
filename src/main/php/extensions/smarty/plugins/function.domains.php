@@ -1,6 +1,9 @@
 <?php
 /**
- * Smarty plugin
+ * Single File Low Functionality Class Tools - Extensions : Smarty Plugin
+ * 
+ * ■ドメイン表示ファンクション
+ * 
  * -------------------------------------------------------------
  * File:     function.domains.php
  * Type:     function
@@ -25,7 +28,10 @@
  * Purpose:  ドメイン選択フォーム及びラベルを表示する
  * -------------------------------------------------------------
  * 
+ * @see       https://github.com/rain-noise/sflf/blob/master/src/main/php/Sflf/Domain.php
+ * 
  * @package   SFLF
+ * @version   v1.0.0
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE

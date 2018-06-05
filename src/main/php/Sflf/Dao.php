@@ -35,7 +35,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/includes/paginate.tpl ページ送り Smarty テンプレート
  * 
  * @package   SFLF
- * @version   v1.0.0
+ * @version   v1.0.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -426,8 +426,11 @@
 	 * @throws DatabaseException
 	 */
 	public static function insert($tableName, $entity) {
-		$reflect = new ReflectionClass(get_class($entity));
-		$ignore  = $reflect->hasConstant('DAO_IGNORE_FILED') ? $reflect->getConstant('DAO_IGNORE_FILED') : array() ;
+		$ignore = [];
+		if(!is_array($entity)) {
+			$reflect = new ReflectionClass(get_class($entity));
+			$ignore  = $reflect->hasConstant('DAO_IGNORE_FILED') ? $reflect->getConstant('DAO_IGNORE_FILED') : array() ;
+		}
 		$cols   = array();
 		$values = array();
 		foreach ($entity AS $col => $value) {
@@ -489,13 +492,15 @@
 	 * @throws DatabaseException
 	 */
 	private static function _compile($sql, $params) {
-		if(!is_array($params)) {
-			$converted = array();
-			foreach ($params AS $key => $value) {
+		$converted = array();
+		foreach ($params AS $key => $value) {
+			if(self::_startWith($key, ':')) {
+				$converted[$key] = $value ;
+			} else {
 				$converted[":{$key}"] = $value ;
 			}
-			$params = $converted;
 		}
+		$params = $converted;
 		
 		foreach ($params AS $key => $value) {
 			if(!preg_match('/:[A-Za-z0-9_]+/', $key)) {
@@ -540,6 +545,17 @@
 		return "'".self::escape($value)."'";
 	}
 	
+	/**
+	 * 指定の文字列 [$haystack] が指定の文字列 [$needle] で始まるか検査します。
+	 * 
+	 * @param  string  $haystack 検査対象文字列
+	 * @param  string  $needle   被検査文字列
+	 * @return boolean true : 始まる／false : 始まらない
+	 */
+	private static function _startWith($haystack, $needle) {
+		return $needle === "" || strrpos($haystack, $needle, -strlen($haystack)) !== FALSE;
+	}
+
 	/**
 	 * 結果セットの値をPHPオブジェクトにコンバートします。
 	 * 

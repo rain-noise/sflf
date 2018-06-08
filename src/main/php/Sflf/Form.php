@@ -174,7 +174,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/block.unless_errors.php エラー有無分岐用 Smarty タグ
  * 
  * @package   SFLF
- * @version   v1.0.0
+ * @version   v1.0.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -890,8 +890,8 @@ abstract class Form
 	const VALID_REQUIRED_IF = 'required_if';
 	protected function valid_required_if($field, $label, $value, $depend, $expect) {
 		if($this->_empty($this->$depend)) { return null; }
-		if(is_array($expect) && !in_array($this->$depend, $expect)) { return null; }
-		if($this->$depend != $expect) { return null; }
+		if( is_array($expect) && !in_array($this->$depend, $expect)) { return null; }
+		if(!is_array($expect) && $this->$depend != $expect) { return null; }
 		if($this->_empty($value)) { return "{$label}を入力して下さい。"; }
 		return null;
 	}

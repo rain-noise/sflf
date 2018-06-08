@@ -17,7 +17,7 @@
  * $pass = Util::randomCode(8);
  * 
  * @package   SFLF
- * @version   v1.0.0
+ * @version   v1.0.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -116,6 +116,31 @@ class Util {
 		$start = strpos($str, $delimiter);
 		if($start === false) { return $str; }
 		return mb_substr($str, $start + ($remove ? mb_strlen($delimiter) : 0));
+	}
+	
+	/**
+	 * 三項演算のメソッド版
+	 * 
+	 * @param type $expr    判別式
+	 * @param type $ifTrue  真の場合の値
+	 * @param type $ifFalse 偽の場合の値
+	 * @return 三項演算の結果
+	 */
+	public static function when($expr, $ifTrue, $ifFalse) {
+		return $expr ? $ifTrue : $ifFalse ;
+	}
+	
+	/**
+	 * 空でない最初の要素を返します。
+	 * 
+	 * @param type $items 要素
+	 * @return type       空でない最初の要素
+	 */
+	public static function coalesce(...$items) {
+		foreach ($items as $item) {
+			if(!empty($item)) { return $item; }
+		}
+		return null;
 	}
 	
 	/**

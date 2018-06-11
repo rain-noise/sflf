@@ -25,7 +25,7 @@
  * $mail->send();
  * 
  * @package   SFLF
- * @version   v1.0.0
+ * @version   v1.0.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -158,9 +158,10 @@ class Mail {
 	 */
 	public function send() {
 		
-		$headers = array();
+		$parameter = array();
+		$headers   = array();
 		$headers[] = "MIME-Version: 1.0";
-		$headers[] = "X-Mailer: PHP/SFLF";
+		$headers[] = "X-Mailer: PHP";
 		
 		// 件名
 		if(empty($this->_subject)) {
@@ -174,9 +175,9 @@ class Mail {
 		}
 		$from    = $this->_mailAddressEncode($this->_from);
 		$replyTo = $this->_mailAddressEncode($this->_replyTo);
-		$headers[] = "From: ".$from;
-		$headers[] = "Return-Path: ".$from;
-		$headers[] = "Reply-To: ".(empty($replyTo) ? $from : $replyTo);
+		$headers[]   = "From: ".$from;
+		$headers[]   = "Reply-To: ".(empty($replyTo) ? $from : $replyTo);
+		$parameter[] = "-f ".$this->_pickMailAddress($this->_from);
 		
 		// 宛先(To)
 		if(empty($this->_to)) {
@@ -214,7 +215,7 @@ class Mail {
 			$headers[] = "Bcc: ".join(",", $bccs);
 		}
 		
-		if(!mail($to, $subject, $body, join(PHP_EOL, $headers)) ) {
+		if(!mail($to, $subject, $body, join(PHP_EOL, $headers), join(' ',$parameter)) ) {
 			throw new MailSendException("Mail send faild.");
 		}
 	}
@@ -232,6 +233,21 @@ class Mail {
 			return mb_encode_mimeheader(trim(!empty($matches[2]) ? $matches[2] : $matches[4]), 'UTF-8', 'B', "\n")."<".$matches[5].">";
 		}
 		return "<".$address.">";
+	}
+	
+	/**
+	 * メールアドレス文字列からメールアドレスのみを抽出します。
+	 * 
+	 * @param  string $address メールアドレス文字列
+	 * @return string メールアドレス
+	 */
+	private function _pickMailAddress($address) {
+		if(empty($address)) { return null; }
+		$matches = array();
+		if(preg_match('/^("([^"].*)" *)|(([^<].*) *)<(.*)>$/', trim($address), $matches)) {
+			return $matches[5];
+		}
+		return $address;
 	}
 }
 

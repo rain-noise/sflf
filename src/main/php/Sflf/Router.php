@@ -37,7 +37,7 @@
  * }
  * 
  * @package   SFLF
- * @version   v1.0.0
+ * @version   v1.1.0
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -205,15 +205,15 @@
 	 * 指定のコントローラー名などが現在のルーティング内容にマッチするかチェックします。
 	 * ※グローバルナビゲーションのアクティブスタイル適用などで利用できます
 	 * 
-	 * @param  string $controller コントローラオブジェクト
-	 * @param  string $action     アクション名
-	 * @param  array  ...$args    引数
+	 * @param  string $controller コントローラ名の正規表現
+	 * @param  string $action     アクション名の正規表現
+	 * @param  array  ...$args    引数の正規表現
 	 * @return boolean true : マッチ／false : アンマッチ
 	 */
 	public function match($controller, $action = null, ...$args) {
-		if($controller != $this->getPartOfController()) { return false; }
+		if(!preg_match($controller, $this->getPartOfController())) { return false; }
 		if(!empty($action)) {
-			if($action != $this->getPartOfAction()) { return false; }
+			if(!preg_match($action, $this->getPartOfAction())) { return false; }
 		}
 		
 		if(empty($args)) { return true; }
@@ -222,7 +222,7 @@
 		if(count($args) > count($list)) { return false; }
 		
 		foreach ($args AS $i => $value) {
-			if($list[$i] != $value) { return false; }
+			if(!preg_match($value, $list[$i])) { return false; }
 		}
 		
 		return true;

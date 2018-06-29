@@ -31,7 +31,7 @@
  * @see       https://github.com/rain-noise/sflf/blob/master/src/main/php/Sflf/Domain.php
  * 
  * @package   SFLF
- * @version   v1.0.0
+ * @version   v1.0.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -109,7 +109,7 @@ function smarty_function_domains($params, &$smarty)
 		}
 	}
 	
-	if($addable && $type == 'option') {
+	if($addable && in_array($type, ['option', 'plain', 'label'])) {
 		$domain_values = [];
 		foreach ($lists AS $d) {
 			$domain_values[] = $d->value;
@@ -117,10 +117,16 @@ function smarty_function_domains($params, &$smarty)
 
 		foreach ($selected as $v) {
 			if(!in_array($v, $domain_values)) {
-				$html .= '<option '.$attrs.' value="'.htmlspecialchars($v).'" selected>'.$prevtag.htmlspecialchars($v).$posttag.'</option>'.$delimiter;
+				if($type == 'option') {
+					$html .= '<option '.$attrs.' value="'.htmlspecialchars($v).'" selected>'.$prevtag.htmlspecialchars($v).$posttag.'</option>'.$delimiter;
+				}
+				if(in_array($type, ['plain', 'label'])) {
+					$html .= $prevtag.htmlspecialchars($v).$posttag.$delimiter;
+				}
 			}
 		}
 	}
+
 	
 	return preg_replace("/".preg_quote($delimiter, '/')."$/", "", $html);
 }

@@ -14,6 +14,11 @@
  * 【使い方】
  * require_once "/path/to/Mail.php"; // or use AutoLoader
  * 
+ * // If you don't want to send mail when you are developing
+ * Mail::$SENDER = function(Mail $mail, $encoded_to, $encoded_subject, $encoded_body, $encoded_headers, $parameter) {
+ *     Log::debug("***** MAIL *****\n{$mail}\n**********");
+ * };
+ * 
  * $mail = new Mail();
  * $mail->setSubject('○○のお知らせ');
  * $mail->setTo('会員氏名<user@sample.com>');
@@ -25,12 +30,20 @@
  * $mail->send();
  * 
  * @package   SFLF
- * @version   v1.0.1
+ * @version   v1.0.2
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
  */
 class Mail {
+	
+	/**
+	 * メール送信ロジック
+	 * ※検証環境などでメールを送信せずにログ出力する場合などは本送信ロジックを上書きして下さい。
+	 * 
+	 * @var callable function(Mail $mail, string $encoded_to, string $encoded_subject, string $encoded_body, string $encoded_headers, string $parameter){ ... }
+	 */
+	public static $SENDER;
 	
 	/**
 	 * 件名
@@ -78,6 +91,13 @@ class Mail {
 	 * コンストラクタ
 	 */
 	public function __construct() {
+		if(!is_callable(self::$SENDER)) {
+			self::$SENDER = function($mail, $encoded_to, $encoded_subject, $encoded_body, $encoded_headers, $parameter) {
+				if(!mail($encoded_to, $encoded_subject, $encoded_body, $encoded_headers, $parameter) ) {
+					throw new MailSendException("Mail send faild.");
+				}
+			};
+		}
 	}
 	
 	/**
@@ -91,6 +111,15 @@ class Mail {
 	}
 	
 	/**
+	 * 件名を取得します。
+	 * 
+	 * @return string 件名
+	 */
+	public function getSubject() {
+		return $this->_subject;
+	}
+	
+	/**
 	 * 宛先(To)を設定します。
 	 * 
 	 * @param  string ...$to
@@ -98,6 +127,15 @@ class Mail {
 	 */
 	public function setTo(...$to) {
 		$this->_to = $to;
+	}
+	
+	/**
+	 * 宛先(To)を取得します。
+	 * 
+	 * @return array 宛先(To)
+	 */
+	public function getTo() {
+		return $this->_to;
 	}
 	
 	/**
@@ -111,6 +149,15 @@ class Mail {
 	}
 	
 	/**
+	 * 宛先(Cc)を取得します。
+	 * 
+	 * @return array 宛先(Cc)
+	 */
+	public function getCc() {
+		return $this->_cc;
+	}
+	
+	/**
 	 * 宛先(Bcc)を設定します。
 	 * 
 	 * @param  string ...$bcc
@@ -118,6 +165,15 @@ class Mail {
 	 */
 	public function setBcc(...$bcc) {
 		$this->_bcc = $bcc;
+	}
+	
+	/**
+	 * 宛先(Bcc)を取得します。
+	 * 
+	 * @return array 宛先(Bcc)
+	 */
+	public function getBcc() {
+		return $this->_bcc;
 	}
 	
 	/**
@@ -131,6 +187,15 @@ class Mail {
 	}
 	
 	/**
+	 * 送信元(From)を取得します。
+	 * 
+	 * @return string 送信元(From)
+	 */
+	public function getFrom() {
+		return $this->_from;
+	}
+	
+	/**
 	 * 返信先(Reply-To)を設定します。
 	 * 
 	 * @param  string $replyTo
@@ -141,6 +206,15 @@ class Mail {
 	}
 	
 	/**
+	 * 返信先(Reply-To)を取得します。
+	 * 
+	 * @return string 返信先(Reply-To)
+	 */
+	public function getReplyTo() {
+		return $this->_replyTo;
+	}
+	
+	/**
 	 * 本文を設定します。
 	 * 
 	 * @param  string $body
@@ -148,6 +222,38 @@ class Mail {
 	 */
 	public function setBody($body) {
 		$this->_body = $body;
+	}
+	
+	/**
+	 * 本文を取得します。
+	 * 
+	 * @return string 本文
+	 */
+	public function getBody() {
+		return $this->_body;
+	}
+	
+	/**
+	 * メールオブジェクト文字列化します
+	 */
+	public function __toString() {
+		$text  = "";
+		$text .= "Subject: {$this->_subject}\n";
+		$text .= "From: {$this->_from}\n";
+		$text .= "To: ".join(', ', $this->_to)."\n";
+		if(!empty($this->_cc)) {
+			$text .= "Cc: ".join(', ', $this->_cc)."\n";
+		}
+		if(!empty($this->_bcc)) {
+			$text .= "Bcc: ".join(', ', $this->_bcc)."\n";
+		}
+		if(!empty($this->_replyTo)) {
+			$text .= "Reply-To: {$this->_replyTo}\n";
+		}
+		$text .= "\n";
+		$text .= "{$this->_body}";
+		
+		return $text;
 	}
 	
 	/**
@@ -215,9 +321,8 @@ class Mail {
 			$headers[] = "Bcc: ".join(",", $bccs);
 		}
 		
-		if(!mail($to, $subject, $body, join(PHP_EOL, $headers), join(' ',$parameter)) ) {
-			throw new MailSendException("Mail send faild.");
-		}
+		$sender = self::$SENDER;
+		$sender($this, $to, $subject, $body, join(PHP_EOL, $headers), join(' ',$parameter));
 	}
 	
 	/**

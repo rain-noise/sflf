@@ -15,7 +15,7 @@
  * require_once "/path/to/Mail.php"; // or use AutoLoader
  * 
  * // If you don't want to send mail when you are developing
- * Mail::$SENDER = function(Mail $mail, $encoded_to, $encoded_subject, $encoded_body, $encoded_headers, $parameter) {
+ * Mail::$SENDER = function(Mail $mail) {
  *     Log::debug("***** MAIL *****\n{$mail}\n**********");
  * };
  * 
@@ -30,7 +30,7 @@
  * $mail->send();
  * 
  * @package   SFLF
- * @version   v1.0.2
+ * @version   v1.1.0
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -41,9 +41,9 @@ class Mail {
 	 * メール送信ロジック
 	 * ※検証環境などでメールを送信せずにログ出力する場合などは本送信ロジックを上書きして下さい。
 	 * 
-	 * @var callable function(Mail $mail, string $encoded_to, string $encoded_subject, string $encoded_body, string $encoded_headers, string $parameter){ ... }
+	 * @var callable function(Mail $mail){ ... }
 	 */
-	public static $SENDER;
+	public static $SENDER = null;
 	
 	/**
 	 * 件名
@@ -91,13 +91,6 @@ class Mail {
 	 * コンストラクタ
 	 */
 	public function __construct() {
-		if(!is_callable(self::$SENDER)) {
-			self::$SENDER = function($mail, $encoded_to, $encoded_subject, $encoded_body, $encoded_headers, $parameter) {
-				if(!mail($encoded_to, $encoded_subject, $encoded_body, $encoded_headers, $parameter) ) {
-					throw new MailSendException("Mail send faild.");
-				}
-			};
-		}
 	}
 	
 	/**
@@ -263,38 +256,40 @@ class Mail {
 	 * @throws MailSendException
 	 */
 	public function send() {
+		$sender = self::$SENDER;
+		if(is_callable($sender)) {
+			$sender($this);
+			return;
+		}
 		
-		$parameter = array();
 		$headers   = array();
 		$headers[] = "MIME-Version: 1.0";
 		$headers[] = "X-Mailer: PHP";
-		
+
 		// 件名
 		if(empty($this->_subject)) {
 			throw new MailSendException("Mail 'subject' not set.");
 		}
 		$subject = mb_encode_mimeheader($this->_subject, 'UTF-8', 'B', "\n");
-		
+
 		// 送信元(From)
 		if(empty($this->_from)) {
 			throw new MailSendException("Mail 'from' not set.");
 		}
-		$from    = $this->_mailAddressEncode($this->_from);
-		$replyTo = $this->_mailAddressEncode($this->_replyTo);
-		$headers[]   = "From: ".$from;
-		$headers[]   = "Reply-To: ".(empty($replyTo) ? $from : $replyTo);
-		$parameter[] = "-f ".$this->_pickMailAddress($this->_from);
-		
+		$from      = self::encodeMailAddress($this->_from);
+		$replyTo   = self::encodeMailAddress($this->_replyTo);
+		$headers[] = "From: ".$from;
+		$headers[] = "Reply-To: ".(empty($replyTo) ? $from : $replyTo);
+
 		// 宛先(To)
 		if(empty($this->_to)) {
 			throw new MailSendException("Mail 'to' not set.");
 		}
 		$tos = array();
 		foreach ($this->_to AS $address) {
-			$tos[] = $this->_mailAddressEncode($address);
+			$tos[] = self::encodeMailAddress($address);
 		}
-		$to = join(",", $tos);
-		
+
 		// 本文
 		if(empty($this->_body)) {
 			throw new MailSendException("Mail 'body' not set.");
@@ -302,40 +297,44 @@ class Mail {
 		$headers[] = "Content-Type: text/plain; charset=UTF-8";
 		$headers[] = "Content-Transfer-Encoding: base64";
 		$body = wordwrap(base64_encode($this->_body), 70, PHP_EOL, true);
-		
+
 		// 宛先(Cc)
 		if(!empty($this->_cc)) {
 			$ccs = array();
 			foreach ($this->_cc AS $cc) {
-				$ccs[] = $this->_mailAddressEncode($cc);
+				$ccs[] = self::encodeMailAddress($cc);
 			}
 			$headers[] = "Cc: ".join(",", $ccs);
 		}
-		
+
 		// 宛先(Bcc)
 		if(!empty($this->_bcc)) {
 			$bccs = array();
 			foreach ($this->_bcc AS $bcc) {
-				$bccs[] = $this->_mailAddressEncode($bcc);
+				$bccs[] = self::encodeMailAddress($bcc);
 			}
 			$headers[] = "Bcc: ".join(",", $bccs);
 		}
-		
-		$sender = self::$SENDER;
-		$sender($this, $to, $subject, $body, join(PHP_EOL, $headers), join(' ',$parameter));
+
+		if(!mail(join(",", $tos), $subject, $body, join(PHP_EOL, $headers), "-f ". self::pickMailAddress($this->_from)) ) {
+			throw new MailSendException("Mail send faild.");
+		}
 	}
 	
 	/**
 	 * メールアドレスをエンコードします。
 	 * 
-	 * @param  string $address メールアドレス
+	 * @param  string $address           メールアドレス
+	 * @param  string $charset           文字コード（デフォルト：UTF-8）
+	 * @param  string $transfer_encoding 転送エンコード（デフォルト：B）
+	 * @param  string $linefeed          改行コード（デフォルト：\n）
 	 * @return string エンコード済みメールアドレス
 	 */
-	private function _mailAddressEncode($address) {
+	public static function encodeMailAddress($address, $charset = 'UTF-8', $transfer_encoding = 'B', $linefeed = "\n") {
 		if(empty($address)) { return null; }
 		$matches = array();
 		if(preg_match('/^("([^"].*)" *)|(([^<].*) *)<(.*)>$/', trim($address), $matches)) {
-			return mb_encode_mimeheader(trim(!empty($matches[2]) ? $matches[2] : $matches[4]), 'UTF-8', 'B', "\n")."<".$matches[5].">";
+			return mb_encode_mimeheader(trim(!empty($matches[2]) ? $matches[2] : $matches[4]), $charset, $transfer_encoding, $linefeed)."<".$matches[5].">";
 		}
 		return "<".$address.">";
 	}
@@ -346,7 +345,7 @@ class Mail {
 	 * @param  string $address メールアドレス文字列
 	 * @return string メールアドレス
 	 */
-	private function _pickMailAddress($address) {
+	public static function pickMailAddress($address) {
 		if(empty($address)) { return null; }
 		$matches = array();
 		if(preg_match('/^("([^"].*)" *)|(([^<].*) *)<(.*)>$/', trim($address), $matches)) {

@@ -17,7 +17,7 @@
  * $pass = Util::randomCode(8);
  * 
  * @package   SFLF
- * @version   v1.0.1
+ * @version   v1.1.0
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -275,14 +275,13 @@ class Util {
 	 * 
 	 * @param  string $plain     平文
 	 * @param  string $secretKey 秘密鍵
-	 * @param  string $cipher    暗号器 デフォルト(MCRYPT_RIJNDAEL_256)
-	 * @param  string $mode      暗号化モード デフォルト(MCRYPT_MODE_CBC)
+	 * @param  string $cipher    暗号器 デフォルト(AES-256-CBC)
 	 * @return string 暗号文
 	 */
-	public static function encript($plain, $secretKey, $cipher=MCRYPT_RIJNDAEL_256, $mode=MCRYPT_MODE_CBC) {
-		$iv        = mcrypt_create_iv(mcrypt_get_iv_size($cipher, $mode), MCRYPT_RAND);
-		$key       = substr(hash('sha256', $secretKey), 0, mcrypt_get_key_size($cipher, $mode));
-		$encrypted = mcrypt_encrypt($cipher, $key, $plain, $mode, $iv);
+	public static function encript($plain, $secretKey, $cipher='AES-256-CBC') {
+		$iv_size   = openssl_cipher_iv_length($cipher);
+		$iv        = random_bytes($iv_size);
+		$encrypted = openssl_encrypt($plain, $cipher, $secretKey, OPENSSL_RAW_DATA, $iv);
 		return $iv.$encrypted;
 	}
 	
@@ -291,16 +290,14 @@ class Util {
 	 * 
 	 * @param  string encrypted  暗号文
 	 * @param  string $secretKey 秘密鍵
-	 * @param  string $cipher    暗号器 デフォルト(MCRYPT_RIJNDAEL_256)
-	 * @param  string $mode      暗号化モード デフォルト(MCRYPT_MODE_CBC)
+	 * @param  string $cipher    暗号器 デフォルト(AES-256-CBC)
 	 * @return string 復号文
 	 */
-	public static function decript($encrypted, $secretKey, $cipher=MCRYPT_RIJNDAEL_256, $mode=MCRYPT_MODE_CBC) {
-		$key       = substr(hash('sha256', $secretKey), 0, mcrypt_get_key_size($cipher, $mode));
-		$iv_size   = mcrypt_get_iv_size($cipher, $mode);
-		$iv        = substr($encrypted, 0 , $iv_size);
+	public static function decript($encrypted, $secretKey, $cipher='AES-256-CBC') {
+		$iv_size   = openssl_cipher_iv_length($cipher);
+		$iv        = substr($encrypted, 0, $iv_size);
 		$encrypted = substr($encrypted, $iv_size);
-		$decrypted = mcrypt_decrypt($cipher, $key, $encrypted , $mode, $iv);
+		$decrypted = openssl_decrypt($encrypted, $cipher, $secretKey, OPENSSL_RAW_DATA, $iv);
 		return rtrim($decrypted, "\0");
 	}
 	

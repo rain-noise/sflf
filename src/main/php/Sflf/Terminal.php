@@ -15,7 +15,7 @@
  * }
  * 
  * @package   SFLF
- * @version   v1.0.0
+ * @version   v1.0.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -151,7 +151,11 @@ class Terminal {
 	 * @param string $xff  IPアドレス：X_FORWARDED_FOR 値
 	 */
 	public static function init($ua, $ip, $xrip, $xff) {
-		self::$_XFF  = empty($xff) ? null : trim(reset(explode(",", $xff)));
+		self::$_XFF  = null;
+		if(!empty($xff)) {
+			$xff_list = explode(",", $xff);
+			self::$_XFF = trim(reset($xff_list));
+		}
 		self::$_XRIP = $xrip;
 		self::$_IP   = $ip;
 		self::$_UA   = $ua;

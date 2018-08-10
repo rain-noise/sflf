@@ -17,7 +17,7 @@
  * $pass = Util::randomCode(8);
  * 
  * @package   SFLF
- * @version   v1.1.0
+ * @version   v1.1.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -776,8 +776,9 @@ class Util {
 	 * @param array|string $cols      出力対象列名リスト or DTOクラス名
 	 * @param boolean      $hasHeader true : ヘッダ行を出力する／false : ヘッダ行を出力しない - デフォルト true
 	 * @param array        $colLabels ヘッダ行のラベル指定(配列又は連想配列)                  - デフォルト array()
+	 * @param string       $encoding  CSVファイルエンコーディング                             - デフォルト SJIS-win
 	 */
-	public static function csv($fileName, $converter, array $rs, $cols, $hasHeader = true, $colLabels = array()) {
+	public static function csv($fileName, $converter, array $rs, $cols, $hasHeader = true, $colLabels = array(), $encoding = 'SJIS-win') {
 		if(is_string($cols)) {
 			$reflect = new ReflectionClass($cols);
 			$props   = $reflect->getProperties(ReflectionProperty::IS_PUBLIC);
@@ -810,7 +811,7 @@ class Util {
 			if(0 <= $last) {
 				$line .= "\n";
 			}
-			echo mb_convert_encoding($line, "SJIS-win", "UTF-8");
+			echo mb_convert_encoding($line, $encoding, "UTF-8");
 		}
 		
 		foreach ($rs AS $i => $row) {
@@ -826,7 +827,7 @@ class Util {
 			if($i != $last) {
 				$line .= "\n";
 			}
-			echo mb_convert_encoding($line, "SJIS-win", "UTF-8");
+			echo mb_convert_encoding($line, $encoding, "UTF-8");
 		}
 		exit();
 	}

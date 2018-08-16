@@ -17,7 +17,7 @@
  * $pass = Util::randomCode(8);
  * 
  * @package   SFLF
- * @version   v1.1.1
+ * @version   v1.1.2
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -54,12 +54,12 @@ class Util {
 	 * DateTime オブジェクトを解析します。
 	 * ※本メソッドは analyzeDateTime() から日付フォーマット情報を除外して日付のみを返す簡易メソッドです。
 	 * 
-	 * @param string       $value
-	 * @param string|array $main_format
+	 * @param string    $value
+	 * @param ...string $main_format
 	 * @return DateTime or null
 	 */
-	public static function createDateTime($value, $main_format = null) {
-		list($date, ) = self::analyzeDateTime($value, $main_format);
+	public static function createDateTime($value, ...$main_format) {
+		list($date, ) = self::analyzeDateTime($value, ...$main_format);
 		return $date;
 	}
 	
@@ -67,16 +67,16 @@ class Util {
 	 * DateTime オブジェクトを解析します。
 	 * ※本メソッドは解析に成功した日付フォーマットも返します
 	 * 
-	 * @param string       $value
-	 * @param string|array $main_format
+	 * @param string    $value
+	 * @param ...string $main_format
 	 * @return [DateTime or null, apply_format or null]
 	 */
-	public static function analyzeDateTime($value, $main_format = null) {
+	public static function analyzeDateTime($value, ...$main_format) {
 		if($value === null || $value === '') { return null; }
 		if($value instanceof DateTime) { return [$value, null]; }
 		
 		$formats = static::ACCEPTABLE_DATETIME_FORMAT ;
-		if(!empty($main_format)) { array_unshift($formats, $main_format); }
+		if(!empty($main_format)) { array_unshift($formats, ...$main_format); }
 		
 		$date         = null;
 		$apply_format = null;

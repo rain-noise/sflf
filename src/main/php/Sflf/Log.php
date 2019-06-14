@@ -34,7 +34,7 @@
  * );
  * 
  * @package   SFLF
- * @version   v1.0.0
+ * @version   v1.0.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -215,15 +215,6 @@ class Log {
 				."\n".print_r($params, true)
 				, 1
 				,'>> '
-			);
-		}
-		
-		if($level === self::LEVEL_DEBUG) {
-			$body .= self::_indent(
-				 "\n*** DEBUG TRACE ***"
-				."\n".self::_traceToString(debug_backtrace(), false)
-				, 1
-				,'-- '
 			);
 		}
 		

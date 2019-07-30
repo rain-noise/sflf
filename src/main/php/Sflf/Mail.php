@@ -17,6 +17,7 @@
  * // If you don't want to send mail when you are developing
  * Mail::$SENDER = function(Mail $mail) {
  *     Log::debug("***** MAIL *****\n{$mail}\n**********");
+ *     return true; // return false if you want to send a mail with default behavior
  * };
  * 
  * $mail = new Mail();
@@ -30,7 +31,7 @@
  * $mail->send();
  * 
  * @package   SFLF
- * @version   v1.1.0
+ * @version   v1.2.0
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -258,8 +259,9 @@ class Mail {
 	public function send() {
 		$sender = self::$SENDER;
 		if(is_callable($sender)) {
-			$sender($this);
-			return;
+			if($sender($this)) {
+				return;
+			}
 		}
 		
 		$headers   = array();

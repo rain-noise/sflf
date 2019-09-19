@@ -17,7 +17,7 @@
  * $pass = Util::randomCode(8);
  * 
  * @package   SFLF
- * @version   v1.1.2
+ * @version   v1.2.0
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -906,5 +906,25 @@ class Util {
 				,'verify_peer_name' => false
 			),
 		)));
+	}
+	
+	/**
+	 * 対象のCSVファイルを読み込みます。
+	 * 
+	 * @param type $file
+	 * @param type $flags
+	 * @return \SplFileObject
+	 */
+	public static function loadCsv($file, $flags = SplFileObject::READ_CSV) {
+		$data = file_get_contents($file);
+		$data = mb_convert_encoding($data, 'UTF-8', 'auto');
+		$data = preg_replace('/^\xEF\xBB\xBF/', '', $data); // BOMがあれば除去
+		file_put_contents($file, $data);
+		
+		setlocale(LC_ALL, 'ja_JP.UTF-8');
+		$csv = new SplFileObject($file);
+		$csv->setFlags($flags);
+		$csv->setCsvControl(',', '"', '"');
+		return $csv;
 	}
 }

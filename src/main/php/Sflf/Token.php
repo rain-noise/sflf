@@ -26,7 +26,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/function.token.php トークン出力用 Smarty タグ
  * 
  * @package   SFLF
- * @version   v1.0.0
+ * @version   v1.1.0
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -65,15 +65,18 @@ class Token {
 	
 	/**
 	 * トークンを検証します。
-	 * ※セッション上のトークン値は削除されます。
+	 * ※セッション上のトークン値はデフォルトでは削除されます。
 	 * 
-	 * @param  string $token 検証対象トークン文字列
-	 * @param  string $key   キー名 - デフォルト 'global'
+	 * @param  string $token    検証対象トークン文字列
+	 * @param  string $key      キー名                   - デフォルト 'global'
+	 * @param  boolean $onetime ワンタイムトークンか否か - デフォルト 'true'
 	 * @return boolean true : OK／false : NG
 	 */
-	public static function validate($token, $key='global') {
+	public static function validate($token, $key='global', $onetime = true) {
 		$origin = self::get($key);
-		unset($_SESSION[self::SESSION_KEY_PREFIX.$key]);
+		if($onetime) {
+			unset($_SESSION[self::SESSION_KEY_PREFIX.$key]);
+		}
 		return !empty($token) && $token == $origin ;
 	}
 }

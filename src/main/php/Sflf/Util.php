@@ -17,7 +17,7 @@
  * $pass = Util::randomCode(8);
  * 
  * @package   SFLF
- * @version   v1.2.0
+ * @version   v1.2.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -789,46 +789,84 @@ class Util {
 		}
 		
 		// 出力
+		static::csvOpen($fileName);
+		if($hasHeader) {
+			static::csvHeader($cols, $colLabels, $encoding);
+		}
+		foreach ($rs AS $i => $row) {
+			static::csvLine(!$hasHeader && $i === 0, $row, $cols, $converter, $encoding);
+		}
+		static::csvClose();
+	}
+	
+	
+	/**
+	 * CSV出力：手順(1)　HTTPヘッダを出力し、CSVデータダウンロードを開始します。
+	 * ※CSVダウンロードに伴うメモリ使用量を削減したい場合はこれらのCSV出力パーツ関数を組み合わせて利用して下さい。
+	 * 
+	 * @param string $fileName 出力ファイル名
+	 * @param string $encoding CSVファイル名エンコーディング - デフォルト SJIS-win
+	 */
+	public static function csvOpen($fileName, $encoding = 'SJIS-win') {
 		ob_clean();
 		header("Pragma: public");
 		header("Expires: 0");
 		header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
 		header("Cache-Control: private",false);
 		header("Content-Type: application/force-download");
-		header('Content-Disposition: attachment; filename=' . mb_convert_encoding($fileName, "SJIS-win", "UTF-8"));
+		header('Content-Disposition: attachment; filename=' . mb_convert_encoding($fileName, $encoding, "UTF-8"));
 		header("Content-Transfer-Encoding: binary");
-		
-		$last = count($rs) - 1;
-		
-		if($hasHeader) {
-			$line = '';
-			$isMap = self::isMap($colLabels);
-			foreach ($cols AS $i => $col) {
-				$val = $isMap ? self::get($colLabels, $col, $col ) : self::get($colLabels, $i, $col) ;
-				$line .= '"'.str_replace('"','""', $val).'",';
-			}
-			$line  = substr($line, 0, -1);
-			if(0 <= $last) {
-				$line .= "\n";
-			}
-			echo mb_convert_encoding($line, $encoding, "UTF-8");
+	}
+	
+	/**
+	 * CSV出力：手順(2)　CSVファイルのヘッダ行を書き出します。
+	 * ※CSVダウンロードに伴うメモリ使用量を削減したい場合はこれらのCSV出力パーツ関数を組み合わせて利用して下さい。
+	 * ※ヘッダ行が存在しない CSV ファイルでは呼び出す必要はありません。
+	 * 
+	 * @param array|string $cols      出力対象列名リスト or DTOクラス名
+	 * @param array        $colLabels ヘッダ行のラベル指定(配列又は連想配列) - デフォルト array()
+	 * @param string       $encoding  CSVファイルデータエンコーディング      - デフォルト SJIS-win
+	 */
+	public static function csvHeader(array $cols, array $colLabels = [], $encoding = 'SJIS-win'){
+		$line = '';
+		$isMap = self::isMap($colLabels);
+		foreach ($cols AS $i => $col) {
+			$val = $isMap ? self::get($colLabels, $col, $col ) : self::get($colLabels, $i, $col) ;
+			$line .= '"'.str_replace('"','""', $val).'",';
 		}
-		
-		foreach ($rs AS $i => $row) {
-			$line = '';
-			foreach ($cols AS $col) {
-				$val = self::get($row, $col) ;
-				if($converter) {
-					$val = $converter($row, $col, $val);
-				}
-				$line .= '"'.str_replace('"','""', $val).'",';
+		$line  = substr($line, 0, -1);
+		echo mb_convert_encoding($line, $encoding, "UTF-8");
+	}
+	
+	/**
+	 * CSV出力：手順(3)　CSVファイルのデータ行を書き出します。
+	 * ※CSVダウンロードに伴うメモリ使用量を削減したい場合はこれらのCSV出力パーツ関数を組み合わせて利用して下さい。
+	 * ※出力データ分だけ繰り返し呼び出して下さい。
+	 * 
+	 * @param bool         $isfirstLine 最初の行か否か
+	 * @param array|object $row         結果データ（１行分のデータ）
+	 * @param array|string $cols        出力対象列名リスト or DTOクラス名
+	 * @param function     $converter   コンバータ
+	 * @param string       $encoding    CSVファイルデータエンコーディング      - デフォルト SJIS-win
+	 */
+	public static function csvLine(bool $isfirstLine, $row, array $cols, $converter, $encoding = 'SJIS-win') {
+		$line = $isfirstLine ? '' : "\n" ;
+		foreach ($cols AS $col) {
+			$val = self::get($row, $col) ;
+			if($converter) {
+				$val = $converter($row, $col, $val);
 			}
-			$line  = substr($line, 0, -1);
-			if($i != $last) {
-				$line .= "\n";
-			}
-			echo mb_convert_encoding($line, $encoding, "UTF-8");
+			$line .= '"'.str_replace('"','""', $val).'",';
 		}
+		$line  = substr($line, 0, -1);
+		echo mb_convert_encoding($line, $encoding, "UTF-8");
+	}
+	
+	/**
+	 * CSV出力：手順(4)　CSVファイル出力を閉じます。
+	 * ※CSVダウンロードに伴うメモリ使用量を削減したい場合はこれらのCSV出力パーツ関数を組み合わせて利用して下さい。
+	 */
+	public static function csvClose() {
 		exit();
 	}
 	

@@ -35,7 +35,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/includes/paginate.tpl ページ送り Smarty テンプレート
  * 
  * @package   SFLF
- * @version   v1.0.1
+ * @version   v1.0.2
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -538,6 +538,10 @@
 			return $value;
 		}
 		
+        if (is_bool($value)) {
+            return $value ? 1 : 0 ;
+        }
+        
 		if($value instanceof DateTime || $value instanceof DateTimeImmutable) {
 			return "'".$value->format("Y-m-d H:i:s")."'";
 		}

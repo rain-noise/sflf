@@ -17,7 +17,7 @@
  * $pass = Util::randomCode(8);
  * 
  * @package   SFLF
- * @version   v1.2.1
+ * @version   v1.2.2
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -856,6 +856,24 @@ class Util {
 			if($converter) {
 				$val = $converter($row, $col, $val);
 			}
+			$line .= '"'.str_replace('"','""', $val).'",';
+		}
+		$line  = substr($line, 0, -1);
+		echo mb_convert_encoding($line, $encoding, "UTF-8");
+	}
+	
+	/**
+	 * CSV出力：手順(3´)　CSVファイルのデータ行（文字列データ）をそのまま書き出します。
+	 * ※CSVダウンロードに伴うメモリ使用量を削減したい場合はこれらのCSV出力パーツ関数を組み合わせて利用して下さい。
+	 * ※出力データ分だけ繰り返し呼び出して下さい。
+	 * 
+	 * @param bool     $isfirstLine 最初の行か否か
+	 * @param array    $row         CSV文字列データ
+	 * @param string   $encoding    CSVファイルデータエンコーディング      - デフォルト SJIS-win
+	 */
+	public static function csvRawLine(bool $isfirstLine, array $row, $encoding = 'SJIS-win') {
+		$line = $isfirstLine ? '' : "\n" ;
+		foreach ($row AS $val) {
 			$line .= '"'.str_replace('"','""', $val).'",';
 		}
 		$line  = substr($line, 0, -1);

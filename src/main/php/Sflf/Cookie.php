@@ -13,10 +13,6 @@
  * $value = Cookie::get('key','default');
  * Cookie::remove('key');
  * 
- * 【注意】
- * デフォルトの secure 設定が ture になっているため、デフォルト挙動は常時SSL通信を想定したものとなっています。
- * これに伴い、本モジュールをそのまま使用する場合は開発環境においてもSSL通信環境を構築する必要があります。
- * 
  * @package   SFLF
  * @version   v2.0.0
  * @author    github.com/rain-noise
@@ -59,11 +55,11 @@
 	 * @param  string  $expiry 有効期限       - デフォルト '+1 day'
 	 * @param  string  $path   パス           - デフォルト '/'
 	 * @param  string  $domain ドメイン       - デフォルト ''
-	 * @param  string  $secure セキュア       - デフォルト true
-	 * @param  string  $samesite セイムサイト - デフォルト 'None'
+	 * @param  string  $secure セキュア       - デフォルト false
+	 * @param  string  $samesite セイムサイト - デフォルト 'Lax'
 	 * @return boolean true : 成功／false : 失敗
 	 */
-	public static function set($name, $value, $expiry = '+1 day', $path = '/', $domain = '', $secure = true, $samesite='None') {
+	public static function set($name, $value, $expiry = '+1 day', $path = '/', $domain = '', $secure = false, $samesite='Lax') {
 		//$domain = $domain ? $domain : $_SERVER['HTTP_HOST'] ;
 		if(version_compare(PHP_VERSION, '7.3.0', '>=')) {
 			$result = setcookie($name, $value, [

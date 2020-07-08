@@ -13,8 +13,12 @@
  * $value = Cookie::get('key','default');
  * Cookie::remove('key');
  * 
+ * 【注意】
+ * デフォルトの secure 設定が ture になっているため、デフォルト挙動は常時SSL通信を想定したものとなっています。
+ * これに伴い、本モジュールをそのまま使用する場合は開発環境においてもSSL通信環境を構築する必要があります。
+ * 
  * @package   SFLF
- * @version   v1.0.0
+ * @version   v2.0.0
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -52,15 +56,27 @@
 	 * 
 	 * @param  string  $name   Cookie 名
 	 * @param  string  $value  値
-	 * @param  string  $expiry 有効期限  - デフォルト '+1 day'
-	 * @param  string  $path   パス      - デフォルト '/'
-	 * @param  string  $domain ドメイン  - デフォルト ''
-	 * @param  string  $secure セキュア  - デフォルト false
+	 * @param  string  $expiry 有効期限       - デフォルト '+1 day'
+	 * @param  string  $path   パス           - デフォルト '/'
+	 * @param  string  $domain ドメイン       - デフォルト ''
+	 * @param  string  $secure セキュア       - デフォルト true
+	 * @param  string  $samesite セイムサイト - デフォルト 'None'
 	 * @return boolean true : 成功／false : 失敗
 	 */
-	public static function set($name, $value, $expiry = '+1 day', $path = '/', $domain = '', $secure = false) {
+	public static function set($name, $value, $expiry = '+1 day', $path = '/', $domain = '', $secure = true, $samesite='None') {
 		//$domain = $domain ? $domain : $_SERVER['HTTP_HOST'] ;
-		if(setcookie($name, $value, strtotime($expiry), $path, $domain, $secure)) {
+		if(version_compare(PHP_VERSION, '7.3.0', '>=')) {
+			$result = setcookie($name, $value, [
+				'expires'  => strtotime($expiry),
+				'path'     => $path,  
+				'domain'   => $domain,
+				'secure'   => $secure,
+				'samesite' => $samesite,
+			]);
+		} else {
+			$result = setcookie($name, $value, strtotime($expiry), $path."; SameSite={$samesite}", $domain, $secure);
+		}
+		if($result) {
 			$_COOKIE[$name] = $value;
 			return true;
 		}

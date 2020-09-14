@@ -17,7 +17,7 @@
  * $pass = Util::randomCode(8);
  * 
  * @package   SFLF
- * @version   v1.2.2
+ * @version   v1.2.3
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -217,7 +217,7 @@ class Util {
 	public static function randomCode($length = 12, $chars = "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890") {
 		$res = "";
 		for ($i=0; $i < $length; $i++) {
-			$res .= $chars{mt_rand(0, strlen($chars) - 1)};
+			$res .= $chars[mt_rand(0, strlen($chars) - 1)];
 		}
 		return $res;
 	}

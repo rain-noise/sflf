@@ -367,7 +367,7 @@ class Mail {
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
  */
-class MailSendException extends RuntimeException {
+class MailSendException extends \RuntimeException {
 	public function __construct ($message, $code=null, $previous=null) {
 		parent::__construct($message, $code, $previous);
 	}

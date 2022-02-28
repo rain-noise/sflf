@@ -174,7 +174,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/block.unless_errors.php エラー有無分岐用 Smarty タグ
  * 
  * @package   SFLF
- * @version   v1.0.2
+ * @version   v1.0.3
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -1766,7 +1766,7 @@ abstract class Form
 	private function _tryToParseDateTime($value, $format) {
 		$date = DateTime::createFromFormat("!{$format}", $value);
 		$le   = DateTime::getLastErrors();
-		return $date === false || !empty($le['errors']) || !empty($le['warnings']) ? null : $date ;
+		return $date === false || !empty($le['errors']) || !empty($le['warnings']) ? null : $date->setTimezone(new DateTimeZone(date_default_timezone_get())) ;
 	}
 	
 	//--------------------------------------------------------------------------

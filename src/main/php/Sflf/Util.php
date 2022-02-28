@@ -17,7 +17,7 @@
  * $pass = Util::randomCode(8);
  * 
  * @package   SFLF
- * @version   v1.2.3
+ * @version   v1.2.4
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -101,7 +101,7 @@ class Util {
 	private static function _tryToParseDateTime($value, $format) {
 		$date = DateTime::createFromFormat("!{$format}", $value);
 		$le   = DateTime::getLastErrors();
-		return $date === false || !empty($le['errors']) || !empty($le['warnings']) ? null : $date ;
+		return $date === false || !empty($le['errors']) || !empty($le['warnings']) ? null : $date->setTimezone(new DateTimeZone(date_default_timezone_get())) ;
 	}
 	
 	/**

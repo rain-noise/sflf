@@ -34,7 +34,7 @@
  * );
  * 
  * @package   SFLF
- * @version   v1.0.1
+ * @version   v1.1.0
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -50,10 +50,8 @@ class Log {
 	const LEVEL_TRACE = 5;
 	
 	// ブラウザ画面表示モード定義
-	const DISPLAY_NONE        = 1; // ブラウザ画面への表示を行わない
-	const DISPLAY_IMMEDIATELY = 2; // ログ出力が呼ばれる度にブラウザ画面に出力
-	const DISPLAY_TRIGGER     = 3; // ログ内容をストックし、 Log::display() のコールでブラウザ画面に出力
-	const DISPLAY_FINALLY     = 4; // ログ内容をストックし、 シャットダウン時にブラウザ画面に出力
+	const DISPLAY_NONE    = 1; // ブラウザ画面への表示を行わない
+	const DISPLAY_FINALLY = 2; // ログ内容をストックし、 シャットダウン時にウェブレスポンスに出力
 	
 	/**
 	 * インスタンス化禁止
@@ -78,7 +76,39 @@ class Log {
 	private static $_LOG_SUPPRESS_PATTERN = null;
 	
 	// ブラウザ画面ログ出力ストック用バッファ
-	private static $_OUT_BUFFER = "";
+	private static $_OUT_BUFFER = [];
+	
+	// (ブラウザ画面ログ出力時のみ)
+	// ファイルサフィックス ⇒ Content-Type のマップ
+	// データダウンロード時の Content-Type が 'application/octet-stream', 'application/force-download' の場合に 
+	// Content-Disposition に指定されている filename のサフィックスから適切な Content-Type を判断するために使用
+	// ※必要に応じて追加/変更して下さい。
+	// ※ここに定義の無いサフィックスの Content-Type はそのまま 'application/octet-stream' 又は 'application/force-download' として扱われます。
+	private static $_FILE_MIME_TYPE = [
+		'csv' => 'text/csv',
+		'tsv' => 'text/tsv',
+		'txt' => 'text/plain',
+		'css' => 'text/css',
+		'js'  => 'application/javascript',
+		'xml' => 'application/xml',
+	];
+	
+	// (ブラウザ画面ログ出力時のみ)
+	// 出力対象のコンテンツタイプによってログ出力方法を変更できます。
+	// ※ここに定義のないコンテンツタイプの場合はウェブレスポンスへのログ出力は行われません。
+	// ※必要に応じて追加/変更して下さい。
+	private static $_HOW_TO_DISPLAY = [
+		'text/html'              => ['html'         , null],
+		'text/csv'               => ['wrap-escape'  , ['"', ['"' , '""'], '"']],
+		'text/tsv'               => ['wrap-escape'  , ['' , ["\t", '    '], '']],
+		'text/plain'             => ['raw'          , null],
+		'text/css'               => ['block-comment', [['/*'  , '*/' ], ['[COMMENT]', '[/COMMENT]']]],
+		'text/javascript'        => ['line-comment' , '// '],
+		'application/javascript' => ['line-comment' , '// '],
+		'text/xml'               => ['block-comment', [['<!--', '-->'], ['[COMMENT]', '[/COMMENT]']]],
+		'application/xml'        => ['block-comment', [['<!--', '-->'], ['[COMMENT]', '[/COMMENT]']]],
+		//'content/type'         => ['custom', function($body, $level) { ... }],
+	];
 	
 	/**
 	 * ロガーを初期化します。
@@ -231,44 +261,77 @@ class Log {
 		error_log($body."\n", 3, self::$_LOG_FILE.date(self::$_LOG_FILE_SUFFIX, $now));
 		
 		if(self::$_LOG_DISPLAY != self::DISPLAY_NONE) {
-			switch ($level) {
-				case self::LEVEL_TRACE:
-					$fc = '#666666'; $bc = '#f9f9f9';
-					break;
-				case self::LEVEL_DEBUG:
-					$fc = '#3333cc'; $bc = '#eeeeff';
-					break;
-				case self::LEVEL_INFO:
-					$fc = '#229922'; $bc = '#eeffee';
-					break;
-				case self::LEVEL_WARN:
-					$fc = '#ff6e00'; $bc = '#ffffee';
-					break;
-				case self::LEVEL_ERROR:
-				case self::LEVEL_FATAL:
-					$fc = '#ee3333'; $bc = '#ffeeee';
-					break;
-			}
-			
-			$mark    = substr_count($body,"\n") > 1 ? "☰" : "　" ;
-			$message = preg_replace('/\n/s', '<br />', str_replace(' ', '&nbsp;', htmlspecialchars($body)));
-			$html    = <<<EOS
+			self::$_OUT_BUFFER[] = [$level, $body];
+		}
+	}
+	
+	/**
+	 * HTML 表示用のログに整形します。
+	 * 
+	 * @param string $body  ログメッセージ
+	 * @param int    $level ログレベル
+	 * @return type
+	 */
+	private static function _toHtmlDisplay(string $body, int $level) {
+		switch ($level) {
+			case self::LEVEL_TRACE:
+				$fc = '#666666'; $bc = '#f9f9f9';
+				break;
+			case self::LEVEL_DEBUG:
+				$fc = '#3333cc'; $bc = '#eeeeff';
+				break;
+			case self::LEVEL_INFO:
+				$fc = '#229922'; $bc = '#eeffee';
+				break;
+			case self::LEVEL_WARN:
+				$fc = '#ff6e00'; $bc = '#ffffee';
+				break;
+			case self::LEVEL_ERROR:
+			case self::LEVEL_FATAL:
+				$fc = '#ee3333'; $bc = '#ffeeee';
+				break;
+		}
+
+		$mark    = substr_count($body,"\n") > 1 ? "☰" : "　" ;
+		$message = preg_replace('/\n/s', '<br />', str_replace(' ', '&nbsp;', htmlspecialchars($body)));
+		$html    = <<<EOS
 <div style="box-sizing: border-box; height:20px; overflow-y:hidden; cursor:pointer; margin:5px; padding:4px 10px 4px 26px; border-left:8px solid {$fc}; color:{$fc}; background-color:{$bc};display: block;font-size:12px; line-height: 1.2em; word-break : break-all;font-family: Consolas, 'Courier New', Courier, Monaco, monospace;text-indent:-19px;text-align: left;"
      ondblclick="javascript: this.style.height=='20px' ? this.style.height='auto' : this.style.height='20px'">
 {$mark} {$message}
 </div>
 EOS;
-			switch (self::$_LOG_DISPLAY) {
-				case self::DISPLAY_IMMEDIATELY:
-					echo $html;
-					break;
-				case self::DISPLAY_TRIGGER: // Do not break.
-				case self::DISPLAY_FINALLY:
-					self::$_OUT_BUFFER .= $html;
-					break;
+		return $html;
+	}
+	
+	/**
+     * レスポンスのコンテンツタイプを取得します。
+	 * コンテンツタイプが application/octet-stream 又は application/force-download の場合は filename の拡張子から推測します。
+     *
+     * @return string コンテンツタイプ
+     */
+	private static function _getResponseContentType()
+    {
+		$content_type = null;
+		$file_suffix  = null;
+		$matcher      = [];
+        foreach (\headers_list() as $header) {
+			$header  = mb_decode_mimeheader($header);
+			
+			if(\preg_match('|content-type:\s*(?<type>[^/]+/[^ ;]+).*|i', $header, $matcher)) {
+				$content_type = $matcher['type'];
+			}
+			
+			if(\preg_match('|content-disposition:.*filename="?.*\.(?<suffix>[^ ";]+)"?|i', $header, $matcher)) {
+				$file_suffix = $matcher['suffix'];
 			}
 		}
-	}
+		
+		if($file_suffix !== null && in_array($content_type, ['application/octet-stream', 'application/force-download'])) {
+			$content_type = self::$_FILE_MIME_TYPE[$file_suffix] ?? $content_type ;
+		}
+
+        return $content_type ?? 'unknown';
+    }
 	
 	/**
 	 * 指定の文字列をインデントします。
@@ -289,8 +352,33 @@ EOS;
 	 */
 	public static function display() {
 		if(!empty(self::$_OUT_BUFFER)) {
-			echo self::$_OUT_BUFFER;
-			self::$_OUT_BUFFER = "";
+			$content_type = self::_getResponseContentType();
+			list($how_to, $option) = self::$_HOW_TO_DISPLAY[$content_type] ?? ['none', null];
+			foreach (self::$_OUT_BUFFER as list($level, $body)) {
+				switch ($how_to) {
+					case 'html':
+						echo self::_toHtmlDisplay($body, $level);
+						break;
+					case 'raw':
+						echo "\n".$body;
+						break;
+					case 'wrap-escape':
+						list($open, $escape, $close) = $option;
+						echo "\n{$open}".str_replace($escape[0], $escape[1], $body)."{$close}";
+						break;
+					case 'block-comment':
+						list($comment, $replacement) = $option;
+						echo "\n{$comment[0]}\n".str_replace($comment, $replacement, $body)."\n{$comment[1]}";
+						break;
+					case 'line-comment':
+						echo "\n".self::_indent($body, 1, $option);
+						break;
+					case 'custom':
+						echo "\n".$option($body, $level);
+						break;
+				}
+			}
+			self::$_OUT_BUFFER = [];
 		}
 	}
 	
@@ -300,7 +388,7 @@ EOS;
 	 * @return void
 	 */
 	public static function clear() {
-		self::$_OUT_BUFFER = "";
+		self::$_OUT_BUFFER = [];
 	}
 	
 	/**

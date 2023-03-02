@@ -14,7 +14,7 @@
  * Session::set('LOGIN', $user);
  * 
  * @package   SFLF
- * @version   v1.0.0
+ * @version   v1.0.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -84,6 +84,19 @@ class Session {
 		if(self::exists($key)) {
 			unset($_SESSION[self::SESSION_KEY_PREFIX.$key]);
 		}
+	}
+	
+	/**
+	 * セッションから値を取得し、その値を削除します。
+	 * 
+	 * @param  string $key     キー名
+	 * @param  obj    $default デフォルト値
+	 * @return mixed 格納した値
+	 */
+	public static function pull($key, $default = null) {
+		$value = self::get($key, $default);
+		self::remove($key);
+		return $value;
 	}
 	
 	/**

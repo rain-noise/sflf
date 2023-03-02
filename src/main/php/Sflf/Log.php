@@ -34,7 +34,7 @@
  * );
  * 
  * @package   SFLF
- * @version   v1.1.0
+ * @version   v1.1.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -251,8 +251,7 @@ class Log {
 		if($exception) {
 			$body .= self::_indent(
 				 "\n*** STACK TRACE ***"
-				."\n".$exception->getMessage(). " (".$exception->getFile().":".$exception->getLine().")"
-				."\n".$exception->getTraceAsString()
+				."\n".$exception
 				, 1
 				,'** '
 			);

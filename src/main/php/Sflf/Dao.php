@@ -35,7 +35,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/includes/paginate.tpl ページ送り Smarty テンプレート
  * 
  * @package   SFLF
- * @version   v1.0.2
+ * @version   v1.1.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -239,7 +239,7 @@
 		
 		$rs = self::$_DB->query($sql);
 		if($rs === false) {
-			throw new DatabaseException("Execute query failed : ".self::$_DB->error."\n--- [SQL] ---\n{$sql}\n-------------\n");
+			throw new DatabaseException("Execute query failed : ".self::$_DB->errno." ".self::$_DB->error."\n--- [SQL] ---\n{$sql}\n-------------\n", self::$_DB->errno);
 		}
 		
 		return $rs;
@@ -258,23 +258,68 @@
 	public static function each(callable $callback, $sql, $params = array(), $clazz = 'stdClass') {
 		$rs = self::query($sql, $params);
 		if(is_bool($rs) || empty($rs)) { return; }
-		
+            
 		$types = array();
 		foreach ($rs->fetch_fields() AS $meta) {
 			$types[$meta->name] = $meta->type;
-		}
-		
+        }
+        
 		foreach ($rs AS $i => $row) {
-			$entity = new $clazz();
-			foreach ($row AS $col => $val) {
-				$entity->$col = self::_convertToPhp($val, $types[$col]) ;
-			}
+            $entity = new $clazz();
+            foreach ($row AS $col => $val) {
+                $entity->$col = self::_convertToPhp($val, $types[$col]) ;
+            }
 			$callback($i, $entity);
-		}
-		
+        }
+        
 		return;
 	}
 	
+	/**
+	 * 指定のSQLを実行し、結果の各行に callback 関数を適用します。
+	 * ※大容量の CSV データ出力などメモリ使用量を押さえたい場合などに利用できます。
+     * ※指定の $chunk 単位でデータを分割してDBより取得するため each よりメモリ使用量を抑えられます。
+     * ※LIMIT OFFSET を使用した分割データ取得となるため、指定のSQLはデータの並び順が一意となるように指定されていなければなりません。
+	 * 
+	 * @param unknown $callback コールバック関数（$callback($i, $entity)）
+	 * @param unknown $sqler function(&$params, $cursor) {}
+	 * @param unknown $params
+	 * @param unknown $clazz
+	 * @param unknown $chunk
+	 * @throws DatabaseException
+	 */
+	public static function chunk(callable $callback, callable $sqler, $params = array(), $clazz = 'stdClass', int $chunk = 1000) {
+        $i      = 0;
+        $types  = [];
+        $cursor = null;
+        while(true) {
+            $sql = $sqler($params, $cursor);
+            $sql = preg_match('/LIMIT/i', $sql) ? "SELECT * FROM ({$sql}) AS T" : $sql ;
+            $rs  = self::query("{$sql} LIMIT {$chunk}", $params);
+            if(is_bool($rs) || empty($rs) || $rs->num_rows === 0) { return; }
+            
+            if(empty($types)) {
+                foreach ($rs->fetch_fields() AS $meta) {
+                    $types[$meta->name] = $meta->type;
+                }
+            }
+            
+            foreach ($rs AS $j => $row) {
+                $entity = new $clazz();
+                foreach ($row AS $col => $val) {
+                    $entity->$col = self::_convertToPhp($val, $types[$col]) ;
+                }
+                $callback(($chunk * $i) + $j, $entity);
+                $cursor = $entity;
+            }
+            
+            $rs->free();
+            $i++;
+        }
+        
+		return;
+	}
+    
 	/**
 	 * 指定のSQLを実行し、結果〔N行M列〕を取得します。
 	 * ※戻り値は array($clazz) になります。

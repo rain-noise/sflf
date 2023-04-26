@@ -72,7 +72,7 @@ class Router
     /**
      * リクエストURI
      *
-     * @var string
+     * @var array
      */
     private $part_of_uri;
 

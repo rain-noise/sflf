@@ -84,7 +84,7 @@ class Mail
 
     /**
      * 本文
-     * @var array
+     * @var string
      */
     private $_body;
 

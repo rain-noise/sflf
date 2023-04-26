@@ -358,7 +358,7 @@ EOS;
      * 指定の文字列をインデントします。
      * ※対象の文字列が空の場合、インデントしません。
      *
-     * @param unknown $string
+     * @param string $string
      */
     private static function _indent($string, $depth = 1, $char = "\t")
     {

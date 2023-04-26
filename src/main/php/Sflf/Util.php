@@ -341,7 +341,7 @@ class Util
     /**
      * バイナリデータをURLに利用可能な文字列に変換します。
      *
-     * @param  byte $byte バイナリデータ
+     * @param  string|byte $byte バイナリデータ
      * @return string URL利用可能文字列
      */
     public static function pack($byte)
@@ -528,10 +528,10 @@ class Util
     /**
      * ディレクトリを再帰的にZIP圧縮します。
      *
-     * @param  string   $folder
-     * @param  string   $zipFile
-     * @param  int      $exclusiveLength
-     * @param  function $filter
+     * @param  string     $folder
+     * @param  ZipArchive $zipFile
+     * @param  int        $exclusiveLength
+     * @param  function   $filter
      * @return void
      */
     private static function folderToZip($folder, &$zipFile, $exclusiveLength, $filter)
@@ -1056,8 +1056,8 @@ class Util
     /**
      * 対象のCSVファイルを読み込みます。
      *
-     * @param type $file
-     * @param type $flags
+     * @param string $file
+     * @param int $flags
      * @return \SplFileObject
      */
     public static function loadCsv($file, $flags = SplFileObject::READ_CSV)

@@ -654,7 +654,7 @@ class Dao
     /**
      * 結果セットの値をPHPオブジェクトにコンバートします。
      *
-     * @param mysqli_object $value
+     * @param mysqli_object|string $value
      * @return string|int|float|DateTime PHPオブジェクトコンバート結果
      * @todo 整理＆実装
      */
@@ -805,7 +805,7 @@ class PageInfo
      *
      * @param int  $page
      * @param int  $pageSize
-     * @param long $hitCount
+     * @param int|long $hitCount
      */
     public function __construct($page, $pageSize, $hitCount)
     {

@@ -14,7 +14,7 @@
  * Session::set('LOGIN', $user);
  *
  * @package   SFLF
- * @version   v1.0.2
+ * @version   v1.0.3
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -161,7 +161,7 @@ class RetrySessionHandler extends SessionHandler
 
     /**
      * リトライモード
-     * @var type
+     * @var int
      */
     private $mode;
 
@@ -207,7 +207,7 @@ class RetrySessionHandler extends SessionHandler
     /**
      * オーバーライド
      */
-    public function open($savePath, $sessionName)
+    public function open(string $savePath, string $sessionName) : bool
     {
         if (!($this->mode & self::RETRY_OPEN)) {
             return parent::open($savePath, $sessionName);
@@ -237,7 +237,7 @@ class RetrySessionHandler extends SessionHandler
     /**
      * オーバーライド
      */
-    public function read($id)
+    public function read(string $id): string|false
     {
         if (!($this->mode & self::RETRY_READ)) {
             return parent::read($id);
@@ -267,7 +267,7 @@ class RetrySessionHandler extends SessionHandler
     /**
      * オーバーライド
      */
-    public function write($id, $data)
+    public function write(string $id, string $data) : bool
     {
         if (!($this->mode & self::RETRY_WRITE)) {
             return parent::write($id, $data);
@@ -297,7 +297,7 @@ class RetrySessionHandler extends SessionHandler
     /**
      * オーバーライド
      */
-    public function destroy($sessionId)
+    public function destroy(string $sessionId) : bool
     {
         if (!($this->mode & self::RETRY_DESTROY)) {
             return parent::destroy($sessionId);

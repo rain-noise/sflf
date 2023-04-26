@@ -31,7 +31,7 @@
  * @see       https://github.com/rain-noise/sflf/blob/master/src/main/php/Sflf/Domain.php
  *
  * @package   SFLF
- * @version   v1.0.2
+ * @version   v1.0.3
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -80,7 +80,7 @@ function smarty_function_domains($params, &$smarty)
     }
 
     $html  = "";
-    $lists = is_string($domain) ? in_array($type, ['plain', 'label']) ? $domain::lists() : $domain::nexts($current, $case) : $domain ;
+    $lists = is_string($domain) ? (in_array($type, ['plain', 'label']) ? $domain::lists() : $domain::nexts($current, $case)) : $domain ;
     foreach ($lists as $d) {
         $v = $d->$value;
         $l = empty($d->$label) ? $null_label : $d->$label ;

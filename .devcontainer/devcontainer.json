@@ -1,0 +1,36 @@
+{
+    "name": "rain-noise/sflf",
+    "dockerComposeFile": ["docker-compose.yml"],
+    "service": "workspace",
+    "workspaceFolder": "/workspace",
+	"remoteUser": "vscode",
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "php.validate.enable": false,
+                "php.suggest.basic": false,
+                "php-cs-fixer.onsave": true,
+                "php-cs-fixer.executablePath": "~/.composer/vendor/bin/php-cs-fixer",
+                "[php]": {
+                    "editor.formatOnSave": true,
+                    "editor.defaultFormatter": "junstyle.php-cs-fixer"
+                },
+                "search.exclude": {
+                    "**/.history": true
+                }
+            },
+            "extensions": [
+                "bmewburn.vscode-intelephense-client",
+                "EditorConfig.EditorConfig",
+                "felixfbecker.php-debug",
+                "junstyle.php-cs-fixer",
+                "mikestead.dotenv",
+                "mhutchie.git-graph",
+                "neilbrayfield.php-docblocker",
+                "oderwat.indent-rainbow",
+                "xyz.local-history"
+            ]
+        }
+    },
+    "postCreateCommand": "/bin/sh ./.devcontainer/post_create_command.sh"
+}

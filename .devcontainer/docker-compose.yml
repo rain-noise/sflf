@@ -1,0 +1,16 @@
+version: '3'
+services:
+  # Workspace for Dev Container Development
+  workspace:
+    build:
+      context: ./docker/workspace
+    environment:
+      TZ: Asia/Tokyo
+    hostname: sflf-workspace
+    volumes:
+      - ../:/workspace
+      - ./docker/workspace/config/php.ini:/usr/local/etc/php/php.ini
+      - ./docker/workspace/config/xdebug.ini:/usr/local/etc/php/conf.d/xdebug.ini
+      - ./docker/workspace/config/.bash_aliases:/home/vscode/.bash_aliases
+    working_dir: /workspace
+    tty: true

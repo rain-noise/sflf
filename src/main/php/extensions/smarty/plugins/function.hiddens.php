@@ -1,9 +1,9 @@
 <?php
 /**
  * Single File Low Functionality Class Tools - Extensions : Smarty Plugin
- * 
+ *
  * ■hiddenタグ出力ファンクション
- * 
+ *
  * -------------------------------------------------------------
  * File:     function.hiddens.php
  * Type:     function
@@ -23,66 +23,72 @@
  *  - date_format (optional) : date format of DateTime (default 'Y-m-d H:i:s')
  * Purpose:  <input type="hidden" /> タグを出力する
  * -------------------------------------------------------------
- * 
+ *
  * @see       https://github.com/rain-noise/sflf/blob/master/src/main/php/Sflf/Form.php
- * 
+ *
  * @package   SFLF
- * @version   v1.0.0
+ * @version   v1.0.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
  */
 function smarty_function_hiddens($params, &$smarty)
 {
-	// ---------------------------------------------------------
-	// パラメータ解析
-	// ---------------------------------------------------------
-	$form        = isset($params['form']) ? $params['form'] : trigger_error("error: missing 'form' parameter", E_USER_NOTICE) ;
-	$include     = isset($params['include']) ? explode(',', $params['include']) : array() ;
-	$exclude     = isset($params['exclude']) ? explode(',', $params['exclude']) : array() ;
-	$date_format = isset($params['date_format']) ? $params['date_format'] : 'Y-m-d H:i:s' ;
-	
-	if(!empty($include) && !empty($exclude)) {
-		trigger_error("error: conflict option 'include' and 'exclude' was set.", E_USER_NOTICE);
-	}
-	
-	// ---------------------------------------------------------
-	// タグ出力処理
-	// ---------------------------------------------------------
-	$hiddens = array();
-	smarty_function_hiddens__generate($hiddens, $form, $include, $exclude, $date_format);
-	return join("\n", $hiddens);
+    // ---------------------------------------------------------
+    // パラメータ解析
+    // ---------------------------------------------------------
+    $form        = isset($params['form']) ? $params['form'] : trigger_error("error: missing 'form' parameter", E_USER_NOTICE) ;
+    $include     = isset($params['include']) ? explode(',', $params['include']) : [] ;
+    $exclude     = isset($params['exclude']) ? explode(',', $params['exclude']) : [] ;
+    $date_format = isset($params['date_format']) ? $params['date_format'] : 'Y-m-d H:i:s' ;
+
+    if (!empty($include) && !empty($exclude)) {
+        trigger_error("error: conflict option 'include' and 'exclude' was set.", E_USER_NOTICE);
+    }
+
+    // ---------------------------------------------------------
+    // タグ出力処理
+    // ---------------------------------------------------------
+    $hiddens = [];
+    smarty_function_hiddens__generate($hiddens, $form, $include, $exclude, $date_format);
+    return join("\n", $hiddens);
 }
 
-function smarty_function_hiddens__generate(&$hiddens, $form, $include, $exclude, $date_format, $name_prefix = '') {
-	foreach ($form AS $key => $value) {
-		$key     = empty($name_prefix) ? $key : "{$name_prefix}[{$key}]" ;
-		$matcher = preg_replace('/\[[0-9]*\]/', '', $key);
-		if(!empty($include) && !in_array($matcher, $include)) { continue; }
-		if(!empty($exclude) &&  in_array($matcher, $exclude)) { continue; }
-		
-		if(is_array($value)) {
-			foreach ($value AS $i => $v) {
-				if($v instanceof Form) {
-					smarty_function_hiddens__generate($hiddens, $v, $include, $exclude, $date_format, "{$key}[{$i}]");
-				} else {
-					smarty_function_hiddens__append_tag($hiddens, "{$key}[{$i}]", $v, $date_format);
-				}
-			}
-		} else {
-			if($value instanceof Form) {
-				smarty_function_hiddens__generate($hiddens, $value, $include, $exclude, $date_format, $key);
-			} else {
-				smarty_function_hiddens__append_tag($hiddens, $key, $value, $date_format);
-			}
-		}
-	}
-	
-	return;
+function smarty_function_hiddens__generate(&$hiddens, $form, $include, $exclude, $date_format, $name_prefix = '')
+{
+    foreach ($form as $key => $value) {
+        $key     = empty($name_prefix) ? $key : "{$name_prefix}[{$key}]" ;
+        $matcher = preg_replace('/\[[0-9]*\]/', '', $key);
+        if (!empty($include) && !in_array($matcher, $include)) {
+            continue;
+        }
+        if (!empty($exclude) && in_array($matcher, $exclude)) {
+            continue;
+        }
+
+        if (is_array($value)) {
+            foreach ($value as $i => $v) {
+                if ($v instanceof Form) {
+                    smarty_function_hiddens__generate($hiddens, $v, $include, $exclude, $date_format, "{$key}[{$i}]");
+                } else {
+                    smarty_function_hiddens__append_tag($hiddens, "{$key}[{$i}]", $v, $date_format);
+                }
+            }
+        } else {
+            if ($value instanceof Form) {
+                smarty_function_hiddens__generate($hiddens, $value, $include, $exclude, $date_format, $key);
+            } else {
+                smarty_function_hiddens__append_tag($hiddens, $key, $value, $date_format);
+            }
+        }
+    }
+
+    return;
 }
 
-function smarty_function_hiddens__append_tag(&$hiddens, $name, $value, $date_format) {
-	$value = $value instanceof DateTime ? $value->format($date_format) : $value ;
-	$hiddens[] = '<input type="hidden" name="'.$name.'" value="'.htmlspecialchars("".$value).'" />';
-	return;
+function smarty_function_hiddens__append_tag(&$hiddens, $name, $value, $date_format)
+{
+    $value     = $value instanceof DateTime ? $value->format($date_format) : $value ;
+    $hiddens[] = '<input type="hidden" name="'.$name.'" value="'.htmlspecialchars("".$value).'" />';
+    return;
 }

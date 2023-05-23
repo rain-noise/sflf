@@ -175,7 +175,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/block.unless_errors.php エラー有無分岐用 Smarty タグ
  *
  * @package   SFLF
- * @version   v1.0.4
+ * @version   v1.0.5
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -193,7 +193,7 @@ abstract class Form
 
     public const APPLY_SAVE  = self::APPLY_CREATE | self::APPLY_UPDATE;
     public const APPLY_REFER = self::APPLY_READ | self::APPLY_UPDATE | self::APPLY_DELETE;
-    public const APPLY_ALL   = self::APPLY_CREATE |self::APPLY_READ | self::APPLY_UPDATE | self::APPLY_DELETE;
+    public const APPLY_ALL   = self::APPLY_CREATE | self::APPLY_READ | self::APPLY_UPDATE | self::APPLY_DELETE;
 
     // validation 中断挙動に関するオプション
     public const EXIT_ON_FAILED            = 1024; // このチェックがエラーになった場合、以降のチェックを中断する
@@ -264,7 +264,7 @@ abstract class Form
     public static function converterInputExcludes(...$excludes)
     {
         return function ($field, $defined, $src, $value, $form, $origin) use ($excludes) {
-            if(in_array($field, $excludes)) {
+            if (in_array($field, $excludes)) {
                 return $origin;
             }
             return $defined ? $value : $origin ;
@@ -280,7 +280,7 @@ abstract class Form
     public static function converterInputIncludes(...$includes)
     {
         return function ($field, $defined, $src, $value, $form, $origin) use ($includes) {
-            if(!in_array($field, $includes)) {
+            if (!in_array($field, $includes)) {
                 return $origin;
             }
             return $defined ? $value : $origin ;
@@ -299,12 +299,12 @@ abstract class Form
     public static function converterInputAlias(array $aliases)
     {
         return function ($field, $defined, $src, $value, $form, $origin) use ($aliases) {
-            if(isset($aliases[$field])) {
+            if (isset($aliases[$field])) {
                 $alias = $aliases[$field];
-                if($alias === null) {
+                if ($alias === null) {
                     return $origin;
                 }
-                if(is_callable($alias)) {
+                if (is_callable($alias)) {
                     return $alias($src);
                 }
                 return static::_get($src, $alias);
@@ -333,7 +333,7 @@ abstract class Form
     public static function converterOutputExcludes(...$excludes)
     {
         return function ($field, $defined, $form, $value, $dest, $origin) use ($excludes) {
-            if(in_array($field, $excludes)) {
+            if (in_array($field, $excludes)) {
                 return $origin;
             }
             return $defined ? $value : $origin ;
@@ -349,7 +349,7 @@ abstract class Form
     public static function converterOutputIncludes(...$includes)
     {
         return function ($field, $defined, $form, $value, $dest, $origin) use ($includes) {
-            if(!in_array($field, $includes)) {
+            if (!in_array($field, $includes)) {
                 return $origin;
             }
             return $defined ? $value : $origin ;
@@ -368,12 +368,12 @@ abstract class Form
     public static function converterOutputAlias(array $aliases)
     {
         return function ($field, $defined, $form, $value, $dest, $origin) use ($aliases) {
-            if(isset($aliases[$field])) {
+            if (isset($aliases[$field])) {
                 $alias = $aliases[$field];
-                if($alias === null) {
+                if ($alias === null) {
                     return $origin;
                 }
-                if(is_callable($alias)) {
+                if (is_callable($alias)) {
                     return $alias($form);
                 }
                 return static::_get($form, $alias);
@@ -392,28 +392,27 @@ abstract class Form
      */
     public function popurate($src, $files = null, $converter = null)
     {
-        if(empty($src) && empty($files)) {
+        if (empty($src) && empty($files)) {
             return;
         }
 
-        if(empty($converter)) {
+        if (empty($converter)) {
             $converter = $this->inputConverter();
         }
 
         $clazz = get_class($this);
         foreach ($this as $field => $origin) {
-
             // サブフォームの解析
-            if(array_key_exists($field, static::SUB_FORM)) {
+            if (array_key_exists($field, static::SUB_FORM)) {
                 $this->$field = $this->_genarateSubForm(static::SUB_FORM[$field], $this, static::_get($src, $field), $converter);
                 continue;
             }
 
             // サブフォームリストの解析
-            if(array_key_exists($field, static::SUB_FORM_LIST)) {
-                $this->$field = array();
-                $items = static::_get($src, $field);
-                if(empty($items)) {
+            if (array_key_exists($field, static::SUB_FORM_LIST)) {
+                $this->$field = [];
+                $items        = static::_get($src, $field);
+                if (empty($items)) {
                     continue;
                 }
                 foreach ($items as $item) {
@@ -424,12 +423,12 @@ abstract class Form
 
             $this->$field = $converter($field, static::_has($src, $field), $src, static::_get($src, $field), $this, $origin);
 
-            if(isset($files[$field])) {
+            if (isset($files[$field])) {
                 $this->$field = new UploadFile($clazz, $field, $files[$field]);
             } else {
-                if(UploadFile::exists($clazz, $field)) {
+                if (UploadFile::exists($clazz, $field)) {
                     $this->$field = UploadFile::load($clazz, $field);
-                } elseif(in_array($field, static::FILES) && empty($this->$field)) {
+                } elseif (in_array($field, static::FILES) && empty($this->$field)) {
                     $this->$field = UploadFile::createEmpty($clazz, $field);
                 }
             }
@@ -446,7 +445,7 @@ abstract class Form
      */
     private function _genarateSubForm($generator, $parent, $src, $converter)
     {
-        $subForm = is_callable($generator) ? $generator($parent) : new $generator() ;
+        $subForm           = is_callable($generator) ? $generator($parent) : new $generator() ;
         $subForm->_parent_ = $parent;
         $subForm->popurate($src, null, $converter);
         return $subForm;
@@ -462,13 +461,13 @@ abstract class Form
      */
     public function inject(&$dto, $converter = null)
     {
-        if(empty($converter)) {
+        if (empty($converter)) {
             $converter = $this->outputConverter();
         }
 
         $thisClazz = get_class($this);
         foreach ($dto as $field => $origin) {
-            if(array_key_exists($field, static::SUB_FORM) || array_key_exists($field, static::SUB_FORM_LIST)) {
+            if (array_key_exists($field, static::SUB_FORM) || array_key_exists($field, static::SUB_FORM_LIST)) {
                 continue;
             }
             $dto->$field = $converter($field, property_exists($thisClazz, $field), $this, static::_get($this, $field), $dto, $origin);
@@ -502,22 +501,22 @@ abstract class Form
      */
     protected static function _get($obj, $key, $default = null)
     {
-        if($obj == null) {
+        if ($obj == null) {
             return $default;
         }
-        if(is_array($obj)) {
-            if(!isset($obj[$key])) {
+        if (is_array($obj)) {
+            if (!isset($obj[$key])) {
                 return $default;
             }
             return $obj[$key] === null ? $default : $obj[$key] ;
         }
-        if(!($obj instanceof stdClass)) {
+        if (!($obj instanceof stdClass)) {
             $clazz = get_class($obj);
-            if(!property_exists($clazz, $key)) {
+            if (!property_exists($clazz, $key)) {
                 return $default;
             }
         } else {
-            if(!property_exists($obj, $key)) {
+            if (!property_exists($obj, $key)) {
                 return $default;
             }
         }
@@ -533,13 +532,13 @@ abstract class Form
      */
     protected static function _has($obj, $key)
     {
-        if($obj == null) {
+        if ($obj == null) {
             return false;
         }
-        if(is_array($obj)) {
+        if (is_array($obj)) {
             return isset($obj[$key]);
         }
-        if(!($obj instanceof stdClass)) {
+        if (!($obj instanceof stdClass)) {
             $clazz = get_class($obj);
             return property_exists($clazz, $key);
         }
@@ -554,18 +553,17 @@ abstract class Form
      */
     protected function _duplicate($array)
     {
-        $duplicate = array();
-        if(empty($array)) {
+        $duplicate = [];
+        if (empty($array)) {
             return $duplicate;
         }
         foreach (array_count_values($array) as $v => $c) {
-            if(1 < $c) {
+            if (1 < $c) {
                 $duplicate[] = $v;
             }
         }
         return $duplicate;
     }
-
 
     /**
      * 指定フィールドのラベルを取得します。
@@ -577,7 +575,6 @@ abstract class Form
     {
         return static::_get($this->labels(), $field, $field);
     }
-
 
     /**
      * 指定のルールに従って validation を実施します。
@@ -602,27 +599,27 @@ abstract class Form
      * @return void
      * @throws InvalidValidateRuleException
      */
-    protected function _validate(&$errors, $apply, $parentName='', $index=null)
+    protected function _validate(&$errors, $apply, $parentName = '', $index = null)
     {
         $this->before($apply);
 
         $labels = $this->labels();
         $rules  = $this->rules();
-        if(empty($rules)) {
+        if (empty($rules)) {
             $this->complete($apply);
             return;
         }
 
         $hasError = false;
-        $clazz = get_class($this);
+        $clazz    = get_class($this);
         foreach ($rules as $target => $validations) {
             foreach ($validations as $validate) {
                 // 定義内容チェック
-                if(empty($validate)) {
+                if (empty($validate)) {
                     continue;
                 }
                 $size = count($validate);
-                if($size < 2) {
+                if ($size < 2) {
                     throw new InvalidValidateRuleException("Validate rule has at least 2 or more options [ 'check_name', Form::APPLY_* | Form::EXIT_* ]");
                 }
 
@@ -630,25 +627,25 @@ abstract class Form
                 $check = $validate[0];
 
                 // 引数取得
-                $args   = array();
+                $args   = [];
                 $args[] = $target ;
                 $args[] = isset($labels[$target]) ? $labels[$target] : $target ;
                 $args[] = property_exists($clazz, $target) ? $this->$target : null ;
-                if($size > 2) {
-                    $args = array_merge($args, array_slice($validate, 1, $size-2));
+                if ($size > 2) {
+                    $args = array_merge($args, array_slice($validate, 1, $size - 2));
                 }
 
                 // エラーキー構築
                 $errorKey = empty($parentName) ? $target : "{$parentName}[{$target}]" ;
 
                 // オプション取得
-                $option = $validate[$size-1];
+                $option = $validate[$size - 1];
 
                 // オプション処理
-                if(!($option & $apply)) {
+                if (!($option & $apply)) {
                     continue;
                 }
-                if($option & Form::EXIT_IF_ALREADY_HAS_ERROR && isset($errors[$errorKey]) && !empty($errors[$errorKey])) {
+                if ($option & Form::EXIT_IF_ALREADY_HAS_ERROR && isset($errors[$errorKey]) && !empty($errors[$errorKey])) {
                     break;
                 }
 
@@ -658,26 +655,26 @@ abstract class Form
                 $invoker->setAccessible(true);
 
                 $error = $invoker->invokeArgs($this, $args);
-                if(!empty($error)) {
-                    if($error == self::VALIDATE_COMMAND_EXIT) {
+                if (!empty($error)) {
+                    if ($error == self::VALIDATE_COMMAND_EXIT) {
                         break;
                     }
 
                     $hasError = true;
-                    if(!isset($errors[$errorKey])) {
-                        $errors[$errorKey] = array();
+                    if (!isset($errors[$errorKey])) {
+                        $errors[$errorKey] = [];
                     }
-                    if(is_array($error)) {
+                    if (is_array($error)) {
                         $errors[$errorKey] = array_merge($errors[$errorKey], $error);
                     } else {
                         $errors[$errorKey][] = $error;
                     }
 
-                    if($option & Form::EXIT_ON_FAILED) {
+                    if ($option & Form::EXIT_ON_FAILED) {
                         break;
                     }
                 } else {
-                    if($option & Form::EXIT_ON_SUCCESS) {
+                    if ($option & Form::EXIT_ON_SUCCESS) {
                         break;
                     }
                 }
@@ -687,23 +684,23 @@ abstract class Form
         // サブフォームを処理
         foreach (array_keys(static::SUB_FORM) as $field) {
             $sub_form = $this->$field;
-            if(!empty($sub_form) && $sub_form instanceof Form) {
+            if (!empty($sub_form) && $sub_form instanceof Form) {
                 $sub_form->_validate($errors, $apply, empty($parentName) ? $field : "{$parentName}[{$field}]");
             }
         }
 
         // サブフォームリストを処理
         foreach (array_keys(static::SUB_FORM_LIST) as $field) {
-            if(!empty($this->$field)) {
+            if (!empty($this->$field)) {
                 foreach ($this->$field as $i => $sub_form) {
-                    if(!empty($sub_form) && $sub_form instanceof Form) {
+                    if (!empty($sub_form) && $sub_form instanceof Form) {
                         $sub_form->_validate($errors, $apply, empty($parentName) ? "{$field}[{$i}]" : "{$parentName}[{$field}][{$i}]", $i);
                     }
                 }
             }
         }
 
-        if($hasError) {
+        if ($hasError) {
             $this->failed($errors, $apply);
         } else {
             $this->complete($apply);
@@ -774,7 +771,7 @@ abstract class Form
      */
     protected function _empty($value)
     {
-        if($value instanceof UploadFile) {
+        if ($value instanceof UploadFile) {
             return $value->isEmpty();
         }
         return $value === null || $value === '';
@@ -794,9 +791,10 @@ abstract class Form
      * </pre>
      */
     public const VALID_EXIT_EMPTY = 'exit_empty';
+
     protected function valid_exit_empty($field, $label, $value, $other)
     {
-        if($this->_empty($this->$other)) {
+        if ($this->_empty($this->$other)) {
             return self::VALIDATE_COMMAND_EXIT;
         }
         return null;
@@ -812,9 +810,10 @@ abstract class Form
      * </pre>
      */
     public const VALID_EXIT_NOT_EMPTY = 'exit_not_empty';
+
     protected function valid_exit_not_empty($field, $label, $value, $other)
     {
-        if(!$this->_empty($this->$other)) {
+        if (!$this->_empty($this->$other)) {
             return self::VALIDATE_COMMAND_EXIT;
         }
         return null;
@@ -830,9 +829,10 @@ abstract class Form
      * </pre>
      */
     public const VALID_EXIT_IF = 'exit_if';
+
     protected function valid_exit_if($field, $label, $value, $other, $expect)
     {
-        if($this->$other == $expect) {
+        if ($this->$other == $expect) {
             return self::VALIDATE_COMMAND_EXIT;
         }
         return null;
@@ -848,9 +848,10 @@ abstract class Form
      * </pre>
      */
     public const VALID_EXIT_UNLESS = 'exit_unless';
+
     protected function valid_exit_unless($field, $label, $value, $other, $expect)
     {
-        if($this->$other != $expect) {
+        if ($this->$other != $expect) {
             return self::VALIDATE_COMMAND_EXIT;
         }
         return null;
@@ -866,9 +867,10 @@ abstract class Form
      * </pre>
      */
     public const VALID_EXIT_IN = 'exit_in';
+
     protected function valid_exit_in($field, $label, $value, $other, $expects)
     {
-        if(in_array($this->$other, $expects)) {
+        if (in_array($this->$other, $expects)) {
             return self::VALIDATE_COMMAND_EXIT;
         }
         return null;
@@ -885,18 +887,19 @@ abstract class Form
      * </pre>
      */
     public const VALID_RELATION_REQUIRED_AT_LEAST_IN = 'relation_required_at_least_in';
+
     protected function valid_relation_required_at_least_in($field, $label, $value, $count, $depends)
     {
         $labels       = $this->labels();
-        $dependsLabel = array();
+        $dependsLabel = [];
         $setCount     = 0;
         foreach (is_array($depends) ? $depends : explode(',', $depends) as $depend) {
-            if(!$this->_empty($this->$depend)) {
+            if (!$this->_empty($this->$depend)) {
                 $setCount++;
             }
             $dependsLabel[] = isset($labels[$depend]) ? $labels[$depend] : $depend ;
         }
-        if($setCount < $count) {
+        if ($setCount < $count) {
             return join(', ', $dependsLabel)." の内 {$count} 項目以上を入力して下さい。";
         }
         return null;
@@ -916,23 +919,24 @@ abstract class Form
      * @see Form::VALID_SUB_FORM_UNIQUE 複数のサブフォームを跨る指定フィールドの重複チェック
      */
     public const VALID_RELATION_UNIQUE = 'relation_unique';
+
     protected function valid_relation_unique($field, $label, $value, $depends)
     {
         $labels       = $this->labels();
-        $dependsLabel = array();
-        $values       = array();
+        $dependsLabel = [];
+        $values       = [];
         $emptyAll     = true;
         foreach (is_array($depends) ? $depends : explode(',', $depends) as $depend) {
-            $emptyAll      &= $this->_empty($this->$depend);
+            $emptyAll &= $this->_empty($this->$depend);
             $values[]       = $this->$depend;
             $dependsLabel[] = isset($labels[$depend]) ? $labels[$depend] : $depend ;
         }
-        if($emptyAll) {
+        if ($emptyAll) {
             return null;
         }
 
         $duplicate = $this->_duplicate($values);
-        if(!empty($duplicate)) {
+        if (!empty($duplicate)) {
             return join(', ', $dependsLabel)." にはそれぞれ異なる値を入力して下さい。[ ".join(',', $duplicate)." ] が重複しています。";
         }
         return null;
@@ -948,9 +952,10 @@ abstract class Form
      * </pre>
      */
     public const VALID_REQUIRED = 'required';
+
     protected function valid_required($field, $label, $value)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return "{$label}を入力して下さい。";
         }
         return null;
@@ -968,16 +973,17 @@ abstract class Form
      * </pre>
      */
     public const VALID_REQUIRED_IF_INPUTTED_IN = 'required_if_inputted_in';
+
     protected function valid_required_if_inputted_in($field, $label, $value, $depends)
     {
         $isset = false;
         foreach (is_array($depends) ? $depends : explode(',', $depends) as $depend) {
             $isset |= !$this->_empty($this->$depend);
         }
-        if(!$isset) {
+        if (!$isset) {
             return;
         }
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return "{$label}を入力して下さい。";
         }
         return null;
@@ -994,18 +1000,19 @@ abstract class Form
      * </pre>
      */
     public const VALID_REQUIRED_IF = 'required_if';
+
     protected function valid_required_if($field, $label, $value, $depend, $expect)
     {
-        if($this->_empty($this->$depend)) {
+        if ($this->_empty($this->$depend)) {
             return null;
         }
-        if(is_array($expect) && !in_array($this->$depend, $expect)) {
+        if (is_array($expect) && !in_array($this->$depend, $expect)) {
             return null;
         }
-        if(!is_array($expect) && $this->$depend != $expect) {
+        if (!is_array($expect) && $this->$depend != $expect) {
             return null;
         }
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return "{$label}を入力して下さい。";
         }
         return null;
@@ -1022,18 +1029,19 @@ abstract class Form
      * </pre>
      */
     public const VALID_REQUIRED_UNLESS = 'required_unless';
+
     protected function valid_required_unless($field, $label, $value, $depend, $expect)
     {
-        if($this->_empty($this->$depend)) {
+        if ($this->_empty($this->$depend)) {
             return null;
         }
-        if(is_array($expect) && in_array($this->$depend, $expect)) {
+        if (is_array($expect) && in_array($this->$depend, $expect)) {
             return null;
         }
-        if($this->$depend == $expect) {
+        if ($this->$depend == $expect) {
             return null;
         }
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return "{$label}を入力して下さい。";
         }
         return null;
@@ -1049,12 +1057,13 @@ abstract class Form
      * </pre>
      */
     public const VALID_EMPTY_IF = 'empty_if';
+
     protected function valid_empty_if($field, $label, $value, $depend, $expect)
     {
-        if($this->_empty($this->$depend) || $this->$depend != $expect) {
+        if ($this->_empty($this->$depend) || $this->$depend != $expect) {
             return;
         }
-        if(!$this->_empty($value)) {
+        if (!$this->_empty($value)) {
             return "{$label}を空にして下さい。";
         }
         return null;
@@ -1070,12 +1079,13 @@ abstract class Form
      * </pre>
      */
     public const VALID_EMPTY_UNLESS = 'empty_unless';
+
     protected function valid_empty_unless($field, $label, $value, $depend, $expect)
     {
-        if($this->_empty($this->$depend) || $this->$depend == $expect) {
+        if ($this->_empty($this->$depend) || $this->$depend == $expect) {
             return;
         }
-        if(!$this->_empty($value)) {
+        if (!$this->_empty($value)) {
             return "{$label}を空にして下さい。";
         }
         return null;
@@ -1092,12 +1102,13 @@ abstract class Form
      * </pre>
      */
     public const VALID_SAME_AS = 'same_as';
-    protected function valid_same_as($field, $label, $value, $expect, $expect_label=null)
+
+    protected function valid_same_as($field, $label, $value, $expect, $expect_label = null)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
-        if($value != $expect) {
+        if ($value != $expect) {
             return "{$label}は ".(empty($expect_label) ? $expect : $expect_label)." を入力して下さい。";
         }
         return null;
@@ -1114,12 +1125,13 @@ abstract class Form
      * </pre>
      */
     public const VALID_NOT_SAME_AS = 'not_same_as';
-    protected function valid_not_same_as($field, $label, $value, $expect, $expect_label=null)
+
+    protected function valid_not_same_as($field, $label, $value, $expect, $expect_label = null)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
-        if($value == $expect) {
+        if ($value == $expect) {
             return "{$label}は ".(empty($expect_label) ? $expect : $expect_label)." 以外を入力して下さい。";
         }
         return null;
@@ -1135,12 +1147,13 @@ abstract class Form
      * </pre>
      */
     public const VALID_REGEX = 'regex';
+
     protected function valid_regex($field, $label, $value, $pattern, $patternLabel)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
-        if(!preg_match($pattern, $value)) {
+        if (!preg_match($pattern, $value)) {
             return "{$label}は{$patternLabel}で入力して下さい。";
         }
         return null;
@@ -1156,12 +1169,13 @@ abstract class Form
      * </pre>
      */
     public const VALID_NOT_REGEX = 'not_regex';
+
     protected function valid_not_regex($field, $label, $value, $pattern, $patternLabel)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
-        if(preg_match($pattern, $value)) {
+        if (preg_match($pattern, $value)) {
             return "{$label}は{$patternLabel}以外で入力して下さい。";
         }
         return null;
@@ -1177,23 +1191,24 @@ abstract class Form
      * </pre>
      */
     public const VALID_MAX_LENGTH = 'max_length';
+
     protected function valid_max_length($field, $label, $value, $length)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
 
-        if(is_array($value)) {
+        if (is_array($value)) {
             $errors = [];
             foreach ($value as $i => $v) {
-                if(mb_strlen($v) > $length) {
-                    $errors[] = ($i+1)."番目の{$label}「{$v}」は{$length}文字以下で入力して下さい。";
+                if (mb_strlen($v) > $length) {
+                    $errors[] = ($i + 1)."番目の{$label}「{$v}」は{$length}文字以下で入力して下さい。";
                 }
             }
             return $errors;
         }
 
-        if(mb_strlen($value) > $length) {
+        if (mb_strlen($value) > $length) {
             return "{$label}は{$length}文字以下で入力して下さい。";
         }
         return null;
@@ -1209,23 +1224,24 @@ abstract class Form
      * </pre>
      */
     public const VALID_LENGTH = 'length';
+
     protected function valid_length($field, $label, $value, $length)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
 
-        if(is_array($value)) {
+        if (is_array($value)) {
             $errors = [];
             foreach ($value as $i => $v) {
-                if(mb_strlen($v) != $length) {
-                    $errors[] = ($i+1)."番目の{$label}「{$v}」は{$length}文字で入力して下さい。";
+                if (mb_strlen($v) != $length) {
+                    $errors[] = ($i + 1)."番目の{$label}「{$v}」は{$length}文字で入力して下さい。";
                 }
             }
             return $errors;
         }
 
-        if(mb_strlen($value) != $length) {
+        if (mb_strlen($value) != $length) {
             return "{$label}は{$length}文字で入力して下さい。";
         }
         return null;
@@ -1241,23 +1257,24 @@ abstract class Form
      * </pre>
      */
     public const VALID_MIN_LENGTH = 'min_length';
+
     protected function valid_min_length($field, $label, $value, $length)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
 
-        if(is_array($value)) {
+        if (is_array($value)) {
             $errors = [];
             foreach ($value as $i => $v) {
-                if(mb_strlen($v) < $length) {
-                    $errors[] = ($i+1)."番目の{$label}「{$v}」は{$length}文字以上で入力して下さい。";
+                if (mb_strlen($v) < $length) {
+                    $errors[] = ($i + 1)."番目の{$label}「{$v}」は{$length}文字以上で入力して下さい。";
                 }
             }
             return $errors;
         }
 
-        if(mb_strlen($value) < $length) {
+        if (mb_strlen($value) < $length) {
             return "{$label}は{$length}文字以上で入力して下さい。";
         }
         return null;
@@ -1273,9 +1290,10 @@ abstract class Form
      * </pre>
      */
     public const VALID_NUMBER = 'number';
+
     protected function valid_number($field, $label, $value)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
         return $this->valid_regex($field, $label, $value, "/^[+-]?[0-9]*[\.]?[0-9]+$/u", "数値");
@@ -1291,9 +1309,10 @@ abstract class Form
      * </pre>
      */
     public const VALID_INTEGER = 'integer';
+
     protected function valid_integer($field, $label, $value)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
         return $this->valid_regex($field, $label, $value, "/^[+-]?[0-9]+$/u", "整数");
@@ -1309,9 +1328,10 @@ abstract class Form
      * </pre>
      */
     public const VALID_FLOAT = 'float';
+
     protected function valid_float($field, $label, $value, $decimal)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
         return $this->valid_regex($field, $label, $value, "/^[+-]?[0-9]+([\.][0-9]{0,{$decimal}})?$/u", "実数（小数点{$decimal}桁まで）");
@@ -1327,16 +1347,17 @@ abstract class Form
      * </pre>
      */
     public const VALID_MAX_RANGE = 'max_range';
+
     protected function valid_max_range($field, $label, $value, $max)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
         $preCheck = $this->valid_number($field, $label, $value);
-        if(!empty($preCheck)) {
+        if (!empty($preCheck)) {
             return $preCheck;
         }
-        if(doubleval($value) > $max) {
+        if (doubleval($value) > $max) {
             return "{$label}は{$max}以下で入力して下さい。";
         }
         return null;
@@ -1352,16 +1373,17 @@ abstract class Form
      * </pre>
      */
     public const VALID_MIN_RANGE = 'min_range';
+
     protected function valid_min_range($field, $label, $value, $min)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
         $preCheck = $this->valid_number($field, $label, $value);
-        if(!empty($preCheck)) {
+        if (!empty($preCheck)) {
             return $preCheck;
         }
-        if(doubleval($value) < $min) {
+        if (doubleval($value) < $min) {
             return "{$label}は{$min}以上で入力して下さい。";
         }
         return null;
@@ -1377,12 +1399,13 @@ abstract class Form
      * </pre>
      */
     public const VALID_MAIL_ADDRESS = 'mail_address';
+
     protected function valid_mail_address($field, $label, $value)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
-        if(!filter_var($value, FILTER_VALIDATE_EMAIL)) {
+        if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
             return "{$label}はメールアドレス形式で入力して下さい。";
         }
         return null;
@@ -1399,6 +1422,7 @@ abstract class Form
      * </pre>
      */
     public const VALID_MAIL_ADDRESS_LOOSE = 'mail_address_loose';
+
     protected function valid_mail_address_loose($field, $label, $value)
     {
         return $this->valid_regex($field, $label, $value, "/[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,64}/", "メールアドレス形式");
@@ -1414,6 +1438,7 @@ abstract class Form
      * </pre>
      */
     public const VALID_URL = 'url';
+
     protected function valid_url($field, $label, $value)
     {
         return $this->valid_regex($field, $label, $value, "/^(https?|ftp)(:\/\/[-_.!~*\'()a-zA-Z0-9;\/?:\@&=+\$,%#]+)$/u", "URL形式");
@@ -1430,6 +1455,7 @@ abstract class Form
      */
     public const VALID_IP_V4_ADDRESS = 'ip_v4_address';
     public const IP_V4_PATTERN       = '/^(([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]).){3}([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([1-9]|[1-2][0-9]|3[0-2]))?$/u';
+
     protected function valid_ip_v4_address($field, $label, $value)
     {
         return $this->valid_regex($field, $label, $value, self::IP_V4_PATTERN, 'IPアドレス(CIDR)形式');
@@ -1446,16 +1472,17 @@ abstract class Form
      * </pre>
      */
     public const VALID_IP_V4_ADDRESS_LIST = 'ip_v4_address_list';
-    protected function valid_ip_v4_address_list($field, $label, $value, $delimiter=PHP_EOL)
+
+    protected function valid_ip_v4_address_list($field, $label, $value, $delimiter = PHP_EOL)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
-        $errors = array();
+        $errors = [];
         foreach (explode($delimiter, $value) as $i => $ip) {
             $ip = trim($ip);
-            if(!empty($ip) && !preg_match(self::IP_V4_PATTERN, $ip)) {
-                $errors[] = ($i+1)." 行目の{$label} [ {$ip} ] はIPアドレス(CIDR)形式で入力して下さい。";
+            if (!empty($ip) && !preg_match(self::IP_V4_PATTERN, $ip)) {
+                $errors[] = ($i + 1)." 行目の{$label} [ {$ip} ] はIPアドレス(CIDR)形式で入力して下さい。";
             }
         }
         return $errors;
@@ -1471,6 +1498,7 @@ abstract class Form
      * </pre>
      */
     public const VALID_HALF_DIGIT = 'half_digit';
+
     protected function valid_half_digit($field, $label, $value)
     {
         return $this->valid_regex($field, $label, $value, "/^[0-9]+$/u", "半角数字");
@@ -1486,6 +1514,7 @@ abstract class Form
      * </pre>
      */
     public const VALID_HALF_ALPHA = 'half_alpha';
+
     protected function valid_half_alpha($field, $label, $value)
     {
         return $this->valid_regex($field, $label, $value, "/^[a-zA-Z]+$/u", "半角英字");
@@ -1501,6 +1530,7 @@ abstract class Form
      * </pre>
      */
     public const VALID_HALF_ALPHA_DIGIT = 'half_alpha_digit';
+
     protected function valid_half_alpha_digit($field, $label, $value)
     {
         return $this->valid_regex($field, $label, $value, "/^[a-zA-Z0-9]+$/u", "半角英数字");
@@ -1517,7 +1547,8 @@ abstract class Form
      * </pre>
      */
     public const VALID_HALF_ALPHA_DIGIT_MARK = 'half_alpha_digit_mark';
-    protected function valid_half_alpha_digit_mark($field, $label, $value, $mark='!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ ')
+
+    protected function valid_half_alpha_digit_mark($field, $label, $value, $mark = '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~ ')
     {
         return $this->valid_regex($field, $label, $value, "/^[a-zA-Z0-9".preg_quote($mark)."]+$/u", "半角英数記号（{$mark}を含む）");
     }
@@ -1532,7 +1563,8 @@ abstract class Form
      * </pre>
      */
     public const VALID_HIRAGANA = 'hiragana';
-    protected function valid_hiragana($field, $label, $value, $extra='')
+
+    protected function valid_hiragana($field, $label, $value, $extra = '')
     {
         return $this->valid_regex($field, $label, $value, "/^[\p{Hiragana}ー{$extra}]+$/u", "全角ひらがな");
     }
@@ -1547,7 +1579,8 @@ abstract class Form
      * </pre>
      */
     public const VALID_FULL_KANA = 'full_kana';
-    protected function valid_full_kana($field, $label, $value, $extra='')
+
+    protected function valid_full_kana($field, $label, $value, $extra = '')
     {
         return $this->valid_regex($field, $label, $value, "/^[ァ-ヾ{$extra}]+$/u", "全角カタカナ");
     }
@@ -1563,25 +1596,26 @@ abstract class Form
      * </pre>
      */
     public const VALID_DEPENDENCE_CHAR = 'dependence_char';
-    protected function valid_dependence_char($field, $label, $value, $encode='sjis-win')
+
+    protected function valid_dependence_char($field, $label, $value, $encode = 'sjis-win')
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
 
-        if(is_array($value)) {
+        if (is_array($value)) {
             $errors = [];
             foreach ($value as $i => $v) {
                 $dependences = $this->_checkDependenceChar($v, $encode);
-                if(!empty($dependences)) {
-                    $errors[] = ($i+1)."番目の{$label}「{$v}」に機種依存文字 [".join(", ", $dependences)."] が含まれます。機種依存文字を除去又は代替文字に変更して下さい。";
+                if (!empty($dependences)) {
+                    $errors[] = ($i + 1)."番目の{$label}「{$v}」に機種依存文字 [".join(", ", $dependences)."] が含まれます。機種依存文字を除去又は代替文字に変更して下さい。";
                 }
             }
             return $errors;
         }
 
         $dependences = $this->_checkDependenceChar($value, $encode);
-        if(!empty($dependences)) {
+        if (!empty($dependences)) {
             return "{$label}に機種依存文字 [".join(", ", $dependences)."] が含まれます。機種依存文字を除去又は代替文字に変更して下さい。";
         }
         return null;
@@ -1593,16 +1627,16 @@ abstract class Form
      * @param string $text   チェック対象文字列
      * @param string $encode 機種依存判定用文字コード - デフォルト 'sjis-win'
      */
-    private function _checkDependenceChar($text, $encode='sjis-win')
+    private function _checkDependenceChar($text, $encode = 'sjis-win')
     {
         $org  = $text;
         $conv = mb_convert_encoding(mb_convert_encoding($text, $encode, 'UTF-8'), 'UTF-8', $encode);
-        if(strlen($org) != strlen($conv)) {
+        if (strlen($org) != strlen($conv)) {
             $diff = array_diff(preg_split("//u", $org, -1, PREG_SPLIT_NO_EMPTY), preg_split("//u", $conv, -1, PREG_SPLIT_NO_EMPTY));
             return $diff;
         }
 
-        return array();
+        return [];
     }
 
     //--------------------------------------------------------------------------
@@ -1633,43 +1667,44 @@ abstract class Form
      * </pre>
      */
     public const VALID_NG_WORD = 'ng_word';
-    protected function valid_ng_word($field, $label, $value, $ng_words, $separateLetterPattern='[\p{Common}]', $blankLetterPattern='[\p{M}\p{S}〇*＊_＿]', $blankApplyLength = 3, $blankApplyRatio = 0.4)
+
+    protected function valid_ng_word($field, $label, $value, $ng_words, $separateLetterPattern = '[\p{Common}]', $blankLetterPattern = '[\p{M}\p{S}〇*＊_＿]', $blankApplyLength = 3, $blankApplyRatio = 0.4)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
-        if(!is_array($ng_words)) {
+        if (!is_array($ng_words)) {
             $ng_words = file($ng_words, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
         }
 
         // 伏字の考慮
         $len             = mb_strlen($value);
-        $blankLeterIndex = array();
-        if($len >= $blankApplyLength) {
+        $blankLeterIndex = [];
+        if ($len >= $blankApplyLength) {
             $index = 0;
             foreach (preg_split("//u", $value, -1, PREG_SPLIT_NO_EMPTY) as $letter) {
-                if(preg_match('/^'.$blankLetterPattern.'$/u', $letter)) {
+                if (preg_match('/^'.$blankLetterPattern.'$/u', $letter)) {
                     $blankLeterIndex[] = $index++;
                     continue;
                 }
-                if(preg_match('/^'.$separateLetterPattern.'$/u', $letter)) {
+                if (preg_match('/^'.$separateLetterPattern.'$/u', $letter)) {
                     continue;
                 }
                 $index++;
             }
         }
-        if($len * $blankApplyRatio < count($blankLeterIndex)) {
-            $blankLeterIndex = array();
+        if ($len * $blankApplyRatio < count($blankLeterIndex)) {
+            $blankLeterIndex = [];
         }
 
         // NGワードチェック
-        $matches = array();
+        $matches = [];
         foreach ($ng_words as $word) {
-            if(mb_strlen(trim($word, '^$')) > $len) {
+            if (mb_strlen(trim($word, '^$')) > $len) {
                 continue;
             }
             $regex = $this->_ngWordToMatcher($word, $separateLetterPattern, $blankLetterPattern, $blankLeterIndex);
-            if(preg_match($regex, $value, $matches)) {
+            if (preg_match($regex, $value, $matches)) {
                 return "{$label} に利用できない単語「{$matches[0]}」が含まれます。";
             }
         }
@@ -1684,10 +1719,10 @@ abstract class Form
     private function _ngWordToMatcher($word, $separateLetterPattern, $blankLetterPattern, $blankLeterIndex)
     {
         $regex = '';
-        $i = 0;
+        $i     = 0;
         foreach (preg_split("//u", $word, -1, PREG_SPLIT_NO_EMPTY) as $letter) {
             $letterPattern = isset(self::$_LETTER_TO_REGEX[$letter]) ? self::$_LETTER_TO_REGEX[$letter] : preg_quote($letter, '/') ;
-            if(in_array($letterPattern, array('^','$'))) {
+            if (in_array($letterPattern, ['^', '$'])) {
                 $regex .= $letterPattern.$separateLetterPattern.'*';
                 continue;
             }
@@ -1702,133 +1737,133 @@ abstract class Form
      * 文字の曖昧検索用正規表現変換マップ
      * @var unknown
      */
-    private static $_LETTER_TO_REGEX = array(
-         "^" => "^"
-        ,"$" => "$"
-        ,"a" => "([aAａＡⒶⓐ🄰🅐🅰@＠])"
-        ,"b" => "([bBｂＢⒷⓑ🄱🅑🅱])"
-        ,"c" => "([cCｃＣⒸⓒ🄲🅒🅲©])"
-        ,"d" => "([dDｄＤⒹⓓ🄳🅓🅳])"
-        ,"e" => "([eEｅＥⒺⓔ🄴🅔🅴])"
-        ,"f" => "([fFｆＦⒻⓕ🄵🅕🅵])"
-        ,"g" => "([gGｇＧⒼⓖ🄶🅖🅶])"
-        ,"h" => "([hHｈＨⒽⓗ🄷🅗🅷])"
-        ,"i" => "([iIｉＩⒾⓘ🄸🅘🅸])"
-        ,"j" => "([jJｊＪⒿⓙ🄹🅙🅹])"
-        ,"k" => "([kKｋＫⓀⓚ🄺🅚🅺])"
-        ,"l" => "([lLｌＬⓁⓛ🄻🅛🅻])"
-        ,"m" => "([mMｍＭⓂⓜ🄼🅜🅼])"
-        ,"n" => "([nNｎＮⓃⓝ🄽🅝🅽])"
-        ,"o" => "([oOｏＯⓄⓞ🄾🅞🅾])"
-        ,"p" => "([pPｐＰⓅⓟ🄿🅟🅿℗])"
-        ,"q" => "([qQｑＱⓆⓠ🅀🅠🆀])"
-        ,"r" => "([rRｒＲⓇⓡ🅁🅡🆁®])"
-        ,"s" => "([sSｓＳⓈⓢ🅂🅢🆂])"
-        ,"t" => "([tTｔＴⓉⓣ🅃🅣🆃])"
-        ,"u" => "([uUｕＵⓊⓤ🅄🅤🆄])"
-        ,"v" => "([vVｖＶⓋⓥ🅅🅥🆅])"
-        ,"w" => "([wWｗＷⓌⓦ🅆🅦🆆])"
-        ,"x" => "([xXｘＸⓍⓧ🅇🅧🆇])"
-        ,"y" => "([yYｙＹⓎⓨ🅈🅨🆈])"
-        ,"z" => "([zZｚＺⓏⓩ🅉🅩🆉])"
-        ,"0" => "([0０⓿])"
-        ,"1" => "([1１①⓵❶➀➊㊀一壱壹弌🈩])"
-        ,"2" => "([2２②⓶❷➁➋㊁二弐貳弎🈔])"
-        ,"3" => "([3３③⓷❸➂➌㊂三参參弎🈪])"
-        ,"4" => "([4４④⓸❹➃➍㊃四肆])"
-        ,"5" => "([5５⑤⓹❺➄➎㊄五伍])"
-        ,"6" => "([6６⑥⓺❻➅➏㊅六陸])"
-        ,"7" => "([7７⑦⓻❼➆➐㊆七漆柒質])"
-        ,"8" => "([8８⑧⓼❽➇➑㊇八捌])"
-        ,"9" => "([9９⑨⓽❾➈➒㊈九玖])"
-        ,'ア' => '([アｱ㋐あァｧぁ])'
-        ,'イ' => '([イｲ㋑㋼いィｨぃヰゐ])'
-        ,'ウ' => '([ウｳ㋒うゥｩぅヱゑ])'
-        ,'エ' => '([エｴ㋓㋽えェｪぇ])'
-        ,'オ' => '([オｵ㋔おォｫぉ])'
-        ,'カ' => '([カｶ㋕かヵゕ])'
-        ,'キ' => '([キｷ㋖き])'
-        ,'ク' => '([クｸ㋗く])'
-        ,'ケ' => '([ケｹ㋘けヶ])'
-        ,'コ' => '([コｺ㋙こ])'
-        ,'サ' => '([サｻ㋚さ🈂])'
-        ,'シ' => '([シｼ㋛し])'
-        ,'ス' => '([スｽ㋜す])'
-        ,'セ' => '([セｾ㋝せ])'
-        ,'ソ' => '([ソｿ㋞そ])'
-        ,'タ' => '([タﾀ㋟た])'
-        ,'チ' => '([チﾁ㋠ち])'
-        ,'ツ' => '([ツﾂ㋡つッｯっ])'
-        ,'テ' => '([テﾃ㋢て])'
-        ,'ト' => '([トﾄ㋣と])'
-        ,'ナ' => '([ナﾅ㋤な])'
-        ,'ニ' => '([ニﾆ㊁㋥に🈔])'
-        ,'ヌ' => '([ヌﾇ㋦ぬ])'
-        ,'ネ' => '([ネﾈ㋧ね])'
-        ,'ノ' => '([ノﾉ㋨の])'
-        ,'ハ' => '([ハﾊ㋩は])'
-        ,'ヒ' => '([ヒﾋ㋪ひ])'
-        ,'フ' => '([フﾌ㋫ふ])'
-        ,'ヘ' => '([ヘﾍ㋬へ])'
-        ,'ホ' => '([ホﾎ㋭ほ])'
-        ,'マ' => '([マﾏ㋮ま])'
-        ,'ミ' => '([ミﾐ㋯み])'
-        ,'ム' => '([ムﾑ㋰む])'
-        ,'メ' => '([メﾒ㋱め])'
-        ,'モ' => '([モﾓ㋲も])'
-        ,'ヤ' => '([ヤﾔ㋳やャｬゃ])'
-        ,'ユ' => '([ユﾕ㋴ゆュｭゅ])'
-        ,'ヨ' => '([ヨﾖ㋵よョｮょ])'
-        ,'ラ' => '([ラﾗ㋶ら])'
-        ,'リ' => '([リﾘ㋷り])'
-        ,'ル' => '([ルﾙ㋸る])'
-        ,'レ' => '([レﾚ㋹れ])'
-        ,'ロ' => '([ロﾛ㋺ろ])'
-        ,'ワ' => '([ワﾜ㋻わヮゎ])'
-        ,'ヲ' => '([ヲｦ㋾を])'
-        ,'ン' => '([ンﾝん])'
-        ,'ガ' => '([ガが]|[カヵｶか][゛ﾞ])'
-        ,'ギ' => '([ギぎ]|[キｷき][゛ﾞ])'
-        ,'グ' => '([グぐ]|[クｸく][゛ﾞ])'
-        ,'ゲ' => '([ゲげ]|[ケヶｹけ][゛ﾞ])'
-        ,'ゴ' => '([ゴご]|[コｺこ][゛ﾞ])'
-        ,'ザ' => '([ザざ]|[サｻさ][゛ﾞ])'
-        ,'ジ' => '([ジじ]|[シｼし][゛ﾞ])'
-        ,'ズ' => '([ズず]|[スｽす][゛ﾞ])'
-        ,'ゼ' => '([ゼぜ]|[セｾせ][゛ﾞ])'
-        ,'ゾ' => '([ゾぞ]|[ソｿそ][゛ﾞ])'
-        ,'ダ' => '([ダだ]|[タﾀた][゛ﾞ])'
-        ,'ヂ' => '([ヂぢ]|[チﾁち][゛ﾞ])'
-        ,'ヅ' => '([ヅづ]|[ツッﾂつっ][゛ﾞ])'
-        ,'デ' => '([デで]|[テﾃて][゛ﾞ])'
-        ,'ド' => '([ドど]|[トﾄと][゛ﾞ])'
-        ,'バ' => '([バば]|[ハﾊは][゛ﾞ])'
-        ,'ビ' => '([ビび]|[ヒﾋひ][゛ﾞ])'
-        ,'ブ' => '([ブぶ]|[フﾌふ][゛ﾞ])'
-        ,'ベ' => '([ベべ]|[ヘﾍへ][゛ﾞ])'
-        ,'ボ' => '([ボぼ]|[ホﾎほ][゜ﾟ])'
-        ,'パ' => '([パぱ]|[ハﾊは][゜ﾟ])'
-        ,'ピ' => '([ピぴ]|[ヒﾋひ][゜ﾟ])'
-        ,'プ' => '([プぷ]|[フﾌふ][゜ﾟ])'
-        ,'ペ' => '([ペぺ]|[ヘﾍへ][゜ﾟ])'
-        ,'ポ' => '([ポぽ]|[ホﾎほ][゜ﾟ])'
-        ,'ヴ' => '(ヴ|[ウゥｳうぅ][゛ﾞ])'
-        ,'ァ' => '([アｱ㋐あァｧぁ])'
-        ,'ィ' => '([イｲ㋑㋼いィｨぃヰゐ])'
-        ,'ゥ' => '([ウｳ㋒うゥｩぅヱゑ])'
-        ,'ェ' => '([エｴ㋓㋽えェｪぇ])'
-        ,'ォ' => '([オｵ㋔おォｫぉ])'
-        ,'ヵ' => '([カｶ㋕かヵゕ])'
-        ,'ヶ' => '([ケｹ㋘けヶ])'
-        ,'ッ' => '([ツﾂ㋡つッｯっ])'
-        ,'ャ' => '([ヤﾔ㋳やャｬゃ])'
-        ,'ュ' => '([ユﾕ㋴ゆュｭゅ])'
-        ,'ョ' => '([ヨﾖ㋵よョｮょ])'
-        ,'ヮ' => '([ワﾜ㋻わヮゎ])'
-        ,'゛' => '([゛ﾞ])'
-        ,'゜' => '([゜ﾟ])'
-        ,'ー' => '([ー-])'
-    );
+    private static $_LETTER_TO_REGEX = [
+        "^"   => "^"
+        , "$" => "$"
+        , "a" => "([aAａＡⒶⓐ🄰🅐🅰@＠])"
+        , "b" => "([bBｂＢⒷⓑ🄱🅑🅱])"
+        , "c" => "([cCｃＣⒸⓒ🄲🅒🅲©])"
+        , "d" => "([dDｄＤⒹⓓ🄳🅓🅳])"
+        , "e" => "([eEｅＥⒺⓔ🄴🅔🅴])"
+        , "f" => "([fFｆＦⒻⓕ🄵🅕🅵])"
+        , "g" => "([gGｇＧⒼⓖ🄶🅖🅶])"
+        , "h" => "([hHｈＨⒽⓗ🄷🅗🅷])"
+        , "i" => "([iIｉＩⒾⓘ🄸🅘🅸])"
+        , "j" => "([jJｊＪⒿⓙ🄹🅙🅹])"
+        , "k" => "([kKｋＫⓀⓚ🄺🅚🅺])"
+        , "l" => "([lLｌＬⓁⓛ🄻🅛🅻])"
+        , "m" => "([mMｍＭⓂⓜ🄼🅜🅼])"
+        , "n" => "([nNｎＮⓃⓝ🄽🅝🅽])"
+        , "o" => "([oOｏＯⓄⓞ🄾🅞🅾])"
+        , "p" => "([pPｐＰⓅⓟ🄿🅟🅿℗])"
+        , "q" => "([qQｑＱⓆⓠ🅀🅠🆀])"
+        , "r" => "([rRｒＲⓇⓡ🅁🅡🆁®])"
+        , "s" => "([sSｓＳⓈⓢ🅂🅢🆂])"
+        , "t" => "([tTｔＴⓉⓣ🅃🅣🆃])"
+        , "u" => "([uUｕＵⓊⓤ🅄🅤🆄])"
+        , "v" => "([vVｖＶⓋⓥ🅅🅥🆅])"
+        , "w" => "([wWｗＷⓌⓦ🅆🅦🆆])"
+        , "x" => "([xXｘＸⓍⓧ🅇🅧🆇])"
+        , "y" => "([yYｙＹⓎⓨ🅈🅨🆈])"
+        , "z" => "([zZｚＺⓏⓩ🅉🅩🆉])"
+        , "0" => "([0０⓿])"
+        , "1" => "([1１①⓵❶➀➊㊀一壱壹弌🈩])"
+        , "2" => "([2２②⓶❷➁➋㊁二弐貳弎🈔])"
+        , "3" => "([3３③⓷❸➂➌㊂三参參弎🈪])"
+        , "4" => "([4４④⓸❹➃➍㊃四肆])"
+        , "5" => "([5５⑤⓹❺➄➎㊄五伍])"
+        , "6" => "([6６⑥⓺❻➅➏㊅六陸])"
+        , "7" => "([7７⑦⓻❼➆➐㊆七漆柒質])"
+        , "8" => "([8８⑧⓼❽➇➑㊇八捌])"
+        , "9" => "([9９⑨⓽❾➈➒㊈九玖])"
+        , 'ア' => '([アｱ㋐あァｧぁ])'
+        , 'イ' => '([イｲ㋑㋼いィｨぃヰゐ])'
+        , 'ウ' => '([ウｳ㋒うゥｩぅヱゑ])'
+        , 'エ' => '([エｴ㋓㋽えェｪぇ])'
+        , 'オ' => '([オｵ㋔おォｫぉ])'
+        , 'カ' => '([カｶ㋕かヵゕ])'
+        , 'キ' => '([キｷ㋖き])'
+        , 'ク' => '([クｸ㋗く])'
+        , 'ケ' => '([ケｹ㋘けヶ])'
+        , 'コ' => '([コｺ㋙こ])'
+        , 'サ' => '([サｻ㋚さ🈂])'
+        , 'シ' => '([シｼ㋛し])'
+        , 'ス' => '([スｽ㋜す])'
+        , 'セ' => '([セｾ㋝せ])'
+        , 'ソ' => '([ソｿ㋞そ])'
+        , 'タ' => '([タﾀ㋟た])'
+        , 'チ' => '([チﾁ㋠ち])'
+        , 'ツ' => '([ツﾂ㋡つッｯっ])'
+        , 'テ' => '([テﾃ㋢て])'
+        , 'ト' => '([トﾄ㋣と])'
+        , 'ナ' => '([ナﾅ㋤な])'
+        , 'ニ' => '([ニﾆ㊁㋥に🈔])'
+        , 'ヌ' => '([ヌﾇ㋦ぬ])'
+        , 'ネ' => '([ネﾈ㋧ね])'
+        , 'ノ' => '([ノﾉ㋨の])'
+        , 'ハ' => '([ハﾊ㋩は])'
+        , 'ヒ' => '([ヒﾋ㋪ひ])'
+        , 'フ' => '([フﾌ㋫ふ])'
+        , 'ヘ' => '([ヘﾍ㋬へ])'
+        , 'ホ' => '([ホﾎ㋭ほ])'
+        , 'マ' => '([マﾏ㋮ま])'
+        , 'ミ' => '([ミﾐ㋯み])'
+        , 'ム' => '([ムﾑ㋰む])'
+        , 'メ' => '([メﾒ㋱め])'
+        , 'モ' => '([モﾓ㋲も])'
+        , 'ヤ' => '([ヤﾔ㋳やャｬゃ])'
+        , 'ユ' => '([ユﾕ㋴ゆュｭゅ])'
+        , 'ヨ' => '([ヨﾖ㋵よョｮょ])'
+        , 'ラ' => '([ラﾗ㋶ら])'
+        , 'リ' => '([リﾘ㋷り])'
+        , 'ル' => '([ルﾙ㋸る])'
+        , 'レ' => '([レﾚ㋹れ])'
+        , 'ロ' => '([ロﾛ㋺ろ])'
+        , 'ワ' => '([ワﾜ㋻わヮゎ])'
+        , 'ヲ' => '([ヲｦ㋾を])'
+        , 'ン' => '([ンﾝん])'
+        , 'ガ' => '([ガが]|[カヵｶか][゛ﾞ])'
+        , 'ギ' => '([ギぎ]|[キｷき][゛ﾞ])'
+        , 'グ' => '([グぐ]|[クｸく][゛ﾞ])'
+        , 'ゲ' => '([ゲげ]|[ケヶｹけ][゛ﾞ])'
+        , 'ゴ' => '([ゴご]|[コｺこ][゛ﾞ])'
+        , 'ザ' => '([ザざ]|[サｻさ][゛ﾞ])'
+        , 'ジ' => '([ジじ]|[シｼし][゛ﾞ])'
+        , 'ズ' => '([ズず]|[スｽす][゛ﾞ])'
+        , 'ゼ' => '([ゼぜ]|[セｾせ][゛ﾞ])'
+        , 'ゾ' => '([ゾぞ]|[ソｿそ][゛ﾞ])'
+        , 'ダ' => '([ダだ]|[タﾀた][゛ﾞ])'
+        , 'ヂ' => '([ヂぢ]|[チﾁち][゛ﾞ])'
+        , 'ヅ' => '([ヅづ]|[ツッﾂつっ][゛ﾞ])'
+        , 'デ' => '([デで]|[テﾃて][゛ﾞ])'
+        , 'ド' => '([ドど]|[トﾄと][゛ﾞ])'
+        , 'バ' => '([バば]|[ハﾊは][゛ﾞ])'
+        , 'ビ' => '([ビび]|[ヒﾋひ][゛ﾞ])'
+        , 'ブ' => '([ブぶ]|[フﾌふ][゛ﾞ])'
+        , 'ベ' => '([ベべ]|[ヘﾍへ][゛ﾞ])'
+        , 'ボ' => '([ボぼ]|[ホﾎほ][゜ﾟ])'
+        , 'パ' => '([パぱ]|[ハﾊは][゜ﾟ])'
+        , 'ピ' => '([ピぴ]|[ヒﾋひ][゜ﾟ])'
+        , 'プ' => '([プぷ]|[フﾌふ][゜ﾟ])'
+        , 'ペ' => '([ペぺ]|[ヘﾍへ][゜ﾟ])'
+        , 'ポ' => '([ポぽ]|[ホﾎほ][゜ﾟ])'
+        , 'ヴ' => '(ヴ|[ウゥｳうぅ][゛ﾞ])'
+        , 'ァ' => '([アｱ㋐あァｧぁ])'
+        , 'ィ' => '([イｲ㋑㋼いィｨぃヰゐ])'
+        , 'ゥ' => '([ウｳ㋒うゥｩぅヱゑ])'
+        , 'ェ' => '([エｴ㋓㋽えェｪぇ])'
+        , 'ォ' => '([オｵ㋔おォｫぉ])'
+        , 'ヵ' => '([カｶ㋕かヵゕ])'
+        , 'ヶ' => '([ケｹ㋘けヶ])'
+        , 'ッ' => '([ツﾂ㋡つッｯっ])'
+        , 'ャ' => '([ヤﾔ㋳やャｬゃ])'
+        , 'ュ' => '([ユﾕ㋴ゆュｭゅ])'
+        , 'ョ' => '([ヨﾖ㋵よョｮょ])'
+        , 'ヮ' => '([ワﾜ㋻わヮゎ])'
+        , '゛' => '([゛ﾞ])'
+        , '゜' => '([゜ﾟ])'
+        , 'ー' => '([ー-])'
+    ];
 
     //--------------------------------------------------------------------------
     /**
@@ -1841,19 +1876,20 @@ abstract class Form
      * </pre>
      */
     public const VALID_CONTAINS = 'contains';
+
     protected function valid_contains($field, $label, $value, $list)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
-        if(is_array($value)) {
+        if (is_array($value)) {
             foreach ($value as $v) {
-                if(!in_array($v, $list)) {
+                if (!in_array($v, $list)) {
                     return "{$label}は指定の一覧から選択して下さい。";
                 }
             }
         } else {
-            if(!in_array($value, $list)) {
+            if (!in_array($value, $list)) {
                 return "{$label}は指定の一覧から選択して下さい。";
             }
         }
@@ -1870,10 +1906,11 @@ abstract class Form
      * </pre>
      */
     public const VALID_MIN_SELECT_COUNT = 'min_select_count';
+
     protected function valid_min_select_count($field, $label, $value, $min)
     {
         $size = $this->_empty($value) ? 0 : (is_array($value) ? count($value) : 1) ;
-        if($size < $min) {
+        if ($size < $min) {
             return "{$label}を {$min} 個以上選択して下さい。";
         }
         return null;
@@ -1889,10 +1926,11 @@ abstract class Form
      * </pre>
      */
     public const VALID_SELECT_COUNT = 'select_count';
+
     protected function valid_select_count($field, $label, $value, $count)
     {
         $size = $this->_empty($value) ? 0 : (is_array($value) ? count($value) : 1) ;
-        if($size != $count) {
+        if ($size != $count) {
             return "{$label}を {$count} 個選択して下さい。";
         }
         return null;
@@ -1908,10 +1946,11 @@ abstract class Form
      * </pre>
      */
     public const VALID_MAX_SELECT_COUNT = 'max_select_count';
+
     protected function valid_max_select_count($field, $label, $value, $max)
     {
         $size = $this->_empty($value) ? 0 : (is_array($value) ? count($value) : 1) ;
-        if($size > $max) {
+        if ($size > $max) {
             return "{$label}は {$max} 個以下で選択して下さい。";
         }
         return null;
@@ -1930,10 +1969,11 @@ abstract class Form
      * @see Form::VALID_SUB_FORM_UNIQUE 複数のサブフォームを跨る指定フィールドの重複チェック
      */
     public const VALID_UNIQUE = 'unique';
+
     protected function valid_unique($field, $label, $value)
     {
         $duplicate = $this->_duplicate($value);
-        if(!empty($duplicate)) {
+        if (!empty($duplicate)) {
             return "{$label}には異なる値を入力して下さい。[ ".join(',', $duplicate)." ] が重複しています。";
         }
         return null;
@@ -1952,13 +1992,14 @@ abstract class Form
      * @see Form::ACCEPTABLE_DATETIME_FORMAT
      */
     public const VALID_DATETIME = 'datetime';
+
     protected function valid_datetime($field, $label, $value, $main_format = null)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
         $date = $this->_createDateTime($value, $main_format);
-        if(empty($date)) {
+        if (empty($date)) {
             return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
         }
         return null;
@@ -1988,15 +2029,15 @@ abstract class Form
      */
     protected function _analyzeDateTime($value, $main_format = null)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
-        if($value instanceof DateTime) {
+        if ($value instanceof DateTime) {
             return [$value, null];
         }
 
         $formats = static::ACCEPTABLE_DATETIME_FORMAT ;
-        if(!empty($main_format)) {
+        if (!empty($main_format)) {
             array_unshift($formats, $main_format);
         }
 
@@ -2004,7 +2045,7 @@ abstract class Form
         $apply_format = null;
         foreach ($formats as $format) {
             $date = $this->_tryToParseDateTime($value, $format);
-            if(!empty($date)) {
+            if (!empty($date)) {
                 $apply_format = $format;
                 break;
             }
@@ -2046,17 +2087,18 @@ abstract class Form
      * @see Form::ACCEPTABLE_DATETIME_FORMAT
      */
     public const VALID_FUTURE_THAN = 'future_than';
+
     protected function valid_future_than($field, $label, $value, $pointTime, $main_format = null)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
         list($target, $apply_format) = $this->_analyzeDateTime($value, $main_format);
-        if(empty($target)) {
+        if (empty($target)) {
             return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
         }
         $point = new DateTime($pointTime);
-        if($target <= $point) {
+        if ($target <= $point) {
             return "{$label}は ".$point->format($main_format ? $main_format : ($apply_format ? $apply_format : 'Y-m-d H:i:s'))." よりも未来日を指定して下さい。";
         }
         return null;
@@ -2081,17 +2123,18 @@ abstract class Form
      * @see Form::ACCEPTABLE_DATETIME_FORMAT
      */
     public const VALID_FUTURE_EQUAL = 'future_equal';
+
     protected function valid_future_equal($field, $label, $value, $pointTime, $main_format = null)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
         list($target, $apply_format) = $this->_analyzeDateTime($value, $main_format);
-        if(empty($target)) {
+        if (empty($target)) {
             return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
         }
         $point = new DateTime($pointTime);
-        if($target < $point) {
+        if ($target < $point) {
             return "{$label}は ".$point->format($main_format ? $main_format : ($apply_format ? $apply_format : 'Y-m-d H:i:s'))." よりも未来日(当日含む)を指定して下さい。";
         }
         return null;
@@ -2116,17 +2159,18 @@ abstract class Form
      * @see Form::ACCEPTABLE_DATETIME_FORMAT
      */
     public const VALID_PAST_THAN = 'past_than';
+
     protected function valid_past_than($field, $label, $value, $pointTime, $main_format = null)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
         list($target, $apply_format) = $this->_analyzeDateTime($value, $main_format);
-        if(empty($target)) {
+        if (empty($target)) {
             return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
         }
         $point = new DateTime($pointTime);
-        if($target >= $point) {
+        if ($target >= $point) {
             return "{$label}は ".$point->format($main_format ? $main_format : ($apply_format ? $apply_format : 'Y-m-d H:i:s'))." よりも過去日を指定して下さい。";
         }
         return null;
@@ -2151,17 +2195,18 @@ abstract class Form
      * @see Form::ACCEPTABLE_DATETIME_FORMAT
      */
     public const VALID_PAST_EQUAL = 'past_equal';
+
     protected function valid_past_equal($field, $label, $value, $pointTime, $main_format = null)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
         list($target, $apply_format) = $this->_analyzeDateTime($value, $main_format);
-        if(empty($target)) {
+        if (empty($target)) {
             return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
         }
         $point  = new DateTime($pointTime);
-        if($target > $point) {
+        if ($target > $point) {
             return "{$label}は ".$point->format($main_format ? $main_format : ($apply_format ? $apply_format : 'Y-m-d H:i:s'))." よりも過去日(当日含む)を指定して下さい。";
         }
         return null;
@@ -2186,17 +2231,18 @@ abstract class Form
      * @see Form::ACCEPTABLE_DATETIME_FORMAT
      */
     public const VALID_AGE_GREATER_EQUAL = 'age_greater_equal';
+
     protected function valid_age_greater_equal($field, $label, $value, $age, $main_format = null)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
         $target = $this->_createDateTime($value, $main_format);
-        if(empty($target)) {
+        if (empty($target)) {
             return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
         }
         $point = new DateTime("-{$age} year");
-        if($target > $point) {
+        if ($target > $point) {
             return "{$age}歳未満の方はご利用頂けません。";
         }
         return null;
@@ -2221,17 +2267,18 @@ abstract class Form
      * @see Form::ACCEPTABLE_DATETIME_FORMAT
      */
     public const VALID_AGE_LESS_EQUAL = 'age_less_equal';
+
     protected function valid_age_less_equal($field, $label, $value, $age, $main_format = null)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
         $target = $this->_createDateTime($value, $main_format);
-        if(empty($target)) {
+        if (empty($target)) {
             return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
         }
         $point = new DateTime("-{$age} year");
-        if($target < $point) {
+        if ($target < $point) {
             return ($age + 1)."歳以上の方はご利用頂けません。";
         }
         return null;
@@ -2249,15 +2296,16 @@ abstract class Form
      * </pre>
      */
     public const VALID_FILE_SIZE = 'file_size';
-    protected function valid_file_size($field, $label, $value, $size, $sizeLabel=null)
+
+    protected function valid_file_size($field, $label, $value, $size, $sizeLabel = null)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
-        if(!($value instanceof UploadFile)) {
+        if (!($value instanceof UploadFile)) {
             throw new InvalidValidateRuleException("{$label} in not UploadFile.");
         }
-        if($value->size >= $size) {
+        if ($value->size >= $size) {
             return "{$label}のファイルサイズ [ ".$value->size." byte ] が ".($sizeLabel ? $sizeLabel : "{$size} byte")." を超えています。";
         }
         return null;
@@ -2274,15 +2322,16 @@ abstract class Form
      * </pre>
      */
     public const VALID_FILE_NAME_MATCH = 'file_name_match';
-    protected function valid_file_name_match($field, $label, $value, $pattern, $patternLabel=null)
+
+    protected function valid_file_name_match($field, $label, $value, $pattern, $patternLabel = null)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
-        if(!($value instanceof UploadFile)) {
+        if (!($value instanceof UploadFile)) {
             throw new InvalidValidateRuleException("{$label} in not UploadFile.");
         }
-        if(!$value->matchFileName($pattern)) {
+        if (!$value->matchFileName($pattern)) {
             return "{$label}のファイル名が ".($patternLabel ? $patternLabel : $pattern)." ではありません。";
         }
         return null;
@@ -2299,18 +2348,19 @@ abstract class Form
      * </pre>
      */
     public const VALID_FILE_NAME_MATCH_IF = 'file_name_match_if';
-    protected function valid_file_name_match_if($field, $label, $value, $other_field, $assumed, $pattern, $patternLabel=null)
+
+    protected function valid_file_name_match_if($field, $label, $value, $other_field, $assumed, $pattern, $patternLabel = null)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
-        if($this->{$other_field} != $assumed) {
+        if ($this->{$other_field} != $assumed) {
             return null;
         }
-        if(!($value instanceof UploadFile)) {
+        if (!($value instanceof UploadFile)) {
             throw new InvalidValidateRuleException("{$label} in not UploadFile.");
         }
-        if(!$value->matchFileName($pattern)) {
+        if (!$value->matchFileName($pattern)) {
             return "{$label}のファイル名が ".($patternLabel ? $patternLabel : $pattern)." ではありません。";
         }
         return null;
@@ -2327,15 +2377,16 @@ abstract class Form
      * </pre>
      */
     public const VALID_FILE_SUFFIX_MATCH = 'file_suffix_match';
-    protected function valid_file_suffix_match($field, $label, $value, $pattern, $patternLabel=null)
+
+    protected function valid_file_suffix_match($field, $label, $value, $pattern, $patternLabel = null)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
-        if(!($value instanceof UploadFile)) {
+        if (!($value instanceof UploadFile)) {
             throw new InvalidValidateRuleException("{$label} in not UploadFile.");
         }
-        if(!$value->matchFileSuffix($pattern)) {
+        if (!$value->matchFileSuffix($pattern)) {
             return "{$label}のファイル拡張子が ".($patternLabel ? $patternLabel : $pattern)." ではありません。";
         }
         return null;
@@ -2352,15 +2403,16 @@ abstract class Form
      * </pre>
      */
     public const VALID_FILE_MIME_TYPE_MATCH = 'file_mime_type_match';
-    protected function valid_file_mime_type_match($field, $label, $value, $pattern, $patternLabel=null)
+
+    protected function valid_file_mime_type_match($field, $label, $value, $pattern, $patternLabel = null)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
-        if(!($value instanceof UploadFile)) {
+        if (!($value instanceof UploadFile)) {
             throw new InvalidValidateRuleException("{$label} in not UploadFile.");
         }
-        if(!$value->matchMimeType($pattern)) {
+        if (!$value->matchMimeType($pattern)) {
             return "{$label}の形式が ".($patternLabel ? $patternLabel : $pattern)." ではありません。";
         }
         return null;
@@ -2379,6 +2431,7 @@ abstract class Form
      * </pre>
      */
     public const VALID_FILE_WEB_IMAGE_SUFFIX = 'file_web_image_suffix';
+
     protected function valid_file_web_image_suffix($field, $label, $value)
     {
         return $this->valid_file_suffix_match($field, $label, $value, '/^(jpe?g|gif|png)$/iu', '画像形式[jpg, jpeg, gif, png]');
@@ -2394,15 +2447,16 @@ abstract class Form
      * </pre>
      */
     public const VALID_FILE_IMAGE_MAX_WIDTH = 'file_image_max_width';
+
     protected function valid_file_image_max_width($field, $label, $value, $width)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
-        if(!($value instanceof UploadFile)) {
+        if (!($value instanceof UploadFile)) {
             throw new InvalidValidateRuleException("{$label} in not UploadFile.");
         }
-        if($value->width > $width) {
+        if ($value->width > $width) {
             return "{$label}の幅 [ ".$value->width." px ] を {$width} px 以下にして下さい。";
         }
         return null;
@@ -2418,15 +2472,16 @@ abstract class Form
      * </pre>
      */
     public const VALID_FILE_IMAGE_WIDTH = 'file_image_width';
+
     protected function valid_file_image_width($field, $label, $value, $width)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
-        if(!($value instanceof UploadFile)) {
+        if (!($value instanceof UploadFile)) {
             throw new InvalidValidateRuleException("{$label} in not UploadFile.");
         }
-        if($value->width == $width) {
+        if ($value->width == $width) {
             return "{$label}の幅 [ ".$value->width." px ] を {$width} px にして下さい。";
         }
         return null;
@@ -2442,15 +2497,16 @@ abstract class Form
      * </pre>
      */
     public const VALID_FILE_IMAGE_MIN_WIDTH = 'file_image_min_width';
+
     protected function valid_file_image_min_width($field, $label, $value, $width)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
-        if(!($value instanceof UploadFile)) {
+        if (!($value instanceof UploadFile)) {
             throw new InvalidValidateRuleException("{$label} in not UploadFile.");
         }
-        if($value->width < $width) {
+        if ($value->width < $width) {
             return "{$label}の幅 [ ".$value->width." px ] を {$width} px 以上にして下さい。";
         }
         return null;
@@ -2466,15 +2522,16 @@ abstract class Form
      * </pre>
      */
     public const VALID_FILE_IMAGE_MAX_HEIGHT = 'file_image_max_height';
+
     protected function valid_file_image_max_height($field, $label, $value, $height)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
-        if(!($value instanceof UploadFile)) {
+        if (!($value instanceof UploadFile)) {
             throw new InvalidValidateRuleException("{$label} in not UploadFile.");
         }
-        if($value->width > $height) {
+        if ($value->width > $height) {
             return "{$label}の高さ [ ".$value->width." px ] を {$height} px 以下にして下さい。";
         }
         return null;
@@ -2490,15 +2547,16 @@ abstract class Form
      * </pre>
      */
     public const VALID_FILE_IMAGE_HEIGHT = 'file_image_height';
+
     protected function valid_file_image_height($field, $label, $value, $height)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
-        if(!($value instanceof UploadFile)) {
+        if (!($value instanceof UploadFile)) {
             throw new InvalidValidateRuleException("{$label} in not UploadFile.");
         }
-        if($value->width == $height) {
+        if ($value->width == $height) {
             return "{$label}の高さ [ ".$value->width." px ] を {$height} px にして下さい。";
         }
         return null;
@@ -2514,15 +2572,16 @@ abstract class Form
      * </pre>
      */
     public const VALID_FILE_IMAGE_MIN_HEIGHT = 'file_image_min_height';
+
     protected function valid_file_image_min_height($field, $label, $value, $height)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
-        if(!($value instanceof UploadFile)) {
+        if (!($value instanceof UploadFile)) {
             throw new InvalidValidateRuleException("{$label} in not UploadFile.");
         }
-        if($value->width < $height) {
+        if ($value->width < $height) {
             return "{$label}の高さ [ ".$value->width." px ] を {$height} px 以上にして下さい。";
         }
         return null;
@@ -2538,12 +2597,13 @@ abstract class Form
      * </pre>
      */
     public const VALID_SAME_AS_INPUTTED = 'same_as_inputted';
+
     protected function valid_same_as_inputted($field, $label, $value, $other)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
-        if($value != $this->$other) {
+        if ($value != $this->$other) {
             $labels = $this->labels();
             return "{$label}の値が{$labels[$other]}の値と異なります。";
         }
@@ -2560,12 +2620,13 @@ abstract class Form
      * </pre>
      */
     public const VALID_NOT_SAME_AS_INPUTTED = 'not_same_as_inputted';
+
     protected function valid_not_same_as_inputted($field, $label, $value, $other)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
-        if($value == $this->$other) {
+        if ($value == $this->$other) {
             $labels = $this->labels();
             return "{$label}の値に{$labels[$other]}と同じ値は指定できません。";
         }
@@ -2582,18 +2643,19 @@ abstract class Form
      * </pre>
      */
     public const VALID_GRATER_EQUAL_INPUTTED = 'grater_equal_inputted';
+
     protected function valid_grater_equal_inputted($field, $label, $value, $other)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
         $preCheck = $this->valid_number($field, $label, $value);
-        if(!empty($preCheck)) {
+        if (!empty($preCheck)) {
             return $preCheck;
         }
         $sv = doubleval($value);
         $ov = doubleval($this->$other);
-        if($sv < $ov) {
+        if ($sv < $ov) {
             $labels = $this->labels();
             return "{$label}は{$labels[$other]}以上の値を指定して下さい。";
         }
@@ -2610,18 +2672,19 @@ abstract class Form
      * </pre>
      */
     public const VALID_GRATER_THAN_INPUTTED = 'grater_than_inputted';
+
     protected function valid_grater_than_inputted($field, $label, $value, $other)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
         $preCheck = $this->valid_number($field, $label, $value);
-        if(!empty($preCheck)) {
+        if (!empty($preCheck)) {
             return $preCheck;
         }
         $sv = doubleval($value);
         $ov = doubleval($this->$other);
-        if($sv <= $ov) {
+        if ($sv <= $ov) {
             $labels = $this->labels();
             return "{$label}は{$labels[$other]}超過の値を指定して下さい。";
         }
@@ -2638,18 +2701,19 @@ abstract class Form
      * </pre>
      */
     public const VALID_LESS_EQUAL_INPUTTED = 'less_equal_inputted';
+
     protected function valid_less_equal_inputted($field, $label, $value, $other)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
         $preCheck = $this->valid_number($field, $label, $value);
-        if(!empty($preCheck)) {
+        if (!empty($preCheck)) {
             return $preCheck;
         }
         $sv = doubleval($value);
         $ov = doubleval($this->$other);
-        if($sv > $ov) {
+        if ($sv > $ov) {
             $labels = $this->labels();
             return "{$label}は{$labels[$other]}以下の値を指定して下さい。";
         }
@@ -2666,18 +2730,19 @@ abstract class Form
      * </pre>
      */
     public const VALID_LESS_THAN_INPUTTED = 'less_than_inputted';
+
     protected function valid_less_than_inputted($field, $label, $value, $other)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
         $preCheck = $this->valid_number($field, $label, $value);
-        if(!empty($preCheck)) {
+        if (!empty($preCheck)) {
             return $preCheck;
         }
         $sv = doubleval($value);
         $ov = doubleval($this->$other);
-        if($sv >= $ov) {
+        if ($sv >= $ov) {
             $labels = $this->labels();
             return "{$label}は{$labels[$other]}超過の値を指定して下さい。";
         }
@@ -2703,17 +2768,18 @@ abstract class Form
      * @see Form::ACCEPTABLE_DATETIME_FORMAT
      */
     public const VALID_FUTURE_THAN_INPUTTED = 'future_than_inputted';
+
     protected function valid_future_than_inputted($field, $label, $value, $other, $main_format = null)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
         $target = $this->_createDateTime($value, $main_format);
-        if(empty($target)) {
+        if (empty($target)) {
             return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
         }
         $point = $this->_createDateTime($this->$other, $main_format);
-        if(empty($point) || !($point < $target)) {
+        if (empty($point) || !($point < $target)) {
             $labels = $this->labels();
             return "{$label}は{$labels[$other]}よりも未来日を指定して下さい。";
         }
@@ -2739,17 +2805,18 @@ abstract class Form
      * @see Form::ACCEPTABLE_DATETIME_FORMAT
      */
     public const VALID_FUTURE_EQUAL_INPUTTED = 'future_equal_inputted';
+
     protected function valid_future_equal_inputted($field, $label, $value, $other, $main_format = null)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
         $target = $this->_createDateTime($value, $main_format);
-        if(empty($target)) {
+        if (empty($target)) {
             return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
         }
         $point = $this->_createDateTime($this->$other, $main_format);
-        if(empty($point) || !($point <= $target)) {
+        if (empty($point) || !($point <= $target)) {
             $labels = $this->labels();
             return "{$label}は{$labels[$other]}よりも未来日(当日含む)を指定して下さい。";
         }
@@ -2775,17 +2842,18 @@ abstract class Form
      * @see Form::ACCEPTABLE_DATETIME_FORMAT
      */
     public const VALID_PAST_THAN_INPUTTED = 'past_than_inputted';
+
     protected function valid_past_than_inputted($field, $label, $value, $other, $main_format = null)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
         $target = $this->_createDateTime($value, $main_format);
-        if(empty($target)) {
+        if (empty($target)) {
             return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
         }
         $point = $this->_createDateTime($this->$other, $main_format);
-        if(empty($point) || !($target < $point)) {
+        if (empty($point) || !($target < $point)) {
             $labels = $this->labels();
             return "{$label}は{$labels[$other]}よりも過去日を指定して下さい。";
         }
@@ -2811,17 +2879,18 @@ abstract class Form
      * @see Form::ACCEPTABLE_DATETIME_FORMAT
      */
     public const VALID_PAST_EQUAL_INPUTTED = 'past_equal_inputted';
+
     protected function valid_past_equal_inputted($field, $label, $value, $other, $main_format = null)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
         $target = $this->_createDateTime($value, $main_format);
-        if(empty($target)) {
+        if (empty($target)) {
             return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
         }
         $point = $this->_createDateTime($this->$other, $main_format);
-        if(empty($point) || !($target <= $point)) {
+        if (empty($point) || !($target <= $point)) {
             $labels = $this->labels();
             return "{$label}は{$labels[$other]}よりも過去日(当日含む)を指定して下さい。";
         }
@@ -2841,22 +2910,23 @@ abstract class Form
      * @see Form::VALID_RELATION_UNIQUE 複数フィールドに跨る重複チェック
      */
     public const VALID_SUB_FORM_UNIQUE = 'sub_form_unique';
+
     protected function valid_sub_form_unique($field, $label, $value, $target)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
-        $sub_values = array();
-        $sub_labels = array();
+        $sub_values = [];
+        $sub_labels = [];
         foreach ($value as $sf) {
-            if(empty($sub_labels)) {
+            if (empty($sub_labels)) {
                 $sub_labels = $sf->labels();
             }
             $sub_value = static::_get($sf, $target);
-            if($this->_empty($sub_value)) {
+            if ($this->_empty($sub_value)) {
                 continue;
             }
-            if(is_array($sub_value)) {
+            if (is_array($sub_value)) {
                 $sub_values = array_merge($sub_values, $sub_value);
             } else {
                 $sub_values[] = $sub_value;
@@ -2864,7 +2934,7 @@ abstract class Form
         }
 
         $duplicate = $this->_duplicate($sub_values);
-        if(!empty($duplicate)) {
+        if (!empty($duplicate)) {
             $sub_label = static::_get($sub_labels, $target, $target);
             return "{$label}：{$sub_label}にはそれぞれ異なる値を入力して下さい。[ ".join(',', $duplicate)." ] が重複しています。";
         }
@@ -2888,22 +2958,23 @@ abstract class Form
      * </pre>
      */
     public const VALID_SUB_FORM_SERIAL_NO = 'sub_form_serial_no';
+
     protected function valid_sub_form_serial_no($field, $label, $value, $target, $start = 1, $step = 1)
     {
-        if($this->_empty($value)) {
+        if ($this->_empty($value)) {
             return null;
         }
-        $sub_values = array();
-        $sub_labels = array();
+        $sub_values = [];
+        $sub_labels = [];
         foreach ($value as $sf) {
-            if(empty($sub_labels)) {
+            if (empty($sub_labels)) {
                 $sub_labels = $sf->labels();
             }
             $sub_value = static::_get($sf, $target);
-            if($this->_empty($sub_value)) {
+            if ($this->_empty($sub_value)) {
                 continue;
             }
-            if(is_array($sub_value)) {
+            if (is_array($sub_value)) {
                 $sub_values = array_merge($sub_values, $sub_value);
             } else {
                 $sub_values[] = $sub_value;
@@ -2913,7 +2984,7 @@ abstract class Form
         sort($sub_values, SORT_NUMERIC);
         $expect = $start;
         foreach ($sub_values as $v) {
-            if($expect != $v) {
+            if ($expect != $v) {
                 $sub_label = static::_get($sub_labels, $target, $target);
                 return "{$label}：{$sub_label}が {$start} から始まる {$step} 刻みの連番になっていません。";
             }
@@ -3010,7 +3081,6 @@ class UploadFile
      */
     public function __construct($formName, $field, $file)
     {
-
         foreach ($this as $key => $value) {
             $this->$key = isset($file[$key]) ? $file[$key] : null ;
         }
@@ -3018,11 +3088,11 @@ class UploadFile
         $this->formName = $formName;
         $this->field    = $field;
         $this->suffix   = null;
-        if(!empty($this->name)) {
-            $pi = pathinfo($this->name);
+        if (!empty($this->name)) {
+            $pi           = pathinfo($this->name);
             $this->suffix = isset($pi['extension']) ? strtolower($pi['extension']) : null ;
         }
-        if(strrpos($this->type, "image/", -strlen($this->type)) !== false) {
+        if (strrpos($this->type, "image/", -strlen($this->type)) !== false) {
             try {
                 $imagesize    = getimagesize($this->tmp_name);
                 $this->width  = isset($imagesize[0]) ? $imagesize[0] : null ;
@@ -3097,24 +3167,24 @@ class UploadFile
     public function saveTemporary($dir)
     {
         $fileId = self::_fileId($this->formName, $this->field);
-        if($this->isEmpty()) {
+        if ($this->isEmpty()) {
             $_SESSION[$fileId] = serialize($this);
             return null;
         }
 
-        if(!file_exists($dir)) {
+        if (!file_exists($dir)) {
             mkdir($dir, 0775, true);
         }
 
         $file   = "{$fileId}.".$this->suffix;
         $path   = "{$dir}/{$file}";
 
-        if(is_uploaded_file($this->tmp_name)) {
+        if (is_uploaded_file($this->tmp_name)) {
             move_uploaded_file($this->tmp_name, $path);
             chmod($path, 0664);
         }
 
-        $this->tmp_name = $path;
+        $this->tmp_name    = $path;
         $_SESSION[$fileId] = serialize($this);
 
         return $file;
@@ -3140,11 +3210,11 @@ class UploadFile
      */
     public function publish($dir, $baseName = null)
     {
-        if($this->isEmpty()) {
+        if ($this->isEmpty()) {
             return null;
         }
 
-        if(!file_exists($dir)) {
+        if (!file_exists($dir)) {
             mkdir($dir, 0775, true);
         }
 
@@ -3166,7 +3236,7 @@ class UploadFile
     {
         unset($_SESSION[self::_fileId($this->formName, $this->field)]);
 
-        if(file_exists($this->tmp_name)) {
+        if (file_exists($this->tmp_name)) {
             unlink($this->tmp_name);
         }
     }
@@ -3191,7 +3261,7 @@ class UploadFile
      */
     public static function load($formName, $fieldName)
     {
-        return self::exists($formName, $fieldName) ? unserialize($_SESSION[self::_fileId($formName, $fieldName)]) : new UploadFile($formName, $fieldName, array()) ;
+        return self::exists($formName, $fieldName) ? unserialize($_SESSION[self::_fileId($formName, $fieldName)]) : new UploadFile($formName, $fieldName, []) ;
     }
 
     /**
@@ -3203,7 +3273,7 @@ class UploadFile
      */
     public static function createEmpty($formName, $fieldName)
     {
-        return new UploadFile($formName, $fieldName, array());
+        return new UploadFile($formName, $fieldName, []);
     }
 
     /**
@@ -3233,7 +3303,7 @@ class UploadFile
  */
 class InvalidValidateRuleException extends RuntimeException
 {
-    public function __construct($message, $code=null, $previous=null)
+    public function __construct($message, $code = null, $previous = null)
     {
         parent::__construct($message, $code, $previous);
     }

@@ -1,9 +1,9 @@
 <?php
 /**
  * Single File Low Functionality Class Tools - Extensions : Smarty Plugin
- * 
+ *
  * ■トークン hidden タグ出力
- * 
+ *
  * -------------------------------------------------------------
  * File:     function.token.php
  * Type:     function
@@ -13,18 +13,18 @@
  *  - name (optional) : name of hidden form name (default 'token')
  * Purpose:  トークンを hidden タグで出力する
  * -------------------------------------------------------------
- * 
+ *
  * @see       https://github.com/rain-noise/sflf/blob/master/src/main/php/Sflf/Token.php
- * 
+ *
  * @package   SFLF
- * @version   v1.0.0
+ * @version   v1.0.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
  */
 function smarty_function_token($params, &$smarty)
 {
-	$name  = isset($params['name']) ? $params['name'] : 'token' ;
-	$token = Token::get(isset($params['key']) ? $params['key'] : 'global');
-	return '<input type="hidden" name="'.$name.'" value="'.$token.'" />';
+    $name  = isset($params['name']) ? $params['name'] : 'token' ;
+    $token = Token::get(isset($params['key']) ? $params['key'] : 'global');
+    return '<input type="hidden" name="'.$name.'" value="'.$token.'" />';
 }

@@ -175,7 +175,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/block.unless_errors.php エラー有無分岐用 Smarty タグ
  *
  * @package   SFLF
- * @version   v1.0.5
+ * @version   v1.0.6
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -2277,9 +2277,10 @@ abstract class Form
         if (empty($target)) {
             return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
         }
-        $point = new DateTime("-{$age} year");
-        if ($target < $point) {
-            return ($age + 1)."歳以上の方はご利用頂けません。";
+        $invalid_age = $age + 1;
+        $point       = new DateTime("-{$invalid_age} year");
+        if ($target <= $point) {
+            return "{$invalid_age}歳以上の方はご利用頂けません。";
         }
         return null;
     }

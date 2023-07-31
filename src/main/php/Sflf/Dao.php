@@ -14,7 +14,7 @@
  * Dao::connect('host', 'user', 'pass', 'dbName', $port, function($sql){ Log::debug("SQL :: {$sql}"); });
  * try {
  *     Dao::begin();
- *     $user = Dao::find('SELECT * FROM user WHERE id = :id',array(':id' => $id), UserEntiry::class);
+ *     $user = Dao::find('SELECT * FROM user WHERE id = :id', [':id' => $id], UserEntiry::class);
  *     // You can set IN phrase like 'WHERE status IN (:status)'. ($status will be converted comma separated values when $status is array)
  *
  *     // Something to do
@@ -28,28 +28,45 @@
  *
  * Dao::connect('host', 'user', 'pass', 'dbName', $port, function($sql){ Log::debug("SQL :: {$sql}"); });
  * Dao::transaction(function(){
- *     $user = Dao::find('SELECT * FROM user WHERE id = :id',array(':id' => $id), UserEntiry::class);
+ *     $user = Dao::find('SELECT * FROM user WHERE id = :id', [':id' => $id], UserEntiry::class);
  *     // Something to do
  * });
  *
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/includes/paginate.tpl ページ送り Smarty テンプレート
  *
  * @package   SFLF
- * @version   v1.1.2
+ * @version   v1.1.3
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
  */
 class Dao
 {
-    const SHUTDOWN_MODE_DO_NOTHING = 1;
-    const SHUTDOWN_MODE_ROLLBACK   = 2;
-    const SHUTDOWN_MODE_COMMIT     = 3;
+    /**
+     * シャットダウンモード：何もしない
+     *
+     * @var int
+     */
+    public const SHUTDOWN_MODE_DO_NOTHING = 1;
+
+    /**
+     * シャットダウンモード：ロールバック
+     *
+     * @var int
+     */
+    public const SHUTDOWN_MODE_ROLLBACK = 2;
+
+    /**
+     * シャットダウンモード：コミット
+     *
+     * @var int
+     */
+    public const SHUTDOWN_MODE_COMMIT = 3;
 
     /**
      * データベースオブジェクト
      *
-     * @var mysqli
+     * @var mysqli|null
      */
     private static $_DB;
 
@@ -59,7 +76,7 @@ class Dao
      * function($sql) を処理する Closure が設定されます。
      * NULL の場合、SQLログ出力は行われません。
      *
-     * @var function function($sql){}
+     * @var callable(string $sql):void|null コールバック関数
      */
     private static $_SQL_LOG_CALLBACK = null;
 
@@ -67,6 +84,7 @@ class Dao
      * シャットダウンモード
      *
      * exit() / die() などが呼ばれた際のシャットダウン時のトランザクション挙動を定義します。
+     *
      * @var int Dao::SHUTDOWN_MODE_* （デフォルト： Dao::SHUTDOWN_MODE_DO_NOTHING）
      */
     private static $_SHUTDOWN_MODE = self::SHUTDOWN_MODE_DO_NOTHING;
@@ -79,6 +97,21 @@ class Dao
     }
 
     /**
+     * DB接続を取得します。
+     * 接続が確率されていない場合は例外を throw します。
+     *
+     * @return mysqli
+     * @throws DatabaseException when do not connect database yet, or already closed connection.
+     */
+    protected static function db()
+    {
+        if (empty(self::$_DB)) {
+            throw new DatabaseException("Do not connect database yet, or already closed connection.");
+        }
+        return self::$_DB;
+    }
+
+    /**
      * SQLログ出力用のコールバック関数を設定します。
      *
      * 例）
@@ -86,8 +119,10 @@ class Dao
      * Dao::setSqlLogger(function($sql){ error_log($sql, 3, '/path/to/sql.log'); });
      * Dao::setSqlLogger(function($sql){ Log::debug("SQL :: {$sql}"); });
      * Dao::setSqlLogger(function($sql) use ($logger){ $logger->debug("SQL :: {$sql}"); });
+     * Dao::setSqlLogger(null);
      *
-     * @param function $callback
+     * @param callable(string $sql):void|null $callback SQLログ出力用コールバック関数 (default: null)
+     * @return void
      */
     public static function setSqlLogger($callback)
     {
@@ -99,24 +134,24 @@ class Dao
      * ※ autocommit は off になります。
      * ※ トランザクション分離レベル は READ COMMITTED になります。
      *
-     * @param  string   $host   接続ホスト
-     * @param  string   $user   接続ユーザー名
-     * @param  string   $pass   接続パスワード
-     * @param  string   $dbName 接続データベース名
-     * @param  string   $port   接続ポート番号     - デフォルト ini_get("mysqli.default_port")
-     * @param  function $logger SQLログ出力用コールバック関数
-     * @return boolean true : 新規接続時／false : 既存コネクション存在時
+     * @param string                          $host    接続ホスト
+     * @param string                          $user    接続ユーザー名
+     * @param string                          $pass    接続パスワード
+     * @param string                          $db_name 接続データベース名
+     * @param int|null                        $port    接続ポート番号 (default: null = use "mysqli.default_port" first, then 3306 if not set)
+     * @param callable(string $sql):void|null $logger  SQLログ出力用コールバック関数 (default: null)
+     * @return bool true : 新規接続時／false : 既存コネクション存在時
      * @throws DatabaseException データベース接続に失敗した場合
      */
-    public static function connect($host, $user, $pass, $dbName, $port = null, $logger = null)
+    public static function connect($host, $user, $pass, $db_name, $port = null, $logger = null)
     {
         if (!self::$_DB) {
             if (isset($logger)) {
                 self::setSqlLogger($logger);
             }
 
-            $port      = $port ? $port : ini_get("mysqli.default_port") ;
-            self::$_DB = new mysqli($host, $user, $pass, $dbName, $port);
+            $port      = $port ? $port : intval(ini_get("mysqli.default_port") ?: 3306) ;
+            self::$_DB = new mysqli($host, $user, $pass, $db_name, $port);
             if (self::$_DB->connect_error) {
                 throw new DatabaseException(self::_createErrorMessage(__METHOD__));
             }
@@ -127,9 +162,11 @@ class Dao
             register_shutdown_function(function () {
                 switch (self::$_SHUTDOWN_MODE) {
                     case self::SHUTDOWN_MODE_ROLLBACK:
-                        return self::rollback(true);
+                        self::rollback(true);
+                        return;
                     case self::SHUTDOWN_MODE_COMMIT:
-                        return self::commit();
+                        self::commit();
+                        return;
                 }
             });
 
@@ -147,7 +184,7 @@ class Dao
      */
     public static function begin()
     {
-        if (!empty(self::$_DB) && !self::$_DB->begin_transaction()) {
+        if (!self::db()->begin_transaction()) {
             throw new DatabaseException(self::_createErrorMessage(__METHOD__));
         }
     }
@@ -155,13 +192,13 @@ class Dao
     /**
      * トランザクションをロールバックします。
      *
-     * @param  boolean $quiet true : 例外を throw しない(デフォルト)／false : 例外を throw する
+     * @param bool $quiet true : 例外を throw しない／false : 例外を throw する (default: true)
      * @return void
      * @throws DatabaseException
      */
     public static function rollback($quiet = true)
     {
-        if (!empty(self::$_DB) && !self::$_DB->rollback() && !$quiet) {
+        if (!self::db()->rollback() && !$quiet) {
             throw new DatabaseException(self::_createErrorMessage(__METHOD__));
         }
     }
@@ -174,7 +211,7 @@ class Dao
      */
     public static function commit()
     {
-        if (!empty(self::$_DB) && !self::$_DB->commit()) {
+        if (!self::db()->commit()) {
             throw new DatabaseException(self::_createErrorMessage(__METHOD__));
         }
     }
@@ -182,8 +219,9 @@ class Dao
     /**
      * トランザクションを開始／ロールバック／コミットします。
      *
-     * @param function $callback      ひとまとまりの処理
-     * @param int      $shutdown_mode シャットダウンモード Dao::SHUTDOWN_MODE_* (デフォルト： Dao::SHUTDOWN_MODE_COMMIT)
+     * @param callable():void $callback      ひとまとまりの処理
+     * @param int             $shutdown_mode シャットダウンモード Dao::SHUTDOWN_MODE_* (default: Dao::SHUTDOWN_MODE_COMMIT)
+     * @return void
      */
     public static function transaction($callback, $shutdown_mode = self::SHUTDOWN_MODE_COMMIT)
     {
@@ -201,7 +239,7 @@ class Dao
     /**
      * 文字列をエスケープします。
      *
-     * @param  string $val
+     * @param string|object $val
      * @return string エスケープ文字列
      */
     public static function escape($val)
@@ -209,37 +247,37 @@ class Dao
         if (is_object($val)) {
             $val = method_exists($val, '__toString') ? $val->__toString() : null ;
         }
-        return self::$_DB->escape_string($val);
+        return self::db()->escape_string($val);
     }
 
     /**
      * 直近で挿入した自動採番のID番号を取得します。
      *
-     * @return long インサートID
+     * @return int|string インサートID
      */
     public static function getInsertId()
     {
-        return self::$_DB->insert_id;
+        return self::db()->insert_id;
     }
 
     /**
-     * 直近の INSERT、 UPDATE、REPLACE あるいは DELETE クエリにより変更された行の数を返します。
+     * 直近の INSERT、UPDATE、REPLACE あるいは DELETE クエリにより変更された行の数を返します。
      *
-     * @return long 更新件数
+     * @return int 更新件数
      */
     public static function getAffectedRows()
     {
-        return self::$_DB->affected_rows;
+        return self::db()->affected_rows;
     }
 
     /**
      * 指定のSQLを実行します。
      * ※戻り値は mysqli_query() の戻り値(falseを除く)となります。
      *
-     * @param  string    $sql    SQL文
-     * @param  array|obj $params パラメータ
-     * @return mysqli_query|mysqli_result 結果セット
-     * @throws DatabaseException
+     * @param string                      $sql    SQL文
+     * @param array<string, mixed>|object $params パラメータ (default: [])
+     * @return mysqli_result|true 結果セット: SELECT/SHOW/DESCRIBE/EXPLAIN 発行時, 更新件数: その他クエリ発行時
+     * @throws DatabaseException SQL実行エラー時
      */
     public static function query($sql, $params = [])
     {
@@ -249,28 +287,64 @@ class Dao
             $log($sql);
         }
 
-        $rs = self::$_DB->query($sql);
+        $rs = self::db()->query($sql);
         if ($rs === false) {
-            throw new DatabaseException("Execute query failed : ".self::$_DB->errno." ".self::$_DB->error."\n--- [SQL] ---\n{$sql}\n-------------\n", self::$_DB->errno);
+            throw new DatabaseException("Execute query failed : ".self::db()->errno." ".self::db()->error."\n--- [SQL] ---\n{$sql}\n-------------\n", self::db()->errno);
         }
 
         return $rs;
     }
 
     /**
+     * 指定のSQL(SELECT/SHOW/DESCRIBE/EXPLAIN)を実行します。
+     * ※戻り値は結果セットになります。
+     *
+     * @param string                      $sql    SQL文
+     * @param array<string, mixed>|object $params パラメータ (default: [])
+     * @return mysqli_result 結果セット
+     * @throws DatabaseException SQL実行エラー時、又は SELECT/SHOW/DESCRIBE/EXPLAIN 以外のSQL指定時
+     */
+    public static function querySelect($sql, $params = [])
+    {
+        if (($rs = self::query($sql, $params)) === true) {
+            throw new DatabaseException("Invalid SQL query given, querySelect() MUST a SELECT/SHOW/DESCRIBE/EXPLAIN query.");
+        }
+        return $rs;
+    }
+
+    /**
+     * 指定のSQL(SELECT/SHOW/DESCRIBE/EXPLAIN 以外)を実行します。
+     * ※戻り値は更新件数になります。
+     *
+     * @param string                      $sql    SQL文
+     * @param array<string, mixed>|object $params パラメータ (default: [])
+     * @return int 更新件数
+     * @throws DatabaseException SQL実行エラー時、又は SELECT/SHOW/DESCRIBE/EXPLAIN のSQL指定時
+     */
+    public static function queryAffect($sql, $params = [])
+    {
+        if (self::query($sql, $params) === true) {
+            return self::getAffectedRows();
+        }
+        throw new DatabaseException("Invalid SQL query given, queryAffect() MUST not be a SELECT/SHOW/DESCRIBE/EXPLAIN queries.");
+    }
+
+    /**
      * 指定のSQLを実行し、結果の各行に callback 関数を適用します。
      * ※大容量の CSV データ出力などメモリ使用量を押さえたい場合などに利用できます。
      *
-     * @param unknown $callback コールバック関数（$callback($i, $entity)）
-     * @param unknown $sql
-     * @param unknown $params
-     * @param unknown $clazz
+     * @template T
+     * @param callable(int $i, T $entity):void $callback コールバック関数
+     * @param string                           $sql      SQL
+     * @param array<string, mixed>|object      $params   パラメータ  (default: [])
+     * @param class-string<T>                  $clazz    エンティティクラス  (default: stdClass)
+     * @return void
      * @throws DatabaseException
      */
     public static function each(callable $callback, $sql, $params = [], $clazz = 'stdClass')
     {
-        $rs = self::query($sql, $params);
-        if (is_bool($rs) || empty($rs)) {
+        $rs = self::querySelect($sql, $params);
+        if ($rs->num_rows === 0) {
             return;
         }
 
@@ -296,11 +370,13 @@ class Dao
      * ※指定の $chunk 単位でデータを分割してDBより取得するため each よりメモリ使用量を抑えられます。
      * ※LIMIT OFFSET を使用した分割データ取得となるため、指定のSQLはデータの並び順が一意となるように指定されていなければなりません。
      *
-     * @param unknown $callback コールバック関数（$callback($i, $entity)）
-     * @param unknown $sqler function(&$params, $cursor) {}
-     * @param unknown $params
-     * @param unknown $clazz
-     * @param unknown $chunk
+     * @template T
+     * @param callable(int $i, T $entity):void                                      $callback コールバック関数
+     * @param callable(array<string, mixed>|object &$params, T|null $cursor):string $sqler    ページングSQL生成関数
+     * @param array<string, mixed>|object                                           $params   パラメータ (default: [])
+     * @param class-string<T>                                                       $clazz    エンティティクラス (default: stdClass)
+     * @param int                                                                   $chunk    一度に取得する最大件数 (default: 1000)
+     * @return void
      * @throws DatabaseException
      */
     public static function chunk(callable $callback, callable $sqler, $params = [], $clazz = 'stdClass', int $chunk = 1000)
@@ -311,8 +387,8 @@ class Dao
         while (true) {
             $sql = $sqler($params, $cursor);
             $sql = preg_match('/LIMIT/i', $sql) ? "SELECT * FROM ({$sql}) AS T" : $sql ;
-            $rs  = self::query("{$sql} LIMIT {$chunk}", $params);
-            if (is_bool($rs) || empty($rs) || $rs->num_rows === 0) {
+            $rs  = self::querySelect("{$sql} LIMIT {$chunk}", $params);
+            if ($rs->num_rows === 0) {
                 return;
             }
 
@@ -334,24 +410,22 @@ class Dao
             $rs->free();
             $i++;
         }
-
-        return;
     }
 
     /**
      * 指定のSQLを実行し、結果〔N行M列〕を取得します。
-     * ※戻り値は array($clazz) になります。
      *
-     * @param  string    $sql    SQL文
-     * @param  array|obj $params パラメータ
-     * @param  string    $clazz  結果セットのマッピング型 - デフォルト 'stdClass'
-     * @return array 検索結果
+     * @template T
+     * @param  string                      $sql    SQL文
+     * @param  array<string, mixed>|object $params パラメータ (default: [])
+     * @param  class-string<T>             $clazz  結果セットのマッピング型 (default: stdClass)
+     * @return T[] 検索結果
      * @throws DatabaseException
      */
     public static function select($sql, $params = [], $clazz = 'stdClass')
     {
-        $rs = self::query($sql, $params);
-        if (is_bool($rs) || empty($rs)) {
+        $rs = self::querySelect($sql, $params);
+        if ($rs->num_rows === 0) {
             return [];
         }
 
@@ -375,16 +449,16 @@ class Dao
     /**
      * 指定のSQLを実行し、結果〔N行1列〕を配列で取得します。
      *
-     * @param  string    $col    列名
-     * @param  string    $sql    SQL文
-     * @param  array|obj $params パラメータ
-     * @return array 検索結果から指定列のみを抽出したリスト
+     * @param  string                      $col    列名
+     * @param  string                      $sql    SQL文
+     * @param  array<string, mixed>|object $params パラメータ (default: [])
+     * @return mixed[] 検索結果から指定列のみを抽出したリスト
      * @throws DatabaseException
      */
     public static function lists($col, $sql, $params = [])
     {
-        $rs = self::query($sql, $params);
-        if (is_bool($rs) || empty($rs)) {
+        $rs = self::querySelect($sql, $params);
+        if ($rs->num_rows === 0) {
             return [];
         }
 
@@ -405,10 +479,11 @@ class Dao
      * 指定のSQLを実行し、結果〔1行M列〕を1件取得します。
      * ※戻り値は $clazz or null になります。
      *
-     * @param  string    $sql    SQL文
-     * @param  array|obj $params パラメータ
-     * @param  string    $clazz  結果セットのマッピング型 - デフォルト 'stdClass'
-     * @return obj $clazz で指定した検索結果
+     * @template T
+     * @param  string                      $sql    SQL文
+     * @param  array<string, mixed>|object $params パラメータ (default: [])
+     * @param  class-string<T>             $clazz  結果セットのマッピング型 (default: stdClass)
+     * @return T|null $clazz で指定した検索結果
      * @throws DatabaseException
      */
     public static function find($sql, $params = [], $clazz = 'stdClass')
@@ -423,28 +498,28 @@ class Dao
     /**
      * 指定のSQLを実行し、結果〔1行1列〕を取得します。
      *
-     * @param  string    $sql     集約SQL文
-     * @param  array|obj $params  パラメータ
-     * @param  mixed     $default デフォルト値
-     * @return int|fload|DateTime|etc 集約結果
+     * @param  string                      $sql     集約SQL文
+     * @param  array<string, mixed>|object $params  パラメータ (default: [])
+     * @param  mixed|null                  $default デフォルト値 (default: null)
+     * @return mixed|null 集約結果
      *
      * @see Dao::_convertToPhp()
      */
     public static function get($sql, $params = [], $default = null)
     {
-        $rs   = self::query($sql, $params);
+        $rs   = self::querySelect($sql, $params);
         $meta = $rs->fetch_field_direct(0);
         $row  = $rs->fetch_row();
-        return $row ? self::_convertToPhp($row[0], $meta->type) : $default ;
+        return $row ? self::_convertToPhp($row[0], $meta->type ?? null) : $default ;
     }
 
     /**
      * 対象SQLの結果が存在するかを判定します。
-     * ※戻り値は boolean になります。
+     * ※戻り値は bool になります。
      *
-     * @param  string    $sql    SQL文
-     * @param  array|obj $params パラメータ
-     * @return boolean true : 存在する／false : 存在しない
+     * @param  string                      $sql    SQL文
+     * @param  array<string, mixed>|object $params パラメータ (default: [])
+     * @return bool true : 存在する／false : 存在しない
      * @throws DatabaseException
      */
     public static function exists($sql, $params = [])
@@ -457,8 +532,8 @@ class Dao
      * 対象SQLの検索結果件数を取得します。
      * ※戻り値は int になります。
      *
-     * @param  string    $sql    SQL文
-     * @param  array|obj $params パラメータ
+     * @param  string                      $sql    SQL文
+     * @param  array<string, mixed>|object $params パラメータ (default: [])
      * @return int 検索結果件数
      * @throws DatabaseException
      */
@@ -470,24 +545,24 @@ class Dao
     /**
      * 指定のSQLを実行し、結果を複数件取得します。
      * ※本処理はページング処理を行った検索を提供します。
-     * ※戻り値は array(PageInfo, array($clazz)) です。
      *
-     * list($pi, $rs) = Dao::paginate(1, 25, "SELECT * FROM ...", array(':status' => 1), UserEntity::class);
+     * list($pi, $rs) = Dao::paginate(1, 25, "SELECT * FROM ...", [':status' => 1], UserEntity::class);
      *
-     * @param int       $page              取得ページ
-     * @param int       $pageSize          1ページのサイズ(データ件数)
-     * @param string    $sql               SQL文
-     * @param array|obj $params            パラメータ
-     * @param string    $clazz             結果セットのマッピング型 - デフォルト 'stdClass'
-     * @param string    $optimizedCountSql ヒット件数検索用の最適化されたカウント用SQL - デフォルト null(= self::count() の利用)
-     * @return array(PageInfo, array($clazz)) ページ情報と検索結果
+     * @template T
+     * @param int                            $page                取得ページ
+     * @param int                            $page_size           1ページのサイズ(データ件数)
+     * @param string                         $sql                 SQL文
+     * @param array<string, mixed>|object    $params              パラメータ (default: [])
+     * @param class-string<T>                $clazz               結果セットのマッピング型 (default: stdClass)
+     * @param string|null                    $optimized_count_sql ヒット件数検索用の最適化されたカウント用SQL (default: null = self::count() の利用)
+     * @return array{0: PageInfo, 1: T[]} ページ情報と検索結果
      * @throws DatabaseException
      */
-    public static function paginate($page, $pageSize, $sql, $params = [], $clazz  = 'stdClass', $optimizedCountSql = null)
+    public static function paginate($page, $page_size, $sql, $params = [], $clazz  = 'stdClass', $optimized_count_sql = null)
     {
-        $hitCount = empty($optimizedCountSql) ? self::count($sql, $params) : self::get($optimizedCountSql, $params) ;
-        $pi       = new PageInfo($page, $pageSize, $hitCount);
-        $rs       = self::select("$sql LIMIT {$pi->offset}, {$pi->pageSize}", $params, $clazz);
+        $hit_count = empty($optimized_count_sql) ? self::count($sql, $params) : self::get($optimized_count_sql, $params) ;
+        $pi        = new PageInfo($page, $page_size, $hit_count);
+        $rs        = self::select("$sql LIMIT {$pi->offset}, {$pi->page_size}", $params, $clazz);
         return [$pi, $rs];
     }
 
@@ -496,17 +571,18 @@ class Dao
      * ※戻り値は insert_id になります。
      * ※エンティティに const DAO_IGNORE_FILED = ['exclude_col', ...] 定数フィールドが定義されている場合、指定されたフィールドは INSERT 文から除外されます
      *
-     * @param string    $tableName テーブル名
-     * @param array|obj $entity    エンティティ情報
-     * @return long インサートID
+     * @param string                      $table_name テーブル名
+     * @param array<string, mixed>|object $entity     エンティティ情報
+     * @return int|string インサートID
      * @throws DatabaseException
      */
-    public static function insert($tableName, $entity)
+    public static function insert($table_name, $entity)
     {
         $ignore = [];
         if (!is_array($entity)) {
             $reflect = new ReflectionClass(get_class($entity));
             $ignore  = $reflect->hasConstant('DAO_IGNORE_FILED') ? $reflect->getConstant('DAO_IGNORE_FILED') : [] ;
+            $entity  = get_object_vars($entity) ;
         }
         $cols   = [];
         $values = [];
@@ -518,7 +594,7 @@ class Dao
             $values[] = self::convertToSql($value);
         }
 
-        self::query("INSERT INTO {$tableName} (".join(',', $cols).") VALUES (".join(',', $values).")") ;
+        self::query("INSERT INTO {$table_name} (".join(',', $cols).") VALUES (".join(',', $values).")") ;
         return self::getInsertId();
     }
 
@@ -526,33 +602,37 @@ class Dao
      * 対象のテーブルのデータを更新します。
      * ※エンティティに const DAO_IGNORE_FILED = ['exclude_col', ...] 定数フィールドが定義されている場合、指定されたフィールドは UPDATE 文から除外されます
      *
-     * @param string    $tableName テーブル名
-     * @param array|obj $entity    エンティティ情報
-     * @param string    $where     更新条件
-     * @param array     $option    where   : array() where句用パラメータ       （未指定時は $entity が利用される）
-     *                             include : array() set句に含めるフィールド名 （未指定時は $entity の DAO_IGNORE_FILED 指定以外の全フィールド）
-     *                             exclude : array() set句から除くフィールド名
-     * @return long インサートID
+     * @param string                                                                             $table_name テーブル名
+     * @param array<string, mixed>|object                                                        $entity     エンティティ情報
+     * @param string                                                                             $where      更新条件SQL
+     * @param array{where?: array<string, mixed>|object, include?: string[], exclude?: string[]} $option     更新オプション (default: [])
+     *     - where   : where句用パラメータ （未指定時は $entity が利用される）
+     *     - include : SET句に含めるフィールド名 （未指定時は $entity の DAO_IGNORE_FILED 指定以外の全フィールド）
+     *     - exclude : SET句から除くフィールド名
+     * @return int 更新件数
      */
-    public static function update($tableName, $entity, $where, $option = [])
+    public static function update($table_name, $entity, $where, $option = [])
     {
-        $reflect = new ReflectionClass(get_class($entity));
-        $ignore  = $reflect->hasConstant('DAO_IGNORE_FILED') ? $reflect->getConstant('DAO_IGNORE_FILED') : [] ;
-        $param   = isset($option['where']) ? $option['where'] : [] ;
+        $ignore = [];
+        if (!is_array($entity)) {
+            $reflect = new ReflectionClass(get_class($entity));
+            $ignore  = $reflect->hasConstant('DAO_IGNORE_FILED') ? $reflect->getConstant('DAO_IGNORE_FILED') : [] ;
+            $entity  = get_object_vars($entity);
+        }
+        $param   = isset($option['where']) ? $option['where'] : $entity ;
         $include = isset($option['include']) ? $option['include'] : [] ;
         $exclude = isset($option['exclude']) ? $option['exclude'] : [] ;
 
         $set = "";
         if (!empty($include)) {
-            $clazz = get_class($entity);
             foreach ($include as $col) {
-                if (!property_exists($clazz, $col)) {
+                if (!array_key_exists($col, $entity)) {
                     continue;
                 }
                 if (in_array($col, $ignore)) {
                     continue;
                 }
-                $set .= $col.'='.self::convertToSql($entity->$col).', ';
+                $set .= $col.'='.self::convertToSql($entity[$col]).', ';
             }
         } else {
             foreach ($entity as $col => $value) {
@@ -568,20 +648,21 @@ class Dao
 
         $set = rtrim($set, ', ');
 
-        return self::query("UPDATE {$tableName} SET {$set} WHERE {$where}", empty($param) ? $entity : $param) ;
+        return self::queryAffect("UPDATE {$table_name} SET {$set} WHERE {$where}", $param) ;
     }
 
     /**
      * SQLテンプレートを展開します。
      *
-     * @param  string    $sql    SQL文
-     * @param  array|obj $params パラメータ
-     * @return string パラメータ展開後のSQL文
+     * @param  string                      $sql    SQL文
+     * @param  array<string, mixed>|object $params パラメータ
+     * @return string                      パラメータ展開後のSQL文
      * @throws DatabaseException
      */
     private static function _compile($sql, $params)
     {
         $converted = [];
+        $params    = is_array($params) ? $params : get_object_vars($params) ;
         foreach ($params as $key => $value) {
             if (self::_startWith($key, ':')) {
                 $converted[$key] = $value ;
@@ -607,6 +688,7 @@ class Dao
             }
 
             $sql = preg_replace("/{$key}(?=[^a-zA-Z0-9_]|$)/", "{$value}", $sql);
+            assert(is_string($sql));
         }
 
         return $sql;
@@ -615,7 +697,7 @@ class Dao
     /**
      * 値をSQL文字列用にコンバートします。
      *
-     * @param null|int|long|float|double|string|DateTime $value
+     * @param mixed $value PHPの値
      * @return string
      */
     public static function convertToSql($value)
@@ -624,12 +706,12 @@ class Dao
             return 'NULL';
         }
 
-        if (is_int($value) || is_long($value) || is_float($value) || is_double($value)) {
-            return $value;
+        if (is_int($value) || is_float($value)) {
+            return "{$value}";
         }
 
         if (is_bool($value)) {
-            return $value ? 1 : 0 ;
+            return $value ? '1' : '0' ;
         }
 
         if ($value instanceof DateTime || $value instanceof DateTimeImmutable) {
@@ -642,9 +724,9 @@ class Dao
     /**
      * 指定の文字列 [$haystack] が指定の文字列 [$needle] で始まるか検査します。
      *
-     * @param  string  $haystack 検査対象文字列
-     * @param  string  $needle   被検査文字列
-     * @return boolean true : 始まる／false : 始まらない
+     * @param string  $haystack 検査対象文字列
+     * @param string  $needle   被検査文字列
+     * @return bool true : 始まる／false : 始まらない
      */
     private static function _startWith($haystack, $needle)
     {
@@ -654,8 +736,9 @@ class Dao
     /**
      * 結果セットの値をPHPオブジェクトにコンバートします。
      *
-     * @param mysqli_object|string $value
-     * @return string|int|float|DateTime PHPオブジェクトコンバート結果
+     * @param mixed|null $value 値
+     * @param int|null   $type  MySQL型情報
+     * @return mixed|null PHPオブジェクトコンバート結果
      * @todo 整理＆実装
      */
     private static function _convertToPhp($value, $type)
@@ -727,8 +810,8 @@ class Dao
      */
     private static function _createErrorMessage($method)
     {
-        if (self::$_DB->connect_error) {
-            return "Dao {$method} failed : ".self::$_DB->connect_errno." ". mb_convert_encoding(self::$_DB->connect_error, 'UTF-8', 'auto');
+        if (self::db()->connect_error) {
+            return "Dao {$method} failed : ".self::db()->connect_errno." ". mb_convert_encoding(self::db()->connect_error, 'UTF-8', 'auto');
         }
         return "Dao {$method} failed.";
     }
@@ -746,7 +829,15 @@ class Dao
  */
 class DatabaseException extends RuntimeException
 {
-    public function __construct($message, $code = null, $previous = null)
+    /**
+     * Undocumented function
+     *
+     * @param string         $message  エラーメッセージ
+     * @param int            $code     エラーコード (default: 0)
+     * @param Throwable|null $previous 原因例外 (default: null)
+     * @return DatabaseException
+     */
+    public function __construct($message, $code = 0, $previous = null)
     {
         parent::__construct($message, $code, $previous);
     }
@@ -766,9 +857,9 @@ class PageInfo
 {
     /**
      * 検索ヒット件数
-     * @var long
+     * @var int
      */
-    public $hitCount;
+    public $hit_count;
 
     /**
      * ページ
@@ -780,13 +871,13 @@ class PageInfo
      * ページサイズ
      * @var int
      */
-    public $pageSize;
+    public $page_size;
 
     /**
      * 最終ページ
      * @var int
      */
-    public $maxPage;
+    public $max_page;
 
     /**
      * オフセット位置
@@ -803,53 +894,53 @@ class PageInfo
     /**
      * ページ情報を構築します。
      *
-     * @param int  $page
-     * @param int  $pageSize
-     * @param int|long $hitCount
+     * @param int $page      ページ
+     * @param int $page_size ページサイズ
+     * @param int $hit_count ヒット件数
      */
-    public function __construct($page, $pageSize, $hitCount)
+    public function __construct($page, $page_size, $hit_count)
     {
-        $maxPage  = floor($hitCount / $pageSize) + ($hitCount % $pageSize == 0 ? 0 : 1);
-        $maxPage  = $maxPage == 0 ? 1 : $maxPage ;
+        $max_page = (int) floor($hit_count / $page_size) + ($hit_count % $page_size == 0 ? 0 : 1);
+        $max_page = $max_page == 0 ? 1 : $max_page ;
         $page     = (empty($page) || $page < 1) ? 1 : $page ;
-        $page     = $maxPage < $page ? $maxPage : $page ;
-        $offset   = ($page - 1) * $pageSize;
-        $limit    = $offset + $pageSize - 1;
-        $limit    = $hitCount < $limit ? $hitCount - 1 : $limit ;
+        $page     = $max_page < $page ? $max_page : $page ;
+        $offset   = ($page - 1) * $page_size;
+        $limit    = $offset + $page_size - 1;
+        $limit    = $hit_count < $limit ? $hit_count - 1 : $limit ;
         $limit    = $limit < 0 ? 0 : $limit ;
 
-        $this->page     = $page;
-        $this->pageSize = $pageSize;
-        $this->hitCount = $hitCount;
-        $this->maxPage  = $maxPage;
-        $this->offset   = $offset;
-        $this->limit    = $limit;
+        $this->page      = $page;
+        $this->page_size = $page_size;
+        $this->hit_count = $hit_count;
+        $this->max_page  = $max_page;
+        $this->offset    = $offset;
+        $this->limit     = $limit;
     }
 
     /**
      * 検索結果が空かチェックします。
      *
-     * @return boolean true : 空である／false : 空でない
+     * @return bool true : 空である／false : 空でない
      */
     public function isEmpty()
     {
-        return $this->hitCount == 0;
+        return $this->hit_count == 0;
     }
 
     /**
      * ページが複数存在するかチェックします。
      *
-     * @return boolean true : 存在する／false : 存在しない
+     * @return bool true : 存在する／false : 存在しない
      */
     public function isMultiPage()
     {
-        return $this->maxPage != 1;
+        return $this->max_page != 1;
     }
 
     /**
      * 最初のページかチェックします。
      *
-     * @return boolean true : 最初のページである／false : 最初のページではない
+     * @return bool true : 最初のページである／false : 最初のページではない
      */
     public function isFirstPage()
     {
@@ -859,7 +950,7 @@ class PageInfo
     /**
      * 前のページが存在するチェックします。
      *
-     * @return boolean true : 存在する／false : 存在しない
+     * @return bool true : 存在する／false : 存在しない
      */
     public function hasPrevPage()
     {
@@ -869,28 +960,28 @@ class PageInfo
     /**
      * 次のページが存在するかチェックします。
      *
-     * @return boolean true : 存在する／false : 存在しない
+     * @return bool true : 存在する／false : 存在しない
      */
     public function hasNextPage()
     {
-        return $this->page < $this->maxPage ;
+        return $this->page < $this->max_page ;
     }
 
     /**
      * 最後のページかチェックします。
      *
-     * @return boolean true : 最後のページである／false : 最後のページではない
+     * @return bool true : 最後のページである／false : 最後のページではない
      */
     public function isLastPage()
     {
-        return $this->page == $this->maxPage;
+        return $this->page == $this->max_page;
     }
 
     /**
      * 近隣のページ番号リストを取得します。
      *
      * @param  int $size ページ番号リストのサイズ（奇数のみ）
-     * @return array(int) 現在のページの近隣ページ番号リスト
+     * @return int[] 現在のページの近隣ページ番号リスト
      * @throws InvalidArgumentException
      */
     public function getNeighborPages($size)
@@ -899,15 +990,15 @@ class PageInfo
             throw new InvalidArgumentException('size must be odd number');
         }
 
-        $start = $this->page - floor($size / 2);
-        $end   = $this->page + floor($size / 2);
+        $start = intval($this->page - floor($size / 2));
+        $end   = intval($this->page + floor($size / 2));
         if ($start < 1) {
-            $end   = $end - $start + 1 < $this->maxPage ? $end - $start + 1 : $this->maxPage ;
+            $end   = $end - $start + 1 < $this->max_page ? $end - $start + 1 : $this->max_page ;
             $start = 1;
         }
-        if ($end > $this->maxPage) {
-            $start = $start - ($end - $this->maxPage) > 1 ? $start - ($end - $this->maxPage) : 1 ;
-            $end   = $this->maxPage;
+        if ($end > $this->max_page) {
+            $start = $start - ($end - $this->max_page) > 1 ? $start - ($end - $this->max_page) : 1 ;
+            $end   = $this->max_page;
         }
 
         $list = [];

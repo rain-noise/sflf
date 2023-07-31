@@ -23,25 +23,56 @@
  * -------------------------------------------------------------
  *
  * @package   SFLF
- * @version   v1.0.1
+ * @version   v1.0.2
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
+ *
+ * @param array{
+ *   from?: string|DateTime|null,
+ *   to?: string|DateTime|null,
+ *   format?: string|null,
+ *   format_hour?: string|null,
+ *   format_minute?: string|null,
+ *   ignore_time?: bool|null,
+ *   null_label?: string,
+ *   positive_label?: string|null,
+ *   zero_label?: string|null,
+ *   negative_label?: string|null,
+ * }             $params  パラメータ
+ * @param Smarty &$smarty テンプレートオブジェクト
+ * @return mixed|null
  */
 function smarty_function_date_diff($params, &$smarty)
 {
+    // ---------------------------------------------------------
+    // パラメータ解析
+    // ---------------------------------------------------------
+    // 必須チェック
+    if (!isset($params['from']) && !is_null($params['from'])) {
+        trigger_error("error: missing 'from' parameter", E_USER_NOTICE);
+    }
+    if (!isset($params['to']) && !is_null($params['to'])) {
+        trigger_error("error: missing 'to' parameter", E_USER_NOTICE);
+    }
+    if (!isset($params['format'])) {
+        trigger_error("error: missing 'format' parameter", E_USER_NOTICE);
+    }
+
+    // パラメータ処理
     $ignore_time    = isset($params['ignore_time']) ? $params['ignore_time'] : false ;
-    $from           = isset($params['from']) || is_null($params['from']) ? $params['from'] : trigger_error("error: missing 'from' parameter", E_USER_NOTICE) ;
+    $from           = $params['from'] ;
     if (!empty($from)) {
         $from       = $from instanceof DateTime ? clone $from : new DateTime($from) ;
         $from       = $ignore_time ? clone $from->setTime(0, 0, 0) : $from ;
     }
-    $to             = isset($params['to']) || is_null($params['to']) ? $params['to'] : trigger_error("error: missing 'to' parameter", E_USER_NOTICE) ;
+    $to             = $params['to'];
     if (!empty($to)) {
         $to         = $to instanceof DateTime ? clone $to : new DateTime($to) ;
         $to         = $ignore_time ? $to->setTime(0, 0, 0) : $to ;
     }
-    $format         = isset($params['format']) ? $params['format'] : trigger_error("error: missing 'format' parameter", E_USER_NOTICE) ;
+    $format         = $params['format'];
+    assert(is_string($format));
     $format_hour    = isset($params['format_hour']) ? $params['format_hour'] : null ;
     $format_minute  = isset($params['format_minute']) ? $params['format_minute'] : null ;
     $null_label     = isset($params['null_label']) ? $params['null_label'] : '' ;

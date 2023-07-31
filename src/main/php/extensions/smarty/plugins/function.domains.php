@@ -31,22 +31,53 @@
  * @see       https://github.com/rain-noise/sflf/blob/master/src/main/php/Sflf/Domain.php
  *
  * @package   SFLF
- * @version   v1.0.3
+ * @version   v1.0.4
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
+ *
+ * @template T of Domain
+ * @param array{
+ *   type?: 'option'|'checkbox'|'radio'|'plain'|'label'|null,
+ *   domain?: class-string<T>|T[]|object{value: mixed, label: string}[],
+ *   selected?: mixed|mixed[],
+ *   value?: string|null,
+ *   label?: string|null,
+ *   check?: string|null,
+ *   include?: string|mixed[],
+ *   exclude?: string|mixed[],
+ *   delimiter?: string|null,
+ *   null_label?: string|null,
+ *   case?: mixed|null,
+ *   current?: mixed|null,
+ *   prevtag?: string|null,
+ *   posttag?: string|null,
+ *   addable?: bool|null,
+ *   name?: string|null,
+ * }             $params  パラメータ
+ * @param Smarty &$smarty テンプレートオブジェクト
+ * @return mixed|null
  */
 function smarty_function_domains($params, &$smarty)
 {
     // ---------------------------------------------------------
     // パラメータ解析
     // ---------------------------------------------------------
-    $domain     = isset($params['domain']) ? $params['domain'] : trigger_error("error: missing 'domain' parameter", E_USER_NOTICE) ;
+    // 必須チェック
+    if (!isset($params['domain'])) {
+        trigger_error("error: missing 'domain' parameter", E_USER_NOTICE);
+    }
+    if (!isset($params['type'])) {
+        trigger_error("error: missing 'type' parameter", E_USER_NOTICE);
+    }
+
+    // パラメータ処理
+    $domain     = $params['domain'] ?? [];
     $selected   = isset($params['selected']) ? (is_array($params['selected']) ? $params['selected'] : [$params['selected']]) : [] ;
     $value      = isset($params['value']) ? $params['value'] : 'value' ;
     $label      = isset($params['label']) ? $params['label'] : 'label' ;
     $check      = isset($params['check']) ? $params['check'] : $value ;
-    $type       = isset($params['type']) ? $params['type'] : trigger_error("error: missing 'type' parameter", E_USER_NOTICE) ;
+    $type       = $params['type'];
     if (!in_array($type, ['option', 'checkbox', 'radio', 'plain', 'label'])) {
         trigger_error("error: invalid 'type' parameter : {$type}", E_USER_NOTICE);
     }

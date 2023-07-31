@@ -1,0 +1,8 @@
+{
+    "config": {
+        "vendor-dir": "src/main/php/vendor"
+    },
+    "require-dev": {
+        "smarty/smarty": "^4.3"
+    }
+}

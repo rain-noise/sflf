@@ -28,7 +28,7 @@
  *
  *
  * @package   SFLF
- * @version   v1.0.1
+ * @version   v1.0.2
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -36,28 +36,50 @@
 abstract class RangeDomain extends Domain
 {
     /**
+     * ドメイン生成
+     *
+     * @param mixed  $value 値
+     * @param string $label ラベル
+     * @return static
+     */
+    final protected function __construct($value, $label)
+    {
+        parent::__construct($value, $label);
+    }
+
+    /**
      * 開始の数値を指定します
+     *
+     * @return int 開始番号
      */
     abstract public static function start();
 
     /**
      * 変動値を指定します
+     *
+     * @return int 変動幅
      */
     abstract public static function step();
 
     /**
      * 終了の数値を指定します
+     *
+     * @return int 終了番号
      */
     abstract public static function end();
 
     /**
      * ラベルを value の数値でフォーマットして返します。
-     * @return string
+     *
+     * @param int $i 数字
+     * @return string ラベル文字列
      */
     abstract public static function format($i);
 
     /**
      * ドメインの一覧を生成します。
+     *
+     * @return static[]
      */
     protected static function generate()
     {

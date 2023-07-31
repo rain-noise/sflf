@@ -31,7 +31,7 @@
  * $mail->send();
  *
  * @package   SFLF
- * @version   v1.2.1
+ * @version   v1.2.2
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -42,7 +42,7 @@ class Mail
      * メール送信ロジック
      * ※検証環境などでメールを送信せずにログ出力する場合などは本送信ロジックを上書きして下さい。
      *
-     * @var callable function(Mail $mail){ ... }
+     * @var callable(Mail) function(Mail $mail){ ... }
      */
     public static $SENDER = null;
 
@@ -54,19 +54,19 @@ class Mail
 
     /**
      * 宛先(To)
-     * @var array
+     * @var string[]
      */
     private $_to;
 
     /**
      * 宛先(Cc)
-     * @var array
+     * @var string[]
      */
     private $_cc;
 
     /**
      * 宛先(Bcc)
-     * @var array
+     * @var string[]
      */
     private $_bcc;
 
@@ -98,7 +98,7 @@ class Mail
     /**
      * 件名を設定します。
      *
-     * @param  string $subject
+     * @param string $subject 件名
      * @return void
      */
     public function setSubject($subject)
@@ -119,7 +119,7 @@ class Mail
     /**
      * 宛先(To)を設定します。
      *
-     * @param  string ...$to
+     * @param string ...$to 宛先(To)
      * @return void
      */
     public function setTo(...$to)
@@ -130,7 +130,7 @@ class Mail
     /**
      * 宛先(To)を取得します。
      *
-     * @return array 宛先(To)
+     * @return string[] 宛先(To)
      */
     public function getTo()
     {
@@ -140,7 +140,7 @@ class Mail
     /**
      * 宛先(Cc)を設定します。
      *
-     * @param  string ...$cc
+     * @param string ...$cc 宛先(Cc)
      * @return void
      */
     public function setCc(...$cc)
@@ -151,7 +151,7 @@ class Mail
     /**
      * 宛先(Cc)を取得します。
      *
-     * @return array 宛先(Cc)
+     * @return string[] 宛先(Cc)
      */
     public function getCc()
     {
@@ -161,7 +161,7 @@ class Mail
     /**
      * 宛先(Bcc)を設定します。
      *
-     * @param  string ...$bcc
+     * @param string ...$bcc 宛先(Bcc)
      * @return void
      */
     public function setBcc(...$bcc)
@@ -172,7 +172,7 @@ class Mail
     /**
      * 宛先(Bcc)を取得します。
      *
-     * @return array 宛先(Bcc)
+     * @return string[] 宛先(Bcc)
      */
     public function getBcc()
     {
@@ -182,7 +182,7 @@ class Mail
     /**
      * 送信元(From)を設定します。
      *
-     * @param  string $from
+     * @param string $from 送信元(From)
      * @return void
      */
     public function setFrom($from)
@@ -203,12 +203,12 @@ class Mail
     /**
      * 返信先(Reply-To)を設定します。
      *
-     * @param  string $replyTo
+     * @param string $reply_to 返信先(Reply-To)
      * @return void
      */
-    public function setReplyTo($replyTo)
+    public function setReplyTo($reply_to)
     {
-        $this->_replyTo = $replyTo;
+        $this->_replyTo = $reply_to;
     }
 
     /**
@@ -224,7 +224,7 @@ class Mail
     /**
      * 本文を設定します。
      *
-     * @param  string $body
+     * @param string $body 本文
      * @return void
      */
     public function setBody($body)
@@ -295,10 +295,10 @@ class Mail
         if (empty($this->_from)) {
             throw new MailSendException("Mail 'from' not set.");
         }
-        $from      = self::encodeMailAddress($this->_from);
-        $replyTo   = self::encodeMailAddress($this->_replyTo);
-        $headers[] = "From: ".$from;
-        $headers[] = "Reply-To: ".(empty($replyTo) ? $from : $replyTo);
+        $from       = self::encodeMailAddress($this->_from);
+        $reply_to   = self::encodeMailAddress($this->_replyTo);
+        $headers[]  = "From: ".$from;
+        $headers[]  = "Reply-To: ".(empty($reply_to) ? $from : $reply_to);
 
         // 宛先(To)
         if (empty($this->_to)) {
@@ -343,11 +343,11 @@ class Mail
     /**
      * メールアドレスをエンコードします。
      *
-     * @param  string $address           メールアドレス
-     * @param  string $charset           文字コード（デフォルト：UTF-8）
-     * @param  string $transfer_encoding 転送エンコード（デフォルト：B）
-     * @param  string $linefeed          改行コード（デフォルト：\n）
-     * @return string エンコード済みメールアドレス
+     * @param string $address           メールアドレス
+     * @param string $charset           文字コード (default: UTF-8)
+     * @param string $transfer_encoding 転送エンコード (default: B)
+     * @param string $linefeed          改行コード (default: \n)
+     * @return string|null エンコード済みメールアドレス
      */
     public static function encodeMailAddress($address, $charset = 'UTF-8', $transfer_encoding = 'B', $linefeed = "\n")
     {
@@ -364,8 +364,8 @@ class Mail
     /**
      * メールアドレス文字列からメールアドレスのみを抽出します。
      *
-     * @param  string $address メールアドレス文字列
-     * @return string メールアドレス
+     * @param string $address メールアドレス文字列
+     * @return string|null メールアドレス
      */
     public static function pickMailAddress($address)
     {
@@ -392,7 +392,15 @@ class Mail
  */
 class MailSendException extends \RuntimeException
 {
-    public function __construct($message, $code = null, $previous = null)
+    /**
+     * メール送信関連例外を構築します
+     *
+     * @param string         $message  エラーメッセージ
+     * @param int            $code     エラーコード (default: 0)
+     * @param Throwable|null $previous 原因例外 (default: null)
+     * @return MailSendException
+     */
+    public function __construct($message, $code = 0, $previous = null)
     {
         parent::__construct($message, $code, $previous);
     }

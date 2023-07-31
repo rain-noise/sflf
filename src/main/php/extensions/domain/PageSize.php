@@ -9,20 +9,25 @@
  * ページサイズの定義はシステムに合わせて適宜変更して下さい。
  *
  * @package   SFLF
- * @version   v1.0.1
+ * @version   v1.0.2
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
  */
 class PageSize extends Domain
 {
+    /**
+     * ページサイズドメインの一覧を生成します。
+     *
+     * @return PageSize[]
+     */
     protected static function generate()
     {
         return [
-            new PageSize(10, '10件')
-            , new PageSize(25, '25件')
-            , new PageSize(50, '50件')
-            , new PageSize(100, '100件')
+            new PageSize(10, '10件'),
+            new PageSize(25, '25件'),
+            new PageSize(50, '50件'),
+            new PageSize(100, '100件')
         ];
     }
 }

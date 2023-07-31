@@ -34,24 +34,30 @@
  * );
  *
  * @package   SFLF
- * @version   v1.1.2
+ * @version   v1.1.3
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
  */
 class Log
 {
-    // エラーレベル定義
+    /** @var int エラーレベル定義：致命的なエラー */
     const LEVEL_FATAL = 0;
+    /** @var int エラーレベル定義：エラー */
     const LEVEL_ERROR = 1;
+    /** @var int エラーレベル定義：ワーニング */
     const LEVEL_WARN  = 2;
+    /** @var int エラーレベル定義：インフォメーション */
     const LEVEL_INFO  = 3;
+    /** @var int エラーレベル定義：デバッグ */
     const LEVEL_DEBUG = 4;
+    /** @var int エラーレベル定義：トレース */
     const LEVEL_TRACE = 5;
 
-    // ブラウザ画面表示モード定義
-    const DISPLAY_NONE    = 1; // ブラウザ画面への表示を行わない
-    const DISPLAY_FINALLY = 2; // ログ内容をストックし、 シャットダウン時にウェブレスポンスに出力
+    /** @var int ブラウザ画面表示モード定義：ブラウザ画面への表示を行わない */
+    const DISPLAY_NONE    = 1;
+    /** @var int ブラウザ画面表示モード定義：ログ内容をストックし、 シャットダウン時にウェブレスポンスに出力 */
+    const DISPLAY_FINALLY = 2;
 
     /**
      * インスタンス化禁止
@@ -60,32 +66,48 @@ class Log
     {
     }
 
-    // エラーラベル定義
+    /**
+     * エラーラベル定義
+     *
+     * @var array<int, string>
+     */
     private static $_LOG_LEVEL_LABEL = [
-        self::LEVEL_FATAL   => "FATAL"
-        , self::LEVEL_ERROR => "ERROR"
-        , self::LEVEL_WARN  => "WARN "
-        , self::LEVEL_INFO  => "INFO "
-        , self::LEVEL_DEBUG => "DEBUG"
-        , self::LEVEL_TRACE => "TRACE"
+        self::LEVEL_FATAL => "FATAL",
+        self::LEVEL_ERROR => "ERROR",
+        self::LEVEL_WARN  => "WARN ",
+        self::LEVEL_INFO  => "INFO ",
+        self::LEVEL_DEBUG => "DEBUG",
+        self::LEVEL_TRACE => "TRACE"
     ];
 
-    // ロガー設定定義
+    /** @var int ロガー設定定義：ログレベル（default: LEVEL_ERROR） */
     private static $_LOG_LEVEL            = self::LEVEL_ERROR;
+    /** @var string|null ロガー設定定義：ログファイル */
     private static $_LOG_FILE             = null;
+    /** @var string ロガー設定定義：ログファイル拡張子 */
     private static $_LOG_FILE_SUFFIX      = "_Ym";
+    /** @var int ロガー設定定義：ログ画面表示設定 */
     private static $_LOG_DISPLAY          = self::DISPLAY_NONE;
+    /** @var string|null ロガー設定定義：ログ出力抑止パターン */
     private static $_LOG_SUPPRESS_PATTERN = null;
 
-    // ブラウザ画面ログ出力ストック用バッファ
+    /**
+     * ブラウザ画面ログ出力ストック用バッファ
+     *
+     * @var array<array{ 0: int, 1: string}> [[ログレベル, ログメッセージ], ...]
+     */
     private static $_OUT_BUFFER = [];
 
-    // (ブラウザ画面ログ出力時のみ)
-    // ファイルサフィックス ⇒ Content-Type のマップ
-    // データダウンロード時の Content-Type が 'application/octet-stream', 'application/force-download' の場合に
-    // Content-Disposition に指定されている filename のサフィックスから適切な Content-Type を判断するために使用
-    // ※必要に応じて追加/変更して下さい。
-    // ※ここに定義の無いサフィックスの Content-Type はそのまま 'application/octet-stream' 又は 'application/force-download' として扱われます。
+    /**
+     * (ブラウザ画面ログ出力時のみ)
+     * ファイルサフィックス ⇒ Content-Type のマップ
+     * データダウンロード時の Content-Type が 'application/octet-stream', 'application/force-download' の場合に
+     * Content-Disposition に指定されている file_name のサフィックスから適切な Content-Type を判断するために使用
+     * ※必要に応じて追加/変更して下さい。
+     * ※ここに定義の無いサフィックスの Content-Type はそのまま 'application/octet-stream' 又は 'application/force-download' として扱われます。
+     *
+     * @var array<string, string> [ファイルサフィックス ⇒ Content-Type]
+     */
     private static $_FILE_MIME_TYPE = [
         'csv' => 'text/csv',
         'tsv' => 'text/tsv',
@@ -95,10 +117,14 @@ class Log
         'xml' => 'application/xml',
     ];
 
-    // (ブラウザ画面ログ出力時のみ)
-    // 出力対象のコンテンツタイプによってログ出力方法を変更できます。
-    // ※ここに定義のないコンテンツタイプの場合はウェブレスポンスへのログ出力は行われません。
-    // ※必要に応じて追加/変更して下さい。
+    /**
+     * (ブラウザ画面ログ出力時のみ)
+     * 出力対象のコンテンツタイプによってログ出力方法を変更できます。
+     * ※ここに定義のないコンテンツタイプの場合はウェブレスポンスへのログ出力は行われません。
+     * ※必要に応じて追加/変更して下さい。
+     *
+     * @var array<string, array{0: string, 1: string|mixed[]|callable(string $body, int $level):string|null}> [content_type => [how_to, args]]
+     */
     private static $_HOW_TO_DISPLAY = [
         'text/html'              => ['html'         , null],
         'text/csv'               => ['wrap-escape'  , ['"', ['"' , '""'], '"']],
@@ -109,26 +135,27 @@ class Log
         'application/javascript' => ['line-comment' , '// '],
         'text/xml'               => ['block-comment', [['<!--', '-->'], ['[COMMENT]', '[/COMMENT]']]],
         'application/xml'        => ['block-comment', [['<!--', '-->'], ['[COMMENT]', '[/COMMENT]']]],
-        //'content/type'         => ['custom', function($body, $level) { ... }],
+        //'unknown'              => ['html'         , null],
+        //'content/type'         => ['custom'       , function($body, $level) { ... }],
     ];
 
     /**
      * ロガーを初期化します。
      *
-     * @param int    $level           ログレベル
-     * @param string $fileName        ログ出力ファイル名
-     * @param string $suffix          ログファイルサフィックス（DatePattern）
-     * @param string $display         画面出力制御
-     * @param string $suppressPattern ログ出力抑止パターン（正規表現）
+     * @param int         $level            ログレベル
+     * @param string|null $file_name        ログ出力ファイル名 (default: null)
+     * @param string      $suffix           ログファイルサフィックスのDatePattern (default: _Ym)
+     * @param int         $display          画面出力制御 DISPLAY_* (default: DISPLAY_NONE)
+     * @param string|null $suppress_pattern ログ出力抑止パターン正規表現 (default: null)
      * @return void
      */
-    public static function init($level, $fileName = null, $suffix = "_Ym", $display = self::DISPLAY_NONE, $suppressPattern = null)
+    public static function init($level, $file_name = null, $suffix = "_Ym", $display = self::DISPLAY_NONE, $suppress_pattern = null)
     {
         self::$_LOG_LEVEL            = $level;
-        self::$_LOG_FILE             = $fileName;
+        self::$_LOG_FILE             = $file_name;
         self::$_LOG_FILE_SUFFIX      = $suffix;
         self::$_LOG_DISPLAY          = $display;
-        self::$_LOG_SUPPRESS_PATTERN = $suppressPattern;
+        self::$_LOG_SUPPRESS_PATTERN = $suppress_pattern;
 
         if (self::$_LOG_DISPLAY == self::DISPLAY_FINALLY) {
             register_shutdown_function(function () { Log::display(); });
@@ -138,9 +165,9 @@ class Log
     /**
      * TRACE レベルログを出力します。
      *
-     * @param string|array|obj|mixed $message   ログメッセージ
-     * @param string|array|obj|mixed $params    パラメータ
-     * @param Throwable              $exception 例外           - デフォルト null
+     * @param string|array|object|mixed      $message   ログメッセージ
+     * @param string|array|object|mixed|null $params    パラメータ (default: null)
+     * @param Throwable|null                 $exception 例外 (default: null)
      * @return void
      */
     public static function trace($message, $params = null, $exception = null)
@@ -151,9 +178,9 @@ class Log
     /**
      * DEBUG レベルログを出力します。
      *
-     * @param string|array|obj|mixed $message   ログメッセージ
-     * @param string|array|obj|mixed $params    パラメータ
-     * @param Throwable              $exception 例外           - デフォルト null
+     * @param string|array|object|mixed      $message   ログメッセージ
+     * @param string|array|object|mixed|null $params    パラメータ (default: null)
+     * @param Throwable|null                 $exception 例外 (default: null)
      * @return void
      */
     public static function debug($message, $params = null, $exception = null)
@@ -164,9 +191,9 @@ class Log
     /**
      * INFO レベルログを出力します。
      *
-     * @param string|array|obj|mixed $message   ログメッセージ
-     * @param string|array|obj|mixed $params    パラメータ
-     * @param Throwable              $exception 例外           - デフォルト null
+     * @param string|array|object|mixed      $message   ログメッセージ
+     * @param string|array|object|mixed|null $params    パラメータ (default: null)
+     * @param Throwable|null                 $exception 例外 (default: null)
      * @return void
      */
     public static function info($message, $params = null, $exception = null)
@@ -177,9 +204,9 @@ class Log
     /**
      * WARN レベルログを出力します。
      *
-     * @param string|array|obj|mixed $message   ログメッセージ
-     * @param string|array|obj|mixed $params    パラメータ
-     * @param Throwable              $exception 例外           - デフォルト null
+     * @param string|array|object|mixed      $message   ログメッセージ
+     * @param string|array|object|mixed|null $params    パラメータ (default: null)
+     * @param Throwable|null                 $exception 例外 (default: null)
      * @return void
      */
     public static function warn($message, $params = null, $exception = null)
@@ -190,9 +217,9 @@ class Log
     /**
      * ERROR レベルログを出力します。
      *
-     * @param string|array|obj|mixed $message   ログメッセージ
-     * @param string|array|obj|mixed $params    パラメータ
-     * @param Throwable              $exception 例外           - デフォルト null
+     * @param string|array|object|mixed      $message   ログメッセージ
+     * @param string|array|object|mixed|null $params    パラメータ (default: null)
+     * @param Throwable|null                 $exception 例外 (default: null)
      * @return void
      */
     public static function error($message, $params = null, $exception = null)
@@ -203,9 +230,9 @@ class Log
     /**
      * FATAL レベルログを出力します。
      *
-     * @param string|array|obj|mixed $message   ログメッセージ
-     * @param string|array|obj|mixed $params    パラメータ
-     * @param Throwable              $exception 例外           - デフォルト null
+     * @param string|array|object|mixed      $message   ログメッセージ
+     * @param string|array|object|mixed|null $params    パラメータ (default: null)
+     * @param Throwable|null                 $exception 例外 (default: null)
      * @return void
      */
     public static function fatal($message, $params = null, $exception = null)
@@ -216,8 +243,8 @@ class Log
     /**
      * メモリ使用量を出力します。
      *
-     * @param string $message   ログメッセージ（デフォルト: 空文字）
-     * @param int    $decimals  メモリ[MB]の小数点桁数（デフォルト: 2）
+     * @param string $message   ログメッセージ（default: 空文字）
+     * @param int    $decimals  メモリ[MB]の小数点桁数（default: 2）
      * @return void
      */
     public static function memory(string $message = '', int $decimals = 2)
@@ -232,10 +259,10 @@ class Log
     /**
      * ログを出力します。
      *
-     * @param int                    $level     ログレベル
-     * @param string|array|obj|mixed $message   ログメッセージ
-     * @param string|array|obj|mixed $params    パラメータ
-     * @param Throwable              $exception 例外           - デフォルト null
+     * @param int                            $level     ログレベル
+     * @param string|array|object|mixed      $message   ログメッセージ
+     * @param string|array|object|mixed|null $params    パラメータ (default: null)
+     * @param Throwable|null                 $exception 例外 (default: null)
      * @return void
      */
     private static function _log($level, $message, $params = null, $exception = null)
@@ -243,16 +270,16 @@ class Log
         if (self::$_LOG_LEVEL < $level) {
             return;
         }
-        if (!is_string($message) && !method_exists($message, '__toString')) {
-            $message = print_r($message, true);
+        if (!is_string($message)) {
+            $message = method_exists($message, '__toString') ? $message->__toString() : print_r($message, true) ;
         }
         if (self::$_LOG_SUPPRESS_PATTERN && preg_match(self::$_LOG_SUPPRESS_PATTERN, $message)) {
             return;
         }
 
-        $microtime = explode('.', microtime(true));
-        $now       = $microtime[0];
-        $ms        = isset($microtime[1]) ? $microtime[1] : 0 ;
+        $microtime = explode('.', (string)microtime(true));
+        $now       = (int)$microtime[0];
+        $ms        = isset($microtime[1]) ? $microtime[1] : '0' ;
         $body      = date("Y-m-d H:i:s", $now).".".str_pad($ms, 4, '0')." ".getmypid()." [".self::$_LOG_LEVEL_LABEL[$level]."] ".$message;
 
         if ($params) {
@@ -285,10 +312,12 @@ class Log
      *
      * @param string $body  ログメッセージ
      * @param int    $level ログレベル
-     * @return type
+     * @return string HTML書式のログ
      */
     private static function _toHtmlDisplay(string $body, int $level)
     {
+        $fc = '#000000';
+        $bc = '#ffffff';
         switch ($level) {
             case self::LEVEL_TRACE:
                 $fc = '#666666';
@@ -326,7 +355,7 @@ EOS;
 
     /**
      * レスポンスのコンテンツタイプを取得します。
-     * コンテンツタイプが application/octet-stream 又は application/force-download の場合は filename の拡張子から推測します。
+     * コンテンツタイプが application/octet-stream 又は application/force-download の場合は file_name の拡張子から推測します。
      *
      * @return string コンテンツタイプ
      */
@@ -342,7 +371,7 @@ EOS;
                 $content_type = $matcher['type'];
             }
 
-            if (\preg_match('|content-disposition:.*filename="?.*\.(?<suffix>[^ ";]+)"?|i', $header, $matcher)) {
+            if (\preg_match('|content-disposition:.*file_name="?.*\.(?<suffix>[^ ";]+)"?|i', $header, $matcher)) {
                 $file_suffix = $matcher['suffix'];
             }
         }
@@ -358,7 +387,10 @@ EOS;
      * 指定の文字列をインデントします。
      * ※対象の文字列が空の場合、インデントしません。
      *
-     * @param string $string
+     * @param string $string 文字列
+     * @param int    $depth  インデントの深さ (default: 1)
+     * @param string $char   インデント用文字列 (default: \t)
+     * @return string インデントされた文字列
      */
     private static function _indent($string, $depth = 1, $char = "\t")
     {
@@ -377,31 +409,53 @@ EOS;
     public static function display()
     {
         if (!empty(self::$_OUT_BUFFER)) {
-            $content_type          = self::_getResponseContentType();
-            list($how_to, $option) = self::$_HOW_TO_DISPLAY[$content_type] ?? ['none', null];
-            foreach (self::$_OUT_BUFFER as list($level, $body)) {
-                switch ($how_to) {
-                    case 'html':
+            $content_type      = self::_getResponseContentType();
+            [$how_to, $option] = self::$_HOW_TO_DISPLAY[$content_type] ?? ['none', null];
+            switch ($how_to) {
+                case 'html':
+                    foreach (self::$_OUT_BUFFER as [$level, $body]) {
                         echo self::_toHtmlDisplay($body, $level);
-                        break;
-                    case 'raw':
+                    }
+                    break;
+                case 'raw':
+                    foreach (self::$_OUT_BUFFER as [$level, $body]) {
                         echo "\n".$body;
-                        break;
-                    case 'wrap-escape':
-                        list($open, $escape, $close) = $option;
+                    }
+                    break;
+                case 'wrap-escape':
+                    if (!is_array($option) || count($option) !== 3) {
+                        throw new ValueError("Invalid 'wrap-escape' options given.");
+                    }
+                    [$open, $escape, $close] = $option;
+                    foreach (self::$_OUT_BUFFER as [$level, $body]) {
                         echo "\n{$open}".str_replace($escape[0], $escape[1], $body)."{$close}";
-                        break;
-                    case 'block-comment':
-                        list($comment, $replacement) = $option;
+                    }
+                    break;
+                case 'block-comment':
+                    if (!is_array($option) || count($option) !== 2) {
+                        throw new ValueError("Invalid 'block-comment' options given.");
+                    }
+                    [$comment, $replacement] = $option;
+                    foreach (self::$_OUT_BUFFER as [$level, $body]) {
                         echo "\n{$comment[0]}\n".str_replace($comment, $replacement, $body)."\n{$comment[1]}";
-                        break;
-                    case 'line-comment':
+                    }
+                    break;
+                case 'line-comment':
+                    if (!is_string($option)) {
+                        throw new ValueError("Invalid 'line-comment' options given.");
+                    }
+                    foreach (self::$_OUT_BUFFER as [$level, $body]) {
                         echo "\n".self::_indent($body, 1, $option);
-                        break;
-                    case 'custom':
+                    }
+                    break;
+                case 'custom':
+                    if (!is_callable($option)) {
+                        throw new ValueError("Invalid 'custom' options given.");
+                    }
+                    foreach (self::$_OUT_BUFFER as [$level, $body]) {
                         echo "\n".$option($body, $level);
-                        break;
-                }
+                    }
+                    break;
             }
             self::$_OUT_BUFFER = [];
         }
@@ -479,23 +533,24 @@ EOS;
     /**
      * debug_backtrace を文字列形式に変換します。
      *
-     * @param array $trace debug_backtrace
-     * @param boolean true : 引数記載有り／false : 引数記載無し（デフォルト）
+     * @param array<array<string, mixed>> $trace     debug_backtrace
+     * @param bool                        $with_args true : 引数記載有り／false : 引数記載無し (default: false)
      * @return string デバックバックトレース文字列
      */
-    private static function _traceToString($trace, $withArgs = false)
+    private static function _traceToString($trace, $with_args = false)
     {
         $trace = array_reverse($trace);
         array_pop($trace); // Remove self method stack
-        array_walk($trace, function (&$value, $key) use ($withArgs) {
+        array_walk($trace, function (&$value, $key) use ($with_args) {
             $value = "#{$key} "
             .(empty($value['class']) ? "" : $value['class']."@")
             .$value['function']
             .(empty($value['file']) ? "" : " (".$value['file'].":".$value['line'].")")
-            .($withArgs && !empty($value['args']) ? "\n-- ARGS --\n".print_r($value['args'], true) : "")
+            .($with_args && !empty($value['args']) ? "\n-- ARGS --\n".print_r($value['args'], true) : "")
             ;
         });
 
+        // @phpstan-ignore-next-line : Phpstan doesn't consider converted array by array_walk()
         return empty($trace) ? "" : join("\n", $trace) ;
     }
 }
@@ -507,6 +562,7 @@ set_error_handler(function ($errno, $errstr, $errfile, $errline) use (&$old_hand
         $old_handler($errno, $errstr, $errfile, $errline);
     }
     Log::error_handle($errno, $errstr, $errfile, $errline);
+    return false;
 });
 
 // シャットダウンハンドラ登録

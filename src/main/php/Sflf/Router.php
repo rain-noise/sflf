@@ -37,21 +37,22 @@
  * }
  *
  * @package   SFLF
- * @version   v1.1.1
+ * @version   v1.1.2
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
  */
 class Router
 {
-    // 各種デフォルト名の定義
+    /** @var string デフォルトコントローラー名 (default: top) */
     const DEFAULT_CONTEOLLER_NAME = 'top';
+    /** @var string デフォルトアクション名 (default: index) */
     const DEFAULT_ACTION_NAME     = 'index';
 
-    // コントローラークラス名のサフィックス
+    /** @var string コントローラークラス名のサフィックス (default: Controller) */
     const CONTROLLER_CLASS_NAME_SUFFIX = 'Controller';
 
-    // URI の ワード区切り文字を定義します。
+    /** @var string URI の ワード区切り文字を定義します。 */
     const URI_SNAKE_CASE_SEPARATOR = '-';
 
     /**
@@ -59,7 +60,7 @@ class Router
      *
      * @var string
      */
-    private $contextPath;
+    private $context_path;
 
     /**
      * リクエストURI
@@ -72,36 +73,37 @@ class Router
     /**
      * リクエストURI
      *
-     * @var array
+     * @var string[]
      */
     private $part_of_uri;
 
     /**
      * アクセス制御
      *
-     * @var boolean
+     * @var bool
      */
     private $accessible;
 
     /**
      * ルーティングオブジェクトを構築します。
      *
-     * @param string $uri         リクエストURL(= $_SERVER['REQUEST_URI'])
-     * @param string $contextPath コンテキストパス                         - デフォルト ''
+     * @param string $uri          リクエストURL(= $_SERVER['REQUEST_URI'])
+     * @param string $context_path コンテキストパス (default: '')
      */
-    public function __construct($uri, $contextPath = '')
+    public function __construct($uri, $context_path = '')
     {
-        $this->uri         = preg_replace('/^'.preg_quote($contextPath, '/').'/', '', $uri);
-        $this->contextPath = $contextPath;
-        $uri               = strpos($this->uri, '?') === false ? $this->uri : strstr($this->uri, '?', true) ;
-        $this->part_of_uri = explode('/', preg_replace('/^\//', '', $uri));
-        $this->accessible  = false;
+        $this->uri          = (string)preg_replace('/^'.preg_quote($context_path, '/').'/', '', $uri);
+        $this->context_path = $context_path;
+        $part_of_uri        = explode('/', (string)preg_replace('/^\//', '', strstr($this->uri, '?', true) ?: $this->uri));
+        assert(is_array($part_of_uri));
+        $this->part_of_uri  = $part_of_uri;
+        $this->accessible   = false;
     }
 
     /**
      * コントローラーの非パブリックメソッドに対してのアクセス制御設定を行います
      *
-     * @param  boolean $accessible true : アクセス可／false : アクセス不可
+     * @param  bool $accessible true : アクセス可／false : アクセス不可
      * @return void
      */
     public function setAccessible($accessible)
@@ -112,7 +114,7 @@ class Router
     /**
      * コントローラークラスのインスタンスを取得します。
      *
-     * @return obj コントローラーオブジェクト
+     * @return object コントローラーオブジェクト
      * @throws NoRouteException
      */
     public function getController()
@@ -121,26 +123,26 @@ class Router
         try {
             return new $controller();
         } catch(Throwable $e) {
-            throw new NoRouteException("Route Not Found : Controller [ {$controller} ] can not instantiate.", null, $e);
+            throw new NoRouteException("Route Not Found : Controller [ {$controller} ] can not instantiate.", 0, $e);
         }
     }
 
     /**
      * コントローラーのアクションを起動します。
      *
-     * @param obj $controller コントローラーオブジェクト
+     * @param object $controller コントローラーオブジェクト
      * @return mixed アクションの戻り値
      */
     public function invoke($controller)
     {
-        $clazz   = $this->_getControllerName();
-        $method  = $this->_getMethodName();
-        $args    = $this->getArgs();
+        $clazz  = $this->_getControllerName();
+        $method = $this->_getMethodName();
+        $args   = $this->getArgs();
 
         try {
             $invoker = new ReflectionMethod($clazz, $method);
         } catch(Throwable $e) {
-            throw new NoRouteException("Route Not Found : Controller [ {$clazz}->{$method}() ] can not invoke.", null, $e);
+            throw new NoRouteException("Route Not Found : Controller [ {$clazz}->{$method}() ] can not invoke.", 0, $e);
         }
 
         if (count($args) < $invoker->getNumberOfRequiredParameters()) {
@@ -178,7 +180,7 @@ class Router
      */
     public function getContextPath()
     {
-        return $this->contextPath;
+        return $this->context_path;
     }
 
     /**
@@ -204,7 +206,7 @@ class Router
     /**
      *パラメータを取得します。
      *
-     * @return array パラメータ
+     * @return string[] パラメータ
      */
     public function getArgs()
     {
@@ -215,10 +217,10 @@ class Router
      * 指定のコントローラー名などが現在のルーティング内容にマッチするかチェックします。
      * ※グローバルナビゲーションのアクティブスタイル適用などで利用できます
      *
-     * @param  string $controller コントローラ名の正規表現
-     * @param  string $action     アクション名の正規表現
-     * @param  array  ...$args    引数の正規表現
-     * @return boolean true : マッチ／false : アンマッチ
+     * @param string      $controller コントローラ名の正規表現
+     * @param string|null $action     アクション名の正規表現 (default: null)
+     * @param string      ...$args    引数の正規表現 (default: [])
+     * @return bool true : マッチ／false : アンマッチ
      */
     public function match($controller, $action = null, ...$args)
     {
@@ -273,9 +275,10 @@ class Router
     /**
      * 配列から値を取得します。
      *
-     * @param array  $array   配列
-     * @param string $key     キー名
-     * @param mixed  $default デフォルト値
+     * @param array<mixed> $array   配列
+     * @param string|int   $key     キー名
+     * @param mixed|null   $default デフォルト値 (default: null)
+     * @return mixed 値
      */
     public function _get($array, $key, $default = null)
     {
@@ -302,7 +305,15 @@ class Router
  */
 class NoRouteException extends RuntimeException
 {
-    public function __construct($message, $code = null, $previous = null)
+    /**
+     * ルーティング関連例外を構築します。
+     *
+     * @param string         $message  エラーメッセージ
+     * @param int            $code     エラーコード (default: 0)
+     * @param Throwable|null $previous 原因例外 (default: null)
+     * @return NoRouteException
+     */
+    public function __construct($message, $code = 0, $previous = null)
     {
         parent::__construct($message, $code, $previous);
     }

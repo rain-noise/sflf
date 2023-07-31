@@ -31,13 +31,29 @@
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
+ *
+ * @param array{
+ *   form?: Form|object|null,
+ *   include?: string|null,
+ *   exclude?: string|null,
+ *   date_format?: string|null,
+ * }             $params  パラメータ
+ * @param Smarty &$smarty テンプレートオブジェクト
+ * @return string
  */
 function smarty_function_hiddens($params, &$smarty)
 {
     // ---------------------------------------------------------
     // パラメータ解析
     // ---------------------------------------------------------
-    $form        = isset($params['form']) ? $params['form'] : trigger_error("error: missing 'form' parameter", E_USER_NOTICE) ;
+    // 必須チェック
+    if (!isset($params['form'])) {
+        trigger_error("error: missing 'form' parameter", E_USER_NOTICE);
+    }
+
+    // パラメータ処理
+    $form        = $params['form'];
+    assert(!is_null($form));
     $include     = isset($params['include']) ? explode(',', $params['include']) : [] ;
     $exclude     = isset($params['exclude']) ? explode(',', $params['exclude']) : [] ;
     $date_format = isset($params['date_format']) ? $params['date_format'] : 'Y-m-d H:i:s' ;
@@ -54,9 +70,20 @@ function smarty_function_hiddens($params, &$smarty)
     return join("\n", $hiddens);
 }
 
+/**
+ * フォームオブジェクトのプロパティから <hidden/> タグを構築します。
+ *
+ * @param string[]    &$hiddens    <hidden/>タグ配列
+ * @param Form|object $form        フォーム
+ * @param string[]    $include     <hidden/>タグに含める項目
+ * @param string[]    $exclude     <hidden/>タグに含めない項目
+ * @param string      $date_format 日付フォーマット
+ * @param string      $name_prefix name属性のプレフィックス (default: '')
+ * @return void
+ */
 function smarty_function_hiddens__generate(&$hiddens, $form, $include, $exclude, $date_format, $name_prefix = '')
 {
-    foreach ($form as $key => $value) {
+    foreach (get_object_vars($form) as $key => $value) {
         $key     = empty($name_prefix) ? $key : "{$name_prefix}[{$key}]" ;
         $matcher = preg_replace('/\[[0-9]*\]/', '', $key);
         if (!empty($include) && !in_array($matcher, $include)) {
@@ -86,6 +113,15 @@ function smarty_function_hiddens__generate(&$hiddens, $form, $include, $exclude,
     return;
 }
 
+/**
+ * <hidden/> タグを構築して追加します
+ *
+ * @param string[] &$hiddens    <hidden/>タグ配列
+ * @param string   $name        <hidden/>タグの name 属性名
+ * @param mixed    $value       <hidden/>タグの value 属性値
+ * @param string   $date_format 日付フォーマット
+ * @return void
+ */
 function smarty_function_hiddens__append_tag(&$hiddens, $name, $value, $date_format)
 {
     $value     = $value instanceof DateTime ? $value->format($date_format) : $value ;

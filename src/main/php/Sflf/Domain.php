@@ -117,14 +117,40 @@
  */
 abstract class Domain
 {
+    /**
+     * 値
+     *
+     * @var mixed
+     */
     public $value;
+
+    /**
+     * ラベル
+     *
+     * @var string
+     */
     public $label;
 
+    /**
+     * ドメインリストのキャッシュ
+     *
+     * @var array<class-string<static>, static[]>
+     */
     private static $DOMAIN_LIST_CACHE = [];
+
+    /**
+     * ドメインマップのキャッシュ
+     *
+     * @var array<array-key, static[]>
+     */
     private static $DOMAIN_MAP_CACHE  = [];
 
     /**
      * ドメイン生成
+     *
+     * @param mixed  $value 値
+     * @param string $label ラベル
+     * @return static
      */
     protected function __construct($value, $label)
     {
@@ -134,7 +160,9 @@ abstract class Domain
 
     /**
      * ドメインの値を検証します。
-     * @param boolean true: 一致 / false: 不一致
+     *
+     * @param mixed $value 値
+     * @return bool true: 一致 / false: 不一致
      */
     public function equals($value)
     {
@@ -143,7 +171,9 @@ abstract class Domain
 
     /**
      * ドメインが指定の配列内に含まれるか検証します。
-     * @param boolean true: 含まれる / false: 含まれない
+     *
+     * @param mixed[] $array 値のリスト
+     * @return bool true: 含まれる / false: 含まれない
      */
     public function in(array $array)
     {
@@ -152,6 +182,8 @@ abstract class Domain
 
     /**
      * ドメインを文字列します。
+     *
+     * @return string ドメイン文字列
      */
     public function __toString()
     {
@@ -160,6 +192,8 @@ abstract class Domain
 
     /**
      * ドメインの一覧を生成します。
+     *
+     * @return static[] 生成されたドメインの一覧
      */
     protected static function generate()
     {
@@ -177,6 +211,8 @@ abstract class Domain
     /**
      * ドメイン定数の一覧 array(Domain) を取得します。
      * ※ドメインクラス名単位で generate されたドメイン一覧をキャッシュし、再利用します。
+     *
+     * @return static[]
      */
     public static function lists()
     {
@@ -191,6 +227,9 @@ abstract class Domain
     /**
      * $domain->$field ⇒ $domain の連想配列を取得します。
      * ※同じ値を持つドメインが存在する場合、 Domain::lists() の順序で後勝ちとなります
+     *
+     * @param string $field 変換元にするフィールド名 (default: value)
+     * @return array<array-key, static>
      */
     public static function maps($field = 'value')
     {
@@ -211,6 +250,9 @@ abstract class Domain
     /**
      * 対象の値を持つドメインを取得します。
      * ※同じ値を持つドメインが存在する場合、 Domain::lists() の順序で後勝ちとなります
+     *
+     * @param string  $value 値
+     * @return static|null 指定の値を持つドメイン
      */
     public static function valueOf($value)
     {
@@ -220,6 +262,9 @@ abstract class Domain
     /**
      * 対象のラベルを持つドメインを取得します。
      * ※同じ値を持つドメインが存在する場合、 Domain::lists() の順序で後勝ちとなります
+     *
+     * @param string  $label ラベル名
+     * @return static|null 指定のラベルを持つドメイン
      */
     public static function labelOf($label)
     {
@@ -229,6 +274,10 @@ abstract class Domain
     /**
      * 指定フィールドの値を持つドメインを取得します。
      * ※同じ値を持つドメインが存在する場合、 Domain::lists() の順序で後勝ちとなります
+     *
+     * @param string $field フィールド
+     * @param mixed  $value 値
+     * @return static|null 指定の値を持つドメイン
      */
     public static function fieldOf($field, $value)
     {
@@ -241,6 +290,9 @@ abstract class Domain
 
     /**
      * 値の一覧を配列で取得します。
+     *
+     * @param null|callable(static $domain):bool $matcher リストに含めるドメインの条件 (default: null)
+     * @return mixed[]
      */
     public static function values($matcher = null)
     {
@@ -249,6 +301,9 @@ abstract class Domain
 
     /**
      * ラベルの一覧を配列で取得します。
+     *
+     * @param null|callable(static $domain):bool $matcher リストに含めるドメインの条件 (default: null)
+     * @return string[]
      */
     public static function labels($matcher = null)
     {
@@ -257,7 +312,10 @@ abstract class Domain
 
     /**
      * 指定フィールドの一覧を配列で取得します。
-     * @param string $name
+     *
+     * @param string $name 対象フィールド名
+     * @param null|callable(static $domain):bool $matcher リストに含めるドメインの条件 (default: null)
+     * @return mixed[]
      */
     public static function listOf($name, $matcher = null)
     {
@@ -274,8 +332,9 @@ abstract class Domain
      * ワークフロー：指定の状況(case)に応じたあるドメイン(current)から遷移可能な次のドメイン一覧を取得します。
      * 必要に応じてサブクラスでオーバーライドして下さい。
      *
-     * @param type $current
-     * @param type $case
+     * @param mixed      $current 現在の値
+     * @param mixed|null $case    場合分け情報 (default: null)
+     * @return static[]
      */
     public static function nexts($current, $case = null)
     {
@@ -284,7 +343,10 @@ abstract class Domain
 
     /**
      * ワークフロー：指定フィールドの一覧を配列で取得します。
-     * @param string $name
+     * @param string     $name 指定フィールド名
+     * @param mixed      $current 現在の値
+     * @param mixed|null $case 場合分け情報 (default: null)
+     * @return mixed[]
      */
     public static function nextOf($name, $current, $case = null)
     {
@@ -297,6 +359,10 @@ abstract class Domain
 
     /**
      * ワークフロー：値の一覧を配列で取得します。
+     *
+     * @param mixed      $current 現在の値
+     * @param mixed|null $case 場合分け情報 (default: null)
+     * @return mixed[]
      */
     public static function nextValues($current, $case = null)
     {
@@ -305,6 +371,10 @@ abstract class Domain
 
     /**
      * ワークフロー：ラベルの一覧を配列で取得します。
+     *
+     * @param mixed      $current 現在の値
+     * @param mixed|null $case 場合分け情報 (default: null)
+     * @return string[]
      */
     public static function nextLabels($current, $case = null)
     {

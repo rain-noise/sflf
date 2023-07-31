@@ -10,7 +10,10 @@
                 "php.validate.enable": false,
                 "php.suggest.basic": false,
                 "php-cs-fixer.onsave": true,
-                "php-cs-fixer.executablePath": "~/.composer/vendor/bin/php-cs-fixer",
+                "php-cs-fixer.executablePath": "/home/vscode/.composer/vendor/bin/php-cs-fixer",
+                "phpstan.binCommand": ["/home/vscode/.composer/vendor/bin/phpstan"],
+                // "phpstan.memoryLimit": "512M",
+                "phpstan.timeout": 30000,
                 "[php]": {
                     "editor.formatOnSave": true,
                     "editor.defaultFormatter": "junstyle.php-cs-fixer"
@@ -22,12 +25,13 @@
             "extensions": [
                 "bmewburn.vscode-intelephense-client",
                 "EditorConfig.EditorConfig",
-                "felixfbecker.php-debug",
                 "junstyle.php-cs-fixer",
                 "mikestead.dotenv",
                 "mhutchie.git-graph",
                 "neilbrayfield.php-docblocker",
                 "oderwat.indent-rainbow",
+                "sanderronde.phpstan-vscode",
+                "xdebug.php-debug",
                 "xyz.local-history"
             ]
         }

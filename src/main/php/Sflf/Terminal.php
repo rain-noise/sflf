@@ -15,16 +15,18 @@
  * }
  *
  * @package   SFLF
- * @version   v1.0.2
+ * @version   v1.0.3
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
  */
 class Terminal
 {
-    // 端末タイプの定義
+    /** @var int 端末タイプ：スマートフォン */
     const TYPE_SMARTPHONE = 1;
+    /** @var int 端末タイプ：タブレット */
     const TYPE_TABLET     = 2;
+    /** @var int 端末タイプ：その他(PC) */
     const TYPE_OTHERS     = 3;
 
     /**
@@ -41,25 +43,25 @@ class Terminal
 
     /**
      * クローラーか否か
-     * @var boolean
+     * @var bool
      */
     private static $_IS_CRAWLER = false;
 
     /**
      * 接続元IPアドレス（REMOTE_ADDR）
-     * @var string
+     * @var string|null
      */
     private static $_IP = null;
 
     /**
      * 接続元IPアドレス（HTTP_X_FORWARDED_FOR）
-     * @var string
+     * @var string|null
      */
     private static $_XFF = null;
 
     /**
      * 接続元IPアドレス（HTTP_X_REAL_IP）
-     * @var string
+     * @var string|null
      */
     private static $_XRIP = null;
 
@@ -73,7 +75,7 @@ class Terminal
     /**
      * 端末が モバイル(スマートフォン 又は タブレット) か判定します。
      *
-     * @return boolean true : モバイル／false : モバイル以外
+     * @return bool true : モバイル／false : モバイル以外
      */
     public static function isMobile()
     {
@@ -83,7 +85,7 @@ class Terminal
     /**
      * 端末が スマートフォン か判定します。
      *
-     * @return boolean true : スマートフォン／false : スマートフォン以外
+     * @return bool true : スマートフォン／false : スマートフォン以外
      */
     public static function isSmartphone()
     {
@@ -93,7 +95,7 @@ class Terminal
     /**
      * 端末が タブレット か判定します。
      *
-     * @return boolean true : タブレット／false : タブレット以外
+     * @return bool true : タブレット／false : タブレット以外
      */
     public static function isTablet()
     {
@@ -103,7 +105,7 @@ class Terminal
     /**
      * 端末が その他(PC) か判定します。
      *
-     * @return boolean true : その他(PC)／false : その他(PC)以外
+     * @return bool true : その他(PC)／false : その他(PC)以外
      */
     public static function isOthers()
     {
@@ -113,7 +115,7 @@ class Terminal
     /**
      * 端末が クローラー か判定します。
      *
-     * @return boolean true : クローラー／false : クローラー以外
+     * @return bool true : クローラー／false : クローラー以外
      */
     public static function isCrawler()
     {
@@ -142,14 +144,14 @@ class Terminal
 
     /**
      * 接続元IPを取得します。
-     * ※$viaProxy 指定時は X_REAL_IP ⇒ X_FORWARDED_FOR の順で最初に見つけた値をIPアドレスとして返します。
+     * ※$via_proxy 指定時は X_REAL_IP ⇒ X_FORWARDED_FOR の順で最初に見つけた値をIPアドレスとして返します。
      *
-     * @param  string $viaProxy プロキシ/ロードバランサ経由か否か
-     * @return string 接続元IPアドレス
+     * @param bool $via_proxy プロキシ/ロードバランサ経由か否か (default: false)
+     * @return string|null 接続元IPアドレス
      */
-    public static function getIP($viaProxy = false)
+    public static function getIP($via_proxy = false)
     {
-        return $viaProxy ? (!empty(self::$_XRIP) ? self::$_XRIP : self::$_XFF) : self::$_IP ;
+        return $via_proxy ? (!empty(self::$_XRIP) ? self::$_XRIP : self::$_XFF) : self::$_IP ;
     }
 
     /**
@@ -159,10 +161,11 @@ class Terminal
      * @param string $ip   IPアドレス：REMOTE_ADDR 値
      * @param string $xrip IPアドレス：X_REAL_IP 値
      * @param string $xff  IPアドレス：X_FORWARDED_FOR 値
+     * @return void
      */
     public static function init($ua, $ip, $xrip, $xff)
     {
-        self::$_XFF  = null;
+        self::$_XFF = null;
         if (!empty($xff)) {
             $xff_list   = explode(",", $xff);
             self::$_XFF = trim(reset($xff_list));

@@ -26,13 +26,14 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/function.token.php トークン出力用 Smarty タグ
  *
  * @package   SFLF
- * @version   v1.1.1
+ * @version   v1.1.2
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
  */
 class Token
 {
+    /** @var string セッションキープレフィックス */
     const SESSION_KEY_PREFIX = "SFLF_TOKEN_";
 
     /**
@@ -45,21 +46,24 @@ class Token
     /**
      * トークンを生成しセッションに保存します。
      *
-     * @param  string $key キー名 - デフォルト 'global'
+     * @param string $key    キー名 (default: global)
+     * @param int    $length 文字数 (default: 16)
      * @return string トークン文字列
+     * @throws Exception when failed to generate openssl_random_pseudo_bytes()
      */
-    public static function generate($key = 'global')
+    public static function generate($key = 'global', $length = 16)
     {
-        $token                                   = bin2hex(openssl_random_pseudo_bytes(16));
-        $_SESSION[self::SESSION_KEY_PREFIX.$key] = $token;
-        return $token;
+        if (($token = openssl_random_pseudo_bytes($length)) === false) {
+            throw new Exception("Failed to generate openssl_random_pseudo_bytes().");
+        }
+        return $_SESSION[self::SESSION_KEY_PREFIX.$key] = bin2hex($token);
     }
 
     /**
      * トークンを取得します。
      * ※セッション上のトークン値は削除されません。
      *
-     * @param  string $key キー名 - デフォルト 'global'
+     * @param string $key キー名 (default: global)
      * @return string トークン文字列
      */
     public static function get($key = 'global')
@@ -71,10 +75,10 @@ class Token
      * トークンを検証します。
      * ※セッション上のトークン値はデフォルトでは削除されます。
      *
-     * @param  string $token    検証対象トークン文字列
-     * @param  string $key      キー名                   - デフォルト 'global'
-     * @param  boolean $onetime ワンタイムトークンか否か - デフォルト 'true'
-     * @return boolean true : OK／false : NG
+     * @param string $token   検証対象トークン文字列
+     * @param string $key     キー名 (default: global)
+     * @param bool   $onetime ワンタイムトークンか否か (default: true)
+     * @return bool true : OK／false : NG
      */
     public static function validate($token, $key = 'global', $onetime = true)
     {

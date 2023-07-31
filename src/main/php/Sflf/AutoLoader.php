@@ -40,7 +40,7 @@
  * $obj = new ClassName();
  *
  * @package   SFLF
- * @version   v1.0.1
+ * @version   v1.0.2
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -49,13 +49,15 @@ class AutoLoader
 {
     /**
      * クラスファイルを検索するディレクトリリスト
-     * @var array
+     *
+     * @var string[]
      */
     public static $INCLUDE_PATH = [];
 
     /**
      * インクルードパス内のクラスファイルリスト
-     * @var array
+     *
+     * @var array<string, string>
      */
     private static $CLASS_FILE_PATH = [];
 
@@ -69,35 +71,30 @@ class AutoLoader
     /**
      * 指定のクラスをロードする
      *
-     * @param  string $class クラス名
-     * @return bool   true : 成功／false : 失敗
+     * @param string $class クラス名
+     * @return void
      */
     public static function load($class)
     {
         if (class_exists($class)) {
-            return true;
+            return;
         }
 
         // ---------------------------------------------------------------------
         // 名前空間を持っている ： PSR-0 に準拠するクラスのロード
         // ---------------------------------------------------------------------
-        if (strpos($class, '\\') !== false) {
-            $basePath  = '';
-            $namespace = '';
-            if (false !== ($lastNsPos = strripos($class, '\\'))) {
-                $namespace = substr($class, 0, $lastNsPos);
-                $className = substr($class, $lastNsPos + 1);
-                $basePath  = str_replace('\\', DIRECTORY_SEPARATOR, $namespace) . DIRECTORY_SEPARATOR;
-            }
-            $basePath .= str_replace('_', DIRECTORY_SEPARATOR, $className);
+        if (($last_ns_pos = strripos($class, '\\')) !== false) {
+            $namespace  = substr($class, 0, $last_ns_pos);
+            $class_name = substr($class, $last_ns_pos + 1);
+            $base_path  = str_replace('\\', DIRECTORY_SEPARATOR, $namespace) . DIRECTORY_SEPARATOR . str_replace('_', DIRECTORY_SEPARATOR, $class_name);
 
             foreach (self::$INCLUDE_PATH as $includePath) {
                 if (self::_endsWith($includePath, '/*')) {
                     continue;
                 }
-                if (file_exists("{$includePath}/{$basePath}.php")) {
-                    require_once "{$includePath}/{$basePath}.php";
-                    return true;
+                if (file_exists("{$includePath}/{$base_path}.php")) {
+                    require_once "{$includePath}/{$base_path}.php";
+                    return;
                 }
             }
         }
@@ -111,13 +108,14 @@ class AutoLoader
 
         if (isset(self::$CLASS_FILE_PATH[$class])) {
             require_once self::$CLASS_FILE_PATH[$class];
-            return true;
+            return;
         }
         // 小文字で検索
         if (isset(self::$CLASS_FILE_PATH[strtolower($class)])) {
             require_once self::$CLASS_FILE_PATH[strtolower($class)];
+            // @phpstan-ignore-next-line : Phpstan doesn't consider require_once
             if (class_exists($class)) {
-                return true;
+                return;
             }
         }
 
@@ -128,14 +126,14 @@ class AutoLoader
             $expect = join('', $split);
             if (isset(self::$CLASS_FILE_PATH[$expect])) {
                 require_once self::$CLASS_FILE_PATH[$expect];
+                // @phpstan-ignore-next-line : Phpstan doesn't consider require_once
                 if (class_exists($class)) {
-                    return true;
+                    return;
                 }
             }
         }
 
-
-        return false;
+        return;
     }
 
     /**
@@ -155,13 +153,13 @@ class AutoLoader
     /**
      * インクルード内のクラスをリストアップします
      *
-     * @param  string $dir 検索対象ディレクトリ
+     * @param string $dir 検索対象ディレクトリ
      * @return void
      */
     private static function _listup($dir)
     {
         // カレントディレクトリ検索
-        foreach (glob($dir."/*.php") as $path) {
+        foreach (glob($dir."/*.php") ?: [] as $path) {
             $class = basename(basename($path, '.php'), '.class');
             if (!isset(self::$CLASS_FILE_PATH[$class])) {
                 self::$CLASS_FILE_PATH[$class] = $path;
@@ -169,7 +167,7 @@ class AutoLoader
         }
 
         // サブディレクトリ検索
-        foreach (glob($dir.'/*', GLOB_ONLYDIR) as $subDir) {
+        foreach (glob($dir.'/*', GLOB_ONLYDIR) ?: [] as $subDir) {
             if ($subDir !== '.' && $subDir !== '..') {
                 self::_listup($subDir);
             }
@@ -179,9 +177,9 @@ class AutoLoader
     /**
      * 指定の文字列 [$haystack] が指定の文字列 [$needle] で終わるか検査します。
      *
-     * @param  string  $haystack 検査対象文字列
-     * @param  string  $needle   被検査文字列
-     * @return boolean true : 終わる／false : 終わらない
+     * @param string $haystack 検査対象文字列
+     * @param string $needle   被検査文字列
+     * @return bool true : 終わる／false : 終わらない
      */
     private static function _endsWith($haystack, $needle)
     {

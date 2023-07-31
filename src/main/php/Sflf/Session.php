@@ -14,13 +14,16 @@
  * Session::set('LOGIN', $user);
  *
  * @package   SFLF
- * @version   v1.0.3
+ * @version   v1.0.4
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
  */
 class Session
 {
+    /**
+     * @var string セッションキープレフィックス
+     */
     const SESSION_KEY_PREFIX = "SFLF_SESSION_";
 
     /**
@@ -33,9 +36,9 @@ class Session
     /**
      * セッションを開始します。
      *
-     * @param SessionHandlerInterface $handler  セッションハンドラ（デフォルト： null）
-     * @param array                   $options  session_start のオプション引数（デフォルト： []）
-     * @return type
+     * @param SessionHandlerInterface $handler  セッションハンドラ (default: null)
+     * @param array<string, mixed>    $options  session_start のオプション引数 (default: [])
+     * @return bool
      */
     public static function start(SessionHandlerInterface $handler = null, array $options = [])
     {
@@ -48,8 +51,8 @@ class Session
     /**
      * セッションに値を保存します。
      *
-     * @param  string $key   キー名
-     * @param  obj    $value 値
+     * @param string $key   キー名
+     * @param object $value 値
      * @return void
      */
     public static function set($key, $value)
@@ -60,8 +63,8 @@ class Session
     /**
      * セッションから値を取得します。
      *
-     * @param  string $key     キー名
-     * @param  obj    $default デフォルト値
+     * @param string      $key     キー名
+     * @param object|null $default デフォルト値 (default: null)
      * @return mixed 格納した値
      */
     public static function get($key, $default = null)
@@ -72,8 +75,8 @@ class Session
     /**
      * セッションが存在するかチェックします。
      *
-     * @param  string $key キー名
-     * @return boolean true : 存在する／false : 存在しない
+     * @param string $key キー名
+     * @return bool true : 存在する／false : 存在しない
      */
     public static function exists($key)
     {
@@ -83,7 +86,7 @@ class Session
     /**
      * セッション情報を削除します。
      *
-     * @param  string $key キー名
+     * @param string $key キー名
      * @return void
      */
     public static function remove($key)
@@ -96,8 +99,8 @@ class Session
     /**
      * セッションから値を取得し、その値を削除します。
      *
-     * @param  string $key     キー名
-     * @param  obj    $default デフォルト値
+     * @param string      $key     キー名
+     * @param object|null $default デフォルト値 (default: null)
      * @return mixed 格納した値
      */
     public static function pull($key, $default = null)
@@ -110,8 +113,9 @@ class Session
     /**
      * セッションを再生成します。
      *
-     * @param int $probability 生成確率母数 (デフォルト：1/1)
-     * @param int $interval    生成間隔[秒] (デフォルト：0秒)
+     * @param int $probability 生成確率母数 (default: 1/1)
+     * @param int $interval    生成間隔[秒] (default: 0)
+     * @return void
      */
     public static function regenerate($probability = 1, $interval = 0)
     {
@@ -135,7 +139,7 @@ class Session
  *
  * セッションハンドラの各種処理が失敗した際に指定回数だけリトライするセッションハンドラ。
  * なおリトライ対象は open / read / write / destroy で、 RetrySessionHandler::RETRY_* によるリトライモードの ON/OFF 指定でリトライ対象を制御できます。
- * （デフォルトでは read のみがリトライ処理対象となります）
+ * （デフォルトでは open & read がリトライ処理対象となります）
  *
  * 本セッションハンドラは主に session.save_handler = files 時に Ajax などで同時並行に多数のアクセスがあった場合において、
  * 稀にセッションロストする現象への対策用として定義されていますが files ハンドラでも多数のアクセスが無ければ、
@@ -151,12 +155,16 @@ class Session
  */
 class RetrySessionHandler extends SessionHandler
 {
-    // リトライモード
+    /** @var int リトライモード：OPEN */
     const RETRY_OPEN    =  1;
+    /** @var int リトライモード：READ */
     const RETRY_READ    =  2;
+    /** @var int リトライモード：WRITE */
     const RETRY_WRITE   =  4;
+    /** @var int リトライモード：DESTROY */
     const RETRY_DESTROY =  8;
 
+    /** @var int リトライモード：ALL(= OPEN + READ + WRITE + DESTROY) */
     const RETRY_ALL = self::RETRY_OPEN | self::RETRY_READ | self::RETRY_WRITE | self::RETRY_DESTROY ;
 
     /**
@@ -169,7 +177,7 @@ class RetrySessionHandler extends SessionHandler
      * 最大リトライ回数
      * @var int
      */
-    private $maxRetry;
+    private $max_retry;
 
     /**
      * リトライまでのインターバル[ミリ秒]
@@ -179,65 +187,74 @@ class RetrySessionHandler extends SessionHandler
 
     /**
      * エラー状態
-     * @var type
+     * @var bool
      */
-    private $hasError = false;
+    private $has_error = false;
 
     /**
      * リトライハンドラを構築します。
      *
-     * @param int $maxRetry 最大リトライ回数
+     * @param int $max_retry 最大リトライ回数
      * @param int $interval リトライまでのインターバル[ミリ秒]
-     * @param int $mode     リトライモード RetrySessionHandler::RETRY_* の論理和 （デフォルト： RETRY_OPEN | RETRY_READ）
+     * @param int $mode     リトライモード RetrySessionHandler::RETRY_* の論理和 (default: RETRY_OPEN | RETRY_READ)
      */
-    public function __construct($maxRetry, $interval, $mode = self::RETRY_OPEN | self::RETRY_READ)
+    public function __construct($max_retry, $interval, $mode = self::RETRY_OPEN | self::RETRY_READ)
     {
-        $this->maxRetry = $maxRetry;
-        $this->interval = $interval;
-        $this->mode     = $mode;
-        $old_handler    = set_error_handler(null);
+        $this->max_retry = $max_retry;
+        $this->interval  = $interval;
+        $this->mode      = $mode;
+        $old_handler     = set_error_handler(null);
         set_error_handler(function ($errno, $errstr, $errfile, $errline) use (&$old_handler) {
-            $this->hasError = true;
+            $this->has_error = true;
             if (is_callable($old_handler)) {
                 $old_handler($errno, $errstr, $errfile, $errline);
             }
+            return false;
         });
     }
 
     /**
      * オーバーライド
+     *
+     * @param string $save_path セッションセーブパス
+     * @param string $session_name セッション名
+     * @return bool
      */
-    public function open(string $savePath, string $sessionName) : bool
+    public function open($save_path, $session_name) : bool
     {
         if (!($this->mode & self::RETRY_OPEN)) {
-            return parent::open($savePath, $sessionName);
+            return parent::open($save_path, $session_name);
         }
 
-        $isOpend = false;
-        $retry   = 0;
+        $is_opend = false;
+        $retry    = 0;
 
         while (true) {
             try {
-                $this->hasError = false;
-                $isOpend        = parent::open($savePath, $sessionName);
-                if (!$this->hasError && ($isOpend || $retry++ >= $this->maxRetry)) {
+                $this->has_error = false;
+                $is_opend        = parent::open($save_path, $session_name);
+                // @phpstan-ignore-next-line Phpstan doesn't consider to set has_error in error_handler
+                if (!$this->has_error && ($is_opend || $retry++ >= $this->max_retry)) {
                     break;
                 }
             } catch (Throwable $t) {
-                if ($retry++ >= $this->maxRetry) {
+                if ($retry++ >= $this->max_retry) {
                     throw $t;
                 }
             }
             usleep($this->interval * 1000);
         }
 
-        return $isOpend;
+        return $is_opend;
     }
 
     /**
      * オーバーライド
+     *
+     * @param string $id
+     * @return string エラー時は false
      */
-    public function read(string $id): string|false
+    public function read($id) : string
     {
         if (!($this->mode & self::RETRY_READ)) {
             return parent::read($id);
@@ -248,13 +265,14 @@ class RetrySessionHandler extends SessionHandler
 
         while (true) {
             try {
-                $this->hasError = false;
-                $data           = parent::read($id);
-                if (!$this->hasError || $retry++ >= $this->maxRetry) {
+                $this->has_error = false;
+                $data            = parent::read($id);
+                // @phpstan-ignore-next-line Phpstan doesn't consider to set has_error in error_handler
+                if (!$this->has_error || $retry++ >= $this->max_retry) {
                     break;
                 }
             } catch (Throwable $t) {
-                if ($retry++ >= $this->maxRetry) {
+                if ($retry++ >= $this->max_retry) {
                     throw $t;
                 }
             }
@@ -266,61 +284,70 @@ class RetrySessionHandler extends SessionHandler
 
     /**
      * オーバーライド
+     *
+     * @param string $id   セッションID
+     * @param string $data 書き込みデータ
+     * @return bool
      */
-    public function write(string $id, string $data) : bool
+    public function write($id, $data) : bool
     {
         if (!($this->mode & self::RETRY_WRITE)) {
             return parent::write($id, $data);
         }
 
-        $isWrote = false;
-        $retry   = 0;
+        $is_wrote = false;
+        $retry    = 0;
 
         while (true) {
             try {
-                $this->hasError = false;
-                $isWrote        = parent::write($id, $data);
-                if (!$this->hasError && ($isWrote || $retry++ >= $this->maxRetry)) {
+                $this->has_error = false;
+                $is_wrote        = parent::write($id, $data);
+                // @phpstan-ignore-next-line Phpstan doesn't consider to set has_error in error_handler
+                if (!$this->has_error && ($is_wrote || $retry++ >= $this->max_retry)) {
                     break;
                 }
             } catch (Throwable $t) {
-                if ($retry++ >= $this->maxRetry) {
+                if ($retry++ >= $this->max_retry) {
                     throw $t;
                 }
             }
             usleep($this->interval * 1000);
         }
 
-        return $isWrote;
+        return $is_wrote;
     }
 
     /**
      * オーバーライド
+     *
+     * @param string $session_id セッションID
+     * @return bool
      */
-    public function destroy(string $sessionId) : bool
+    public function destroy($session_id) : bool
     {
         if (!($this->mode & self::RETRY_DESTROY)) {
-            return parent::destroy($sessionId);
+            return parent::destroy($session_id);
         }
 
-        $isDestroied = false;
-        $retry       = 0;
+        $is_destroied = false;
+        $retry        = 0;
 
         while (true) {
             try {
-                $this->hasError = false;
-                $isDestroied    = parent::destroy($sessionId);
-                if (!$this->hasError && ($isDestroied || $retry++ >= $this->maxRetry)) {
+                $this->has_error = false;
+                $is_destroied    = parent::destroy($session_id);
+                // @phpstan-ignore-next-line Phpstan doesn't consider to set has_error in error_handler
+                if (!$this->has_error && ($is_destroied || $retry++ >= $this->max_retry)) {
                     break;
                 }
             } catch (Throwable $t) {
-                if ($retry++ >= $this->maxRetry) {
+                if ($retry++ >= $this->max_retry) {
                     throw $t;
                 }
             }
             usleep($this->interval * 1000);
         }
 
-        return $isDestroied;
+        return $is_destroied;
     }
 }

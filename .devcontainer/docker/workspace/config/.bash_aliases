@@ -37,3 +37,7 @@ alias phpstan-a="phpstan analyze -c /workspace/phpstan.neon"
 # alias psysh="~/.composer/vendor/bin/psysh"
 alias psysh-app="psysh /workspace/.devcontainer/docker/workspace/config/psysh_autoload.php"
 
+# ---------------------------------------------------------
+# phpunit
+# ---------------------------------------------------------
+alias phpunit="php -d memory_limit=256M /workspace/src/main/php/vendor/bin/phpunit"

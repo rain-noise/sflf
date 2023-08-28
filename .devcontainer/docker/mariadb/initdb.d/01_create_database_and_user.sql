@@ -1,0 +1,5 @@
+CREATE DATABASE sflf DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_bin;
+CREATE USER sflf IDENTIFIED BY 'sflf';
+CREATE USER sflf@localhost IDENTIFIED BY 'sflf';
+GRANT ALL ON sflf.* TO sflf;
+GRANT ALL ON sflf.* TO sflf@localhost;

@@ -1,8 +1,26 @@
 {
+    "name": "rain-noise/sflf",
+    "description": "The Rebet PHP framework",
+    "authors": [
+        {
+            "name": "Junichi Shibata",
+            "email": "rain.noise@gmail.com"
+        }
+    ],
+    "license": "MIT",
+    "type": "project",    
     "config": {
         "vendor-dir": "src/main/php/vendor"
     },
     "require-dev": {
-        "smarty/smarty": "^4.3"
+        "smarty/smarty": "^4.3",
+        "phpunit/phpunit": "^9.6",
+        "symfony/var-dumper": "^5.4"
+    },
+    "autoload": {
+        "classmap": ["src/main/php/Sflf/"]
+    },
+    "autoload-dev": {
+        "classmap": ["tests/"]
     }
 }

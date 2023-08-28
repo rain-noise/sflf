@@ -35,7 +35,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/includes/paginate.tpl ページ送り Smarty テンプレート
  *
  * @package   SFLF
- * @version   v1.1.3
+ * @version   v1.2.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -103,12 +103,24 @@ class Dao
      * @return mysqli
      * @throws DatabaseException when do not connect database yet, or already closed connection.
      */
-    protected static function db()
+    public static function db()
     {
         if (empty(self::$_DB)) {
             throw new DatabaseException("Do not connect database yet, or already closed connection.");
         }
         return self::$_DB;
+    }
+
+    /**
+     * 入力をクエリ内で区切り識別子として安全に使用できるようにフォーマットします。
+     * 識別子は、テーブル名や列名などのオブジェクトです。
+     *
+     * @param string $identifier 識別子
+     * @return string
+     */
+    public static function quoteIdentifier($identifier)
+    {
+        return strpos($identifier, '`') === false ? "`{$identifier}`" : $identifier;
     }
 
     /**
@@ -146,6 +158,7 @@ class Dao
     public static function connect($host, $user, $pass, $db_name, $port = null, $logger = null)
     {
         if (!self::$_DB) {
+            mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
             if (isset($logger)) {
                 self::setSqlLogger($logger);
             }
@@ -160,6 +173,9 @@ class Dao
             self::$_DB->autocommit(false);
 
             register_shutdown_function(function () {
+                if (self::$_DB === null) {
+                    return;
+                }
                 switch (self::$_SHUTDOWN_MODE) {
                     case self::SHUTDOWN_MODE_ROLLBACK:
                         self::rollback(true);
@@ -217,6 +233,22 @@ class Dao
     }
 
     /**
+     * DB接続を閉じます
+     * ※本メソッドは例外を無視します
+     *
+     * @return void
+     */
+    public static function close()
+    {
+        try {
+            static::db()->close();
+            self::$_DB = null;
+        } catch (Exception $e) {
+            // 何もしない
+        }
+    }
+
+    /**
      * トランザクションを開始／ロールバック／コミットします。
      *
      * @param callable():void $callback      ひとまとまりの処理
@@ -247,7 +279,7 @@ class Dao
         if (is_object($val)) {
             $val = method_exists($val, '__toString') ? $val->__toString() : null ;
         }
-        return self::db()->escape_string($val);
+        return self::db()->real_escape_string($val);
     }
 
     /**
@@ -271,6 +303,31 @@ class Dao
     }
 
     /**
+     * 対象のテーブルを Truncate します。
+     *
+     * @param string $table_name 対象テーブル名
+     * @return void
+     */
+    public static function truncate(string $table_name)
+    {
+        $table_name = static::quoteIdentifier($table_name);
+        static::queryAffect("TRUNCATE {$table_name}");
+    }
+
+    /**
+     * AUTO_INCREMENT の値を更新する。
+     *
+     * @param string $table_name     対象テーブル名
+     * @param int    $auto_increment 設定する AUTO_INCREMENT の値
+     * @return void
+     */
+    public static function setAutoIncrement(string $table_name, int $auto_increment)
+    {
+        $table_name = static::quoteIdentifier($table_name);
+        static::queryAffect("ALTER TABLE {$table_name} AUTO_INCREMENT = {$auto_increment}");
+    }
+
+    /**
      * 指定のSQLを実行します。
      * ※戻り値は mysqli_query() の戻り値(falseを除く)となります。
      *
@@ -287,9 +344,13 @@ class Dao
             $log($sql);
         }
 
-        $rs = self::db()->query($sql);
-        if ($rs === false) {
-            throw new DatabaseException("Execute query failed : ".self::db()->errno." ".self::db()->error."\n--- [SQL] ---\n{$sql}\n-------------\n", self::db()->errno);
+        try {
+            $rs = self::db()->query($sql);
+            if ($rs === false) {
+                throw new DatabaseException("Execute query failed : ".self::db()->errno." ".self::db()->error."\n--- [SQL] ---\n{$sql}\n-------------\n", self::db()->errno);
+            }
+        } catch(mysqli_sql_exception $e) {
+            throw new DatabaseException("Execute query failed : ".$e->getCode()." ".$e->getMessage()."\n--- [SQL] ---\n{$sql}\n-------------\n", $e->getCode(), $e);
         }
 
         return $rs;
@@ -332,6 +393,7 @@ class Dao
     /**
      * 指定のSQLを実行し、結果の各行に callback 関数を適用します。
      * ※大容量の CSV データ出力などメモリ使用量を押さえたい場合などに利用できます。
+     * ※もう一歩踏み込んだメモリ使用量の定量化を行い場合は chunk() をご利用下さい。
      *
      * @template T
      * @param callable(int $i, T $entity):void $callback コールバック関数
@@ -687,11 +749,22 @@ class Dao
                 $value = self::convertToSql($value);
             }
 
-            $sql = preg_replace("/{$key}(?=[^a-zA-Z0-9_]|$)/", "{$value}", $sql);
+            $sql = preg_replace("/{$key}(?=[^a-zA-Z0-9_]|$)/", static::preg_quote_replacement("{$value}"), $sql);
             assert(is_string($sql));
         }
 
         return $sql;
+    }
+
+    /**
+     * preg_replace() の置換文字列をクォートします。
+     *
+     * @param string $str 対象文字列
+     * @return string クォートされた文字列
+     */
+    protected static function preg_quote_replacement($str)
+    {
+        return str_replace(['\\', '$'], ['\\\\', '\\$'], $str);
     }
 
     /**
@@ -830,11 +903,11 @@ class Dao
 class DatabaseException extends RuntimeException
 {
     /**
-     * Undocumented function
+     * DB例外を構築します。
      *
-     * @param string         $message  エラーメッセージ
-     * @param int            $code     エラーコード (default: 0)
-     * @param Throwable|null $previous 原因例外 (default: null)
+     * @param string         $message   エラーメッセージ
+     * @param int            $code      エラーコード (default: 0)
+     * @param Throwable|null $previous  原因例外 (default: null)
      * @return DatabaseException
      */
     public function __construct($message, $code = 0, $previous = null)

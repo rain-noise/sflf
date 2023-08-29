@@ -18,7 +18,10 @@
         "symfony/var-dumper": "^5.4"
     },
     "autoload": {
-        "classmap": ["src/main/php/Sflf/"]
+        "classmap": [
+            "src/main/php/Sflf/",
+            "src/main/php/extensions/"
+        ]
     },
     "autoload-dev": {
         "classmap": ["tests/"]

@@ -1,6 +1,7 @@
 <?php
 //namespace Sflf; // 名前空間が必要な場合はコメントを解除して下さい。（任意の名前空間による設定も可）
 
+
 /**
  * Single File Low Functionality Class Tools
  *
@@ -11,10 +12,10 @@
  * require_once "/path/to/Dao.php"; // or use AutoLoader
  * require_once "/path/to/Log.php"; // or use AutoLoader
  *
- * Dao::connect('host', 'user', 'pass', 'dbName', $port, function($sql){ Log::debug("SQL :: {$sql}"); });
+ * Dao::connect('host', 'user', 'pass', 'db_name', $port, function(Query $query){ Log::debug("SQL :: {$query}"); });
  * try {
  *     Dao::begin();
- *     $user = Dao::find('SELECT * FROM user WHERE id = :id', [':id' => $id], UserEntiry::class);
+ *     $user = Dao::find('SELECT * FROM user WHERE id = :id', ['id' => $id], UserEntiry::class);
  *     // You can set IN phrase like 'WHERE status IN (:status)'. ($status will be converted comma separated values when $status is array)
  *
  *     // Something to do
@@ -26,43 +27,22 @@
  *
  * 又は
  *
- * Dao::connect('host', 'user', 'pass', 'dbName', $port, function($sql){ Log::debug("SQL :: {$sql}"); });
+ * Dao::connect('host', 'user', 'pass', 'db_name', $port, function(Query $query){ Log::debug("SQL :: {$query}"); });
  * Dao::transaction(function(){
- *     $user = Dao::find('SELECT * FROM user WHERE id = :id', [':id' => $id], UserEntiry::class);
+ *     $user = Dao::find('SELECT * FROM user WHERE id = :id', ['id' => $id], UserEntiry::class);
  *     // Something to do
  * });
  *
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/includes/paginate.tpl ページ送り Smarty テンプレート
  *
  * @package   SFLF
- * @version   v1.2.1
+ * @version   v2.0.0
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
  */
 class Dao
 {
-    /**
-     * シャットダウンモード：何もしない
-     *
-     * @var int
-     */
-    public const SHUTDOWN_MODE_DO_NOTHING = 1;
-
-    /**
-     * シャットダウンモード：ロールバック
-     *
-     * @var int
-     */
-    public const SHUTDOWN_MODE_ROLLBACK = 2;
-
-    /**
-     * シャットダウンモード：コミット
-     *
-     * @var int
-     */
-    public const SHUTDOWN_MODE_COMMIT = 3;
-
     /**
      * データベースオブジェクト
      *
@@ -73,21 +53,12 @@ class Dao
     /**
      * SQLログ出力用コールバック関数
      *
-     * function($sql) を処理する Closure が設定されます。
+     * function(Query $query) を処理する Closure が設定されます。
      * NULL の場合、SQLログ出力は行われません。
      *
-     * @var callable(string $sql):void|null コールバック関数
+     * @var callable(Query $query):void|null コールバック関数
      */
     private static $_SQL_LOG_CALLBACK = null;
-
-    /**
-     * シャットダウンモード
-     *
-     * exit() / die() などが呼ばれた際のシャットダウン時のトランザクション挙動を定義します。
-     *
-     * @var int Dao::SHUTDOWN_MODE_* （デフォルト： Dao::SHUTDOWN_MODE_DO_NOTHING）
-     */
-    private static $_SHUTDOWN_MODE = self::SHUTDOWN_MODE_DO_NOTHING;
 
     /**
      * インスタンス化禁止
@@ -127,13 +98,14 @@ class Dao
      * SQLログ出力用のコールバック関数を設定します。
      *
      * 例）
-     * Dao::setSqlLogger(function($sql){ echo("<div>{$sql}</div>"); });
-     * Dao::setSqlLogger(function($sql){ error_log($sql, 3, '/path/to/sql.log'); });
-     * Dao::setSqlLogger(function($sql){ Log::debug("SQL :: {$sql}"); });
-     * Dao::setSqlLogger(function($sql) use ($logger){ $logger->debug("SQL :: {$sql}"); });
+     * Dao::setSqlLogger(function($query){ echo("<div>{$query->emulate()}</div>"); });
+     * Dao::setSqlLogger(function($query){ error_log($query->emulate(), 3, '/path/to/sql.log'); });
+     * Dao::setSqlLogger(function($query){ Log::debug("SQL :: {$query->emulate()}"); });
+     * Dao::setSqlLogger(function($query){ Log::debug("SQL", ['sql' => $query->sql(), 'params' => $query->params()]); });
+     * Dao::setSqlLogger(function($query) use ($logger){ $logger->debug("SQL :: {$query->emulate()}"); });
      * Dao::setSqlLogger(null);
      *
-     * @param callable(string $sql):void|null $callback SQLログ出力用コールバック関数 (default: null)
+     * @param callable(Query $query):void|null $callback SQLログ出力用コールバック関数 (default: null)
      * @return void
      */
     public static function setSqlLogger($callback)
@@ -151,42 +123,32 @@ class Dao
      * @param string                          $pass    接続パスワード
      * @param string                          $db_name 接続データベース名
      * @param int|null                        $port    接続ポート番号 (default: null = use "mysqli.default_port" first, then 3306 if not set)
-     * @param callable(string $sql):void|null $logger  SQLログ出力用コールバック関数 (default: null)
+     * @param callable(Query $sql):void|null  $logger  SQLログ出力用コールバック関数 (default: null)
      * @return bool true : 新規接続時／false : 既存コネクション存在時
      * @throws DatabaseException データベース接続に失敗した場合
      */
     public static function connect($host, $user, $pass, $db_name, $port = null, $logger = null)
     {
         if (!self::$_DB) {
-            mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
-            if (isset($logger)) {
-                self::setSqlLogger($logger);
-            }
-
-            $port      = $port ? $port : intval(ini_get("mysqli.default_port") ?: 3306) ;
-            self::$_DB = new mysqli($host, $user, $pass, $db_name, $port);
-            if (self::$_DB->connect_error) {
-                throw new DatabaseException(self::_createErrorMessage(__METHOD__));
-            }
-
-            self::$_DB->query("SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED");
-            self::$_DB->autocommit(false);
-
-            register_shutdown_function(function () {
-                if (self::$_DB === null) {
-                    return;
+            try {
+                mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+                if (isset($logger)) {
+                    self::setSqlLogger($logger);
                 }
-                switch (self::$_SHUTDOWN_MODE) {
-                    case self::SHUTDOWN_MODE_ROLLBACK:
-                        self::rollback(true);
-                        return;
-                    case self::SHUTDOWN_MODE_COMMIT:
-                        self::commit();
-                        return;
-                }
-            });
 
-            return true;
+                $port      = $port ? $port : intval(ini_get("mysqli.default_port") ?: 3306) ;
+                self::$_DB = new mysqli($host, $user, $pass, $db_name, $port);
+                if (self::$_DB->connect_error) {
+                    throw new DatabaseException(self::_createErrorMessage(__METHOD__));
+                }
+
+                self::$_DB->query("SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED");
+                self::$_DB->autocommit(false);
+
+                return true;
+            } catch(mysqli_sql_exception $e) {
+                throw new DatabaseException(self::_createErrorMessage(__METHOD__)." : ".$e->getCode()." ".$e->getMessage(), $e->getCode(), $e);
+            }
         }
 
         return false;
@@ -251,13 +213,11 @@ class Dao
     /**
      * トランザクションを開始／ロールバック／コミットします。
      *
-     * @param callable():void $callback      ひとまとまりの処理
-     * @param int             $shutdown_mode シャットダウンモード Dao::SHUTDOWN_MODE_* (default: Dao::SHUTDOWN_MODE_COMMIT)
+     * @param callable():void $callback ひとまとまりの処理
      * @return void
      */
-    public static function transaction($callback, $shutdown_mode = self::SHUTDOWN_MODE_COMMIT)
+    public static function transaction($callback)
     {
-        self::$_SHUTDOWN_MODE = $shutdown_mode;
         try {
             self::begin();
             $callback();
@@ -293,16 +253,6 @@ class Dao
     }
 
     /**
-     * 直近の INSERT、UPDATE、REPLACE あるいは DELETE クエリにより変更された行の数を返します。
-     *
-     * @return int 更新件数
-     */
-    public static function getAffectedRows()
-    {
-        return self::db()->affected_rows;
-    }
-
-    /**
      * 対象のテーブルを Truncate します。
      *
      * @param string $table_name 対象テーブル名
@@ -333,27 +283,45 @@ class Dao
      *
      * @param string                      $sql    SQL文
      * @param array<string, mixed>|object $params パラメータ (default: [])
-     * @return mysqli_result|true 結果セット: SELECT/SHOW/DESCRIBE/EXPLAIN 発行時, 更新件数: その他クエリ発行時
+     * @return mysqli_result|int 結果セット: SELECT/SHOW/DESCRIBE/EXPLAIN 発行時, 更新件数: その他クエリ発行時
      * @throws DatabaseException SQL実行エラー時
      */
     public static function query($sql, $params = [])
     {
-        $sql = self::_compile($sql, $params);
+        $query = self::compile($sql, $params);
         if (self::$_SQL_LOG_CALLBACK) {
             $log = self::$_SQL_LOG_CALLBACK;
-            $log($sql);
+            $log($query);
         }
 
+        $stmt = null;
         try {
-            $rs = self::db()->query($sql);
-            if ($rs === false) {
+            $stmt = self::db()->prepare($query->sql());
+            if ($stmt === false) {
                 throw new DatabaseException("Execute query failed : ".self::db()->errno." ".self::db()->error."\n--- [SQL] ---\n{$sql}\n-------------\n", self::db()->errno);
             }
+            if (!empty($query->params())) {
+                $stmt->bind_param($query->bindParamTypes(), ...$query->params());
+            }
+            if ($stmt->execute() === false) {
+                throw new DatabaseException("Execute query failed : ".self::db()->errno." ".self::db()->error."\n--- [SQL] ---\n{$sql}\n-------------\n", self::db()->errno);
+            }
+
+            $rs = $stmt->get_result();
+            if ($rs === false) {
+                if (static::db()->errno === 0) {
+                    return intval($stmt->affected_rows);
+                }
+                throw new DatabaseException("Execute query failed : ".self::db()->errno." ".self::db()->error."\n--- [SQL] ---\n{$sql}\n-------------\n", self::db()->errno);
+            }
+            return $rs;
         } catch(mysqli_sql_exception $e) {
             throw new DatabaseException("Execute query failed : ".$e->getCode()." ".$e->getMessage()."\n--- [SQL] ---\n{$sql}\n-------------\n", $e->getCode(), $e);
+        } finally {
+            if ($stmt) {
+                $stmt->close();
+            }
         }
-
-        return $rs;
     }
 
     /**
@@ -367,7 +335,7 @@ class Dao
      */
     public static function querySelect($sql, $params = [])
     {
-        if (($rs = self::query($sql, $params)) === true) {
+        if (is_int($rs = self::query($sql, $params))) {
             throw new DatabaseException("Invalid SQL query given, querySelect() MUST a SELECT/SHOW/DESCRIBE/EXPLAIN query.");
         }
         return $rs;
@@ -384,8 +352,8 @@ class Dao
      */
     public static function queryAffect($sql, $params = [])
     {
-        if (self::query($sql, $params) === true) {
-            return self::getAffectedRows();
+        if (is_int($affected_rows = self::query($sql, $params))) {
+            return $affected_rows;
         }
         throw new DatabaseException("Invalid SQL query given, queryAffect() MUST not be a SELECT/SHOW/DESCRIBE/EXPLAIN queries.");
     }
@@ -653,10 +621,10 @@ class Dao
                 continue;
             }
             $cols[]   = $col;
-            $values[] = self::convertToSql($value);
+            $values[] = $value;
         }
 
-        self::query("INSERT INTO {$table_name} (".join(',', $cols).") VALUES (".join(',', $values).")") ;
+        self::query("INSERT INTO {$table_name} (".join(',', $cols).") VALUES (:values)", ['values' => $values]) ;
         return self::getInsertId();
     }
 
@@ -664,10 +632,10 @@ class Dao
      * 対象のテーブルのデータを更新します。
      * ※エンティティに const DAO_IGNORE_FILED = ['exclude_col', ...] 定数フィールドが定義されている場合、指定されたフィールドは UPDATE 文から除外されます
      *
-     * @param string                                                                             $table_name テーブル名
-     * @param array<string, mixed>|object                                                        $entity     エンティティ情報
-     * @param string                                                                             $where      更新条件SQL
-     * @param array{where?: array<string, mixed>|object, include?: string[], exclude?: string[]} $option     更新オプション (default: [])
+     * @param string                                                                      $table_name テーブル名
+     * @param array<string, mixed>|object                                                 $entity     エンティティ情報
+     * @param string                                                                      $where      更新条件SQL
+     * @param array{where?: array<string, mixed>, include?: string[], exclude?: string[]} $option     更新オプション (default: [])
      *     - where   : where句用パラメータ （未指定時は $entity が利用される）
      *     - include : SET句に含めるフィールド名 （未指定時は $entity の DAO_IGNORE_FILED 指定以外の全フィールド）
      *     - exclude : SET句から除くフィールド名
@@ -694,7 +662,8 @@ class Dao
                 if (in_array($col, $ignore)) {
                     continue;
                 }
-                $set .= $col.'='.self::convertToSql($entity[$col]).', ';
+                $set .= "{$col}=:_{$col}, ";
+                $param["_{$col}"] = $entity[$col];
             }
         } else {
             foreach ($entity as $col => $value) {
@@ -704,7 +673,8 @@ class Dao
                 if (in_array($col, $ignore)) {
                     continue;
                 }
-                $set .= $col.'='.self::convertToSql($value).', ';
+                $set .= "{$col}=:_{$col}, ";
+                $param["_{$col}"] = $value;
             }
         }
 
@@ -718,80 +688,67 @@ class Dao
      *
      * @param  string                      $sql    SQL文
      * @param  array<string, mixed>|object $params パラメータ
-     * @return string                      パラメータ展開後のSQL文
+     * @return Query                       パラメータ展開後のSQLクエリ
      * @throws DatabaseException
      */
-    private static function _compile($sql, $params)
+    public static function compile($sql, $params)
     {
+        $params = is_array($params) ? $params : get_object_vars($params) ;
+
+        // --------------------------------------------------------------------
+        // パラメータキー形式チェック
+        // --------------------------------------------------------------------
         $converted = [];
-        $params    = is_array($params) ? $params : get_object_vars($params) ;
         foreach ($params as $key => $value) {
+            // @todo 下位互換処理（将来的には削除する）
             if (self::_startWith($key, ':')) {
-                $converted[$key] = $value ;
-            } else {
-                $converted[":{$key}"] = $value ;
+                trigger_error("Deprecated SQL query parameter key [ {$key} ] given, prease remove ':' from key. It will be an error in the future.", E_USER_DEPRECATED);
+                $key = trim($key, ':');
+            }
+            $converted[$key] = $value ;
+
+            if (!preg_match('/[a-zA-Z0-9_]+/', $key)) {
+                throw new DatabaseException("Invalid SQL query parameter key [ {$key} ], the key must be pattern of /[a-zA-Z0-9_]+/.");
             }
         }
         $params = $converted;
 
-        foreach ($params as $key => $value) {
-            if (!preg_match('/:[A-Za-z0-9_]+/', $key)) {
-                throw new DatabaseException("Invalid SQL query parameter key [ {$key} ], key must be pattern of /:[A-Za-z0-9_]+/.");
-            }
-
-            if (is_array($value)) {
-                foreach ($value as &$item) {
-                    $item = self::convertToSql($item);
+        // ---------------------------------------------------------------------
+        // 名前付きプレースホルダーの解決
+        // ---------------------------------------------------------------------
+        $real_params = [];
+        $count       = 0;
+        $sql         = preg_replace_callback(
+            '/(:[A-Za-z0-9_]+)(?=[^a-zA-Z0-9_]|$)/',
+            function ($matches) use ($params, &$real_params, &$count) {
+                $key = trim($matches[1], ':');
+                if (!array_key_exists($key, $params)) {
+                    throw new DatabaseException("SQL query parameter key [ {$key} ] does not exist in given params.");
                 }
+                $val    = $params[$key];
+                $holder = "";
+                if (is_array($val)) {
+                    foreach ($val as $v) {
+                        $real_params[] = $v;
+                        $holder .= "?/*{$count}*/, ";
+                        $count++;
+                    }
+                    $holder = trim($holder, ", ");
+                } else {
+                    $real_params[] = $val;
+                    $holder .= "?/*{$count}*/";
+                    $count++;
+                }
+                return $holder;
+            },
+            $sql
+        );
 
-                $value = join(', ', $value);
-            } else {
-                $value = self::convertToSql($value);
-            }
-
-            $sql = preg_replace("/{$key}(?=[^a-zA-Z0-9_]|$)/", static::preg_quote_replacement("{$value}"), $sql);
-            assert(is_string($sql));
+        if ($sql === null) {
+            throw new DatabaseException("Failed to compile SQL.\n- SQL  : {$sql}\n- PRAMS: ".json_encode($params));
         }
 
-        return $sql;
-    }
-
-    /**
-     * preg_replace() の置換文字列をクォートします。
-     *
-     * @param string $str 対象文字列
-     * @return string クォートされた文字列
-     */
-    protected static function preg_quote_replacement($str)
-    {
-        return str_replace(['\\', '$'], ['\\\\', '\\$'], $str);
-    }
-
-    /**
-     * 値をSQL文字列用にコンバートします。
-     *
-     * @param mixed $value PHPの値
-     * @return string
-     */
-    public static function convertToSql($value)
-    {
-        if ($value === null || $value === '') {
-            return 'NULL';
-        }
-
-        if (is_int($value) || is_float($value)) {
-            return "{$value}";
-        }
-
-        if (is_bool($value)) {
-            return $value ? '1' : '0' ;
-        }
-
-        if ($value instanceof DateTime || $value instanceof DateTimeImmutable) {
-            return "'".$value->format("Y-m-d H:i:s")."'";
-        }
-
-        return "'".self::escape($value)."'";
+        return new Query($sql, $real_params);
     }
 
     /**
@@ -883,10 +840,10 @@ class Dao
      */
     private static function _createErrorMessage($method)
     {
-        if (self::db()->connect_error) {
-            return "Dao {$method} failed : ".self::db()->connect_errno." ". mb_convert_encoding(self::db()->connect_error, 'UTF-8', 'auto');
+        if (!empty(self::$_DB) && self::$_DB->connect_error) {
+            return "{$method} failed : ".self::$_DB->connect_errno." ". mb_convert_encoding(self::$_DB->connect_error, 'UTF-8', 'auto');
         }
-        return "Dao {$method} failed.";
+        return "{$method} failed.";
     }
 }
 
@@ -913,6 +870,148 @@ class DatabaseException extends RuntimeException
     public function __construct($message, $code = 0, $previous = null)
     {
         parent::__construct($message, $code, $previous);
+    }
+}
+
+/**
+ * Single File Low Functionality Class Tools
+ *
+ * ■単一ファイル低機能 SQLクエリ クラス（Dao付帯クラス）
+ *
+ * @package   SFLF
+ * @author    github.com/rain-noise
+ * @copyright Copyright (c) 2023 github.com/rain-noise
+ * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
+ */
+class Query
+{
+    /**
+     * Full or partial SQL sentence.
+     *
+     * @var string
+     */
+    protected $sql = '';
+
+    /**
+     * Full or partial SQL parameters
+     *
+     * @var mixed[]
+     */
+    protected $params = [];
+
+    /**
+     * Create full or partial SQL.
+     *
+     * @param string $sql
+     * @param mixed[] $params (default: [])
+     * @return Query
+     */
+    public function __construct($sql, $params = [])
+    {
+        $this->sql    = $sql;
+        $this->params = array_map(function ($v) {
+            return $v instanceof DateTime || $v instanceof DateTimeImmutable ? $v->format("Y-m-d H:i:s") : $v;
+        }, $params);
+    }
+
+    /**
+     * Get full or partial SQL sentence.
+     *
+     * @return string
+     */
+    public function sql()
+    {
+        return $this->sql;
+    }
+
+    /**
+     * Get full or partial SQL parameters
+     *
+     * @return mixed[]
+     */
+    public function params()
+    {
+        return $this->params;
+    }
+
+    /**
+     * ステーメントにバインドする際のパラメータタイプ文字列を取得します。
+     *
+     * @return string
+     */
+    public function bindParamTypes()
+    {
+        $types = '';
+        foreach ($this->params as $param) {
+            if ($param === null || $param === '') {
+                $types .= 's';
+                continue;
+            }
+
+            if (is_int($param)) {
+                $types .= 'i';
+                continue;
+            }
+
+            if (is_float($param)) {
+                $types .= 'd';
+                continue;
+            }
+
+            if (is_bool($param)) {
+                $types .= 'i';
+                continue;
+            }
+
+            $types .= 's';
+            continue;
+        }
+
+
+        return $types;
+    }
+
+    /**
+     * Emulate SQL for logging and exception message.
+     * You should not use this method other than to emulate sql for log output.
+     *
+     * @return string
+     */
+    public function emulate() : string
+    {
+        $sql = $this->sql;
+        foreach ($this->params as $i => $value) {
+            $sql = str_replace("?/*{$i}*/", $this->convertToSql($value), $sql);
+        }
+
+        return "/* Emulated SQL */ ".$sql;
+    }
+
+    /**
+     * 値をSQL文字列用にコンバートします。
+     *
+     * @param mixed $value PHPの値
+     * @return string
+     */
+    protected function convertToSql($value)
+    {
+        if ($value === null || $value === '') {
+            return 'NULL';
+        }
+
+        if (is_int($value) || is_float($value)) {
+            return "{$value}";
+        }
+
+        if (is_bool($value)) {
+            return $value ? '1' : '0' ;
+        }
+
+        if ($value instanceof DateTime || $value instanceof DateTimeImmutable) {
+            return "'".$value->format("Y-m-d H:i:s")."'";
+        }
+
+        return "'".Dao::escape($value)."'";
     }
 }
 

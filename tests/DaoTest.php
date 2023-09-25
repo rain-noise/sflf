@@ -51,7 +51,7 @@ class DaoTest extends SflfTestCase
     {
         $sql_log = [];
         Dao::setSqlLogger(function ($sql) use (&$sql_log) {
-            $sql_log[] = $sql;
+            $sql_log[] = $sql->emulate();
         });
 
         $this->assertEquals($sql_log, []);
@@ -59,7 +59,7 @@ class DaoTest extends SflfTestCase
         Dao::find("SELECT * FROM users WHERE user_id = :user_id", ['user_id' => 1], User::class);
 
         $this->assertEquals($sql_log, [
-            "SELECT * FROM users WHERE user_id = 1"
+            "/* Emulated SQL */ SELECT * FROM users WHERE user_id = 1"
         ]);
     }
 
@@ -71,7 +71,8 @@ class DaoTest extends SflfTestCase
 
     public function test_connect_failed()
     {
-        $this->expectException(mysqli_sql_exception::class);
+        $this->expectException(DatabaseException::class);
+        $this->expectExceptionMessage("Dao::connect failed. : 1045 Access denied for user 'sflf'@'172.21.0.3' (using password: YES)");
 
         Dao::close();
         Dao::connect('mariadb', 'sflf', 'invalid_pass', 'sflf');
@@ -138,15 +139,6 @@ class DaoTest extends SflfTestCase
 
         $this->assertEquals(1, Dao::queryAffect("INSERT INTO articles (user_id, subject, body) VALUES (1, 'Subject 2', 'Body 2')"));
         $this->assertEquals(2, Dao::getInsertId());
-    }
-
-    public function test_getAffectedRows()
-    {
-        Dao::query("INSERT INTO users (user_id, name, gender, birthday, email, role, password) VALUES (4, 'name', 1, '1980-01-01', 'name@sflf.local', 'admin', 'dummy')");
-        $this->assertEquals(1, Dao::getAffectedRows());
-
-        Dao::query("UPDATE users SET name = 'foo' WHERE gender = 1");
-        $this->assertEquals(3, Dao::getAffectedRows());
     }
 
     public function test_truncate()
@@ -216,6 +208,12 @@ class DaoTest extends SflfTestCase
         $rs = Dao::query("SELECT * FROM articles WHERE article_id = 1");
         $rs = $rs->fetch_assoc();
         $this->assertEquals('foo', $rs['subject']);
+
+        $affected_rows = Dao::query("INSERT INTO users (user_id, name, gender, birthday, email, role, password) VALUES (4, 'name', 1, '1980-01-01', 'name@sflf.local', 'admin', 'dummy')");
+        $this->assertEquals(1, $affected_rows);
+
+        $affected_rows = Dao::query("UPDATE users SET name = 'foo' WHERE gender = 1");
+        $this->assertEquals(3, $affected_rows);
     }
 
     public function test_query_error()
@@ -280,7 +278,7 @@ class DaoTest extends SflfTestCase
             User::class
         );
         $this->assertEquals([2, 3], $ids);
-        $this->assertExecutedQueryWildcard('SELECT * FROM users WHERE gender = 1');
+        $this->assertExecutedQueryWildcard('/* Emulated SQL */ SELECT * FROM users WHERE gender = 1');
     }
 
     public function test_chunk()
@@ -305,9 +303,9 @@ class DaoTest extends SflfTestCase
             1
         );
         $this->assertEquals([2, 3], $ids);
-        $this->assertExecutedQueryWildcard('SELECT * FROM users WHERE true  AND gender = 1 ORDER BY user_id ASC LIMIT 1');
-        $this->assertExecutedQueryWildcard('SELECT * FROM users WHERE true  AND gender = 1 AND user_id > 2 ORDER BY user_id ASC LIMIT 1');
-        $this->assertExecutedQueryWildcard('SELECT * FROM users WHERE true  AND gender = 1 AND user_id > 3 ORDER BY user_id ASC LIMIT 1');
+        $this->assertExecutedQueryWildcard('/* Emulated SQL */ SELECT * FROM users WHERE true  AND gender = 1 ORDER BY user_id ASC LIMIT 1');
+        $this->assertExecutedQueryWildcard('/* Emulated SQL */ SELECT * FROM users WHERE true  AND gender = 1 AND user_id > 2 ORDER BY user_id ASC LIMIT 1');
+        $this->assertExecutedQueryWildcard('/* Emulated SQL */ SELECT * FROM users WHERE true  AND gender = 1 AND user_id > 3 ORDER BY user_id ASC LIMIT 1');
     }
 
     public function test_select()
@@ -668,15 +666,35 @@ class DaoTest extends SflfTestCase
         ]);
     }
 
-    public function test_convertToSql()
+    public function test_compile_and_Query()
     {
-        $this->assertEquals('NULL', Dao::convertToSql(null));
-        $this->assertEquals('123', Dao::convertToSql(123));
-        $this->assertEquals('12.3', Dao::convertToSql(12.3));
-        $this->assertEquals('1', Dao::convertToSql(true));
-        $this->assertEquals('0', Dao::convertToSql(false));
-        $this->assertEquals("'2020-01-02 12:34:56'", Dao::convertToSql(new DateTime('2020-01-02 12:34:56')));
-        $this->assertEquals("'text'", Dao::convertToSql('text'));
+        $query = Dao::compile(
+            "SELECT * FROM i=:i AND d=:d AND s=:s AND t=:t AND a IN (:a) AND ss=:s AND baz=:baz",
+            [
+                "i"    => 123,
+                "d"    => 12.3,
+                "s"    => "foo",
+                "t"    => new DateTime("2023-01-02 12:34:56"),
+                "a"    => [456, 45.6, "bar", new DateTime("2023-03-04 12:34:56")],
+                ":baz" => "baz" // Deprecated
+            ]
+        );
+        $this->assertEquals(
+            "SELECT * FROM i=?/*0*/ AND d=?/*1*/ AND s=?/*2*/ AND t=?/*3*/ AND a IN (?/*4*/, ?/*5*/, ?/*6*/, ?/*7*/) AND ss=?/*8*/ AND baz=?/*9*/",
+            $query->sql()
+        );
+        $this->assertEquals(
+            [123, 12.3, "foo", "2023-01-02 12:34:56", 456, 45.6, "bar", "2023-03-04 12:34:56", "foo", "baz"],
+            $query->params()
+        );
+        $this->assertEquals(
+            "idssidssss",
+            $query->bindParamTypes()
+        );
+        $this->assertEquals(
+            "/* Emulated SQL */ SELECT * FROM i=123 AND d=12.3 AND s='foo' AND t='2023-01-02 12:34:56' AND a IN (456, 45.6, 'bar', '2023-03-04 12:34:56') AND ss='foo' AND baz='baz'",
+            $query->emulate()
+        );
     }
 
     public function test_PageInfo()

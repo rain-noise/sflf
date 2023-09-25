@@ -9,7 +9,7 @@ use Symfony\Component\VarDumper\Dumper\CliDumper;
 abstract class SflfTestCase extends TestCase
 {
     /**
-     * @var string[] executed SQL queries
+     * @var Query[] executed SQL queries
      */
     private static $executed_queries = [];
 
@@ -101,9 +101,9 @@ abstract class SflfTestCase extends TestCase
     /**
      * Dequeue oldest executed query.
      *
-     * @return string|null
+     * @return Query|null
      */
-    public static function dequeueExecutedQuery() : ?string
+    public static function dequeueExecutedQuery() : ?Query
     {
         return array_shift(static::$executed_queries);
     }
@@ -359,7 +359,7 @@ abstract class SflfTestCase extends TestCase
     {
         static::assertStringWildcardAll(
             $expect,
-            static::dequeueExecutedQuery(),
+            static::dequeueExecutedQuery()->emulate(),
             $wildcards,
             $message
         );

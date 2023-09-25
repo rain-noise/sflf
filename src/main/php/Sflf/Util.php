@@ -17,7 +17,7 @@
  * $pass = Util::randomCode(8);
  *
  * @package   SFLF
- * @version   v1.2.6
+ * @version   v1.3.0
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -456,6 +456,26 @@ class Util
     public static function nvl($value, $default)
     {
         return $value === null ? $default : $value ;
+    }
+
+    /**
+     * 対象の値がブランク（null／空文字／スペース／空配列）かチェックします。
+     *
+     * @param mixed $value 値
+     * @return bool true: ブランク, false: ブランク以外
+     */
+    public static function isBlank($value)
+    {
+        if ($value === null) {
+            return true;
+        }
+        if (is_string($value)) {
+            return trim($value) === '';
+        }
+        if (is_array($value) && empty($value)) {
+            return true;
+        }
+        return false;
     }
 
     /**

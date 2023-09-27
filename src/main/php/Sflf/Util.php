@@ -17,7 +17,7 @@
  * $pass = Util::randomCode(8);
  *
  * @package   SFLF
- * @version   v1.3.0
+ * @version   v1.3.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -1104,16 +1104,17 @@ class Util
      * 対象のCSVファイルを読み込みます。
      *
      * @param string $file CSVファイル
+     * @param string|string[] $encode CSVファイルのエンコード候補 (default: SJIS-win,SJIS,ASCII,JIS,UTF-8,EUC-JP)
      * @param int $flags SplFileObject用フラグ (default: SplFileObject::READ_CSV)
      * @return \SplFileObject
      * @throws Exception when failed to get file contents by file_get_contents().
      */
-    public static function loadCsv($file, $flags = SplFileObject::READ_CSV)
+    public static function loadCsv($file, $encode = 'SJIS-win,SJIS,ASCII,JIS,UTF-8,EUC-JP', $flags = SplFileObject::READ_CSV)
     {
         if (($data = file_get_contents($file)) === false) {
             throw new Exception("Failed to get file contents by file_get_contents().");
         }
-        $data = mb_convert_encoding($data, 'UTF-8', 'auto');
+        $data = mb_convert_encoding($data, 'UTF-8', $encode);
         $data = preg_replace('/^\xEF\xBB\xBF/', '', $data); // BOMがあれば除去
         file_put_contents($file, $data);
 

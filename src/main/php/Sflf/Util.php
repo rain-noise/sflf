@@ -17,7 +17,7 @@
  * $pass = Util::randomCode(8);
  *
  * @package   SFLF
- * @version   v1.3.1
+ * @version   v1.4.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -1098,6 +1098,25 @@ class Util
                 'verify_peer_name' => false
             ],
         ]));
+    }
+
+    /**
+     * 指定URLのページが存在するかチェックします。
+     * ※HTTPステータスコードが 2XX系 及び 3XX 系の場合に true を返します。
+     *
+     * @param string $url URL
+     * @return bool true: 存在する, false: 存在しない
+     */
+    public static function urlExistContents($url)
+    {
+        $headers = @get_headers($url, 0, stream_context_create([
+            'http' => ['ignore_errors' => true],
+            'ssl'  => [
+                'verify_peer'      => false,
+                'verify_peer_name' => false
+            ],
+        ]));
+        return preg_match('/[23][0-9]{2}/', $headers[0] ?? '') === 1;
     }
 
     /**

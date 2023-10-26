@@ -57,7 +57,7 @@
 {/if}
 <div class="paginate">
 	<div class="info">
-		該当件数：<span class="hitCount">{$pi->hitCount}<span class="unit"> 件</span></span>
+		該当件数：<span class="hitCount">{$pi->hit_count}<span class="unit"> 件</span></span>
 		<span class="offset">{$pi->offset}<span class="unit"> 件</span></span> ～ <span class="limit">{$pi->limit}<span class="unit"> 件</span></span> を表示
 	</div>
 	{if !$pi->isEmpty()}
@@ -72,7 +72,7 @@
 			{/if}
 		{/foreach}
 		<li class="next-page">{if  $pi->hasNextPage()}<a href="javascript:void(0);" onclick="pageJump({$pi->page + 1});">次へ</a>{else}<span>次へ</span>{/if}</li>
-		<li class="prev-page">{if !$pi->isLastPage()}<a href="javascript:void(0);" onclick="pageJump({$pi->maxPage});">最後へ</a>{else}<span>最後へ</span>{/if}</li>
+		<li class="prev-page">{if !$pi->isLastPage()}<a href="javascript:void(0);" onclick="pageJump({$pi->max_page});">最後へ</a>{else}<span>最後へ</span>{/if}</li>
 	</ul>
 	{/if}
 </div>

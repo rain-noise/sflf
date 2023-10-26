@@ -36,7 +36,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/includes/paginate.tpl ページ送り Smarty テンプレート
  *
  * @package   SFLF
- * @version   v2.0.0
+ * @version   v2.0.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -1012,6 +1012,16 @@ class Query
         }
 
         return "'".Dao::escape($value)."'";
+    }
+
+    /**
+     * SQLクエリを文字列化します。
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return $this->emulate();
     }
 }
 

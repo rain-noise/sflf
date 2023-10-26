@@ -175,7 +175,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/block.unless_errors.php エラー有無分岐用 Smarty タグ
  *
  * @package   SFLF
- * @version   v1.0.7
+ * @version   v2.0.0
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -287,12 +287,12 @@ abstract class Form
     protected $_parent_;
 
     /**
-     * 同じフィールド名同士でコピーする入力コンバータを取得します。
+     * デフォルト入力コンバータ（同じフィールド名同士でコピーするコンバータ）を取得します。
      * ※必要に応じてサブクラスでオーバーライドして下さい
      *
      * @return callable(string $field, bool $defined, array<string, mixed>|object $src, mixed $value, Form $form, mixed $origin):mixed 入力用コンバータ
      */
-    protected function converterInputSameFields()
+    protected function converterInputDefault()
     {
         return function ($field, $defined, $src, $value, $form, $origin) { return $defined ? $value : $origin ; };
     }
@@ -353,12 +353,12 @@ abstract class Form
     }
 
     /**
-     * 同じフィールド名同士でコピーする出力コンバータを取得します。
+     * デフォルト出力コンバータ（同じフィールド名同士でコピーするコンバータ）を取得します。
      * ※必要に応じてサブクラスでオーバーライドして下さい
      *
      * @return callable(string $field, bool $defined, Form $form, mixed $value, array<string, mixed>|object $dest, mixed $origin):mixed 出力用コンバータ
      */
-    protected function converterOutputSameFields()
+    protected function converterOutputDefault()
     {
         return function ($field, $defined, $form, $value, $dest, $origin) { return $defined ? $value : $origin ; };
     }
@@ -423,9 +423,9 @@ abstract class Form
      *
      * @param array<string, mixed>|object                                                                                                  $src       コピー元データ。リクエストデータ(=$_REQUEST)又はDtoオブジェクト
      * @param array<string, mixed>|null                                                                                                    $files     アップロードファイル情報(=$_FILES) (default: null)
-     * @param callable(string $field, bool $defined, array<string, mixed>|object $src, mixed $value, Form $form, mixed $origin):mixed|null $converter 入力コンバータの戻り値が設定されます (default: null = Form::converterInputSameFields())
+     * @param callable(string $field, bool $defined, array<string, mixed>|object $src, mixed $value, Form $form, mixed $origin):mixed|null $converter 入力コンバータの戻り値が設定されます (default: null = Form::converterInputDefault())
      * @return void
-     * @see Form::converterInputSameFields()
+     * @see Form::converterInputDefault()
      * @see Form::converterInputExcludes()
      * @see Form::converterInputIncludes()
      * @see Form::converterInputAlias()
@@ -437,7 +437,7 @@ abstract class Form
         }
 
         if (empty($converter)) {
-            $converter = $this->converterInputSameFields();
+            $converter = $this->converterInputDefault();
         }
 
         $clazz = get_class($this);
@@ -497,9 +497,9 @@ abstract class Form
      *
      * @template T of object
      * @param T                                                                                                   $dto       コピー対象DTOオブジェクト
-     * @param callable(string $field, bool $defined, Form $form, mixed $value, T $dest, mixed $origin):mixed|null $converter 出力用コンバータの戻り値が設定されます (default: null = Form::converterOutputSameFields())
+     * @param callable(string $field, bool $defined, Form $form, mixed $value, T $dest, mixed $origin):mixed|null $converter 出力用コンバータの戻り値が設定されます (default: null = Form::converterOutputDefault())
      * @return T
-     * @see Form::converterOutputSameFields()
+     * @see Form::converterOutputDefault()
      * @see Form::converterOutputExcludes()
      * @see Form::converterOutputIncludes()
      * @see Form::converterOutputAlias()
@@ -507,7 +507,7 @@ abstract class Form
     public function inject(&$dto, $converter = null)
     {
         if (empty($converter)) {
-            $converter = $this->converterOutputSameFields();
+            $converter = $this->converterOutputDefault();
         }
 
         $this_clazz = get_class($this);
@@ -527,9 +527,9 @@ abstract class Form
      *
      * @template T of object
      * @param class-string<T>                                                                                     $clazz     DTOオブジェクトクラス名
-     * @param callable(string $field, bool $defined, Form $form, mixed $value, T $dest, mixed $origin):mixed|null $converter 出力用コンバータの戻り値が設定されます (default: null = Form::converterOutputSameFields())
+     * @param callable(string $field, bool $defined, Form $form, mixed $value, T $dest, mixed $origin):mixed|null $converter 出力用コンバータの戻り値が設定されます (default: null = Form::converterOutputDefault())
      * @return T
-     * @see Form::converterOutputSameFields()
+     * @see Form::converterOutputDefault()
      * @see Form::converterOutputExcludes()
      * @see Form::converterOutputIncludes()
      * @see Form::converterOutputAlias()

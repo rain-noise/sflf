@@ -17,7 +17,7 @@
  * $pass = Util::randomCode(8);
  *
  * @package   SFLF
- * @version   v1.4.1
+ * @version   v1.5.0
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -1101,6 +1101,26 @@ class Util
     }
 
     /**
+     * 指定URLのヘッダ情報を取得します。
+     *
+     * @param string $url         URL
+     * @param bool   $associative ヘッダ解析 (default: false)
+     * @return mixed ヘッダ情報
+     */
+    public static function urlGetHeaders($url, $associative = false)
+    {
+        $headers = @get_headers($url, $associative ? 1 : 0, stream_context_create([
+            'http' => ['ignore_errors' => true],
+            'ssl'  => [
+                'verify_peer'      => false,
+                'verify_peer_name' => false
+            ],
+        ]));
+
+        return $headers === false ? [] : $headers;
+    }
+
+    /**
      * 指定URLのページが存在するかチェックします。
      * ※HTTPステータスコードが 2XX系 及び 3XX 系の場合に true を返します。
      *
@@ -1109,13 +1129,7 @@ class Util
      */
     public static function urlExistContents($url)
     {
-        $headers = @get_headers($url, 0, stream_context_create([
-            'http' => ['ignore_errors' => true],
-            'ssl'  => [
-                'verify_peer'      => false,
-                'verify_peer_name' => false
-            ],
-        ]));
+        $headers = static::urlGetHeaders($url, false);
         return preg_match('/[23][0-9]{2}/', $headers[0] ?? '') === 1;
     }
 

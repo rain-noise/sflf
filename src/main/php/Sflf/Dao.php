@@ -36,7 +36,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/includes/paginate.tpl ページ送り Smarty テンプレート
  *
  * @package   SFLF
- * @version   v2.0.1
+ * @version   v2.0.2
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -910,7 +910,13 @@ class Query
     {
         $this->sql    = $sql;
         $this->params = array_map(function ($v) {
-            return $v instanceof DateTime || $v instanceof DateTimeImmutable ? $v->format("Y-m-d H:i:s") : $v;
+            if ($v === '') {
+                return null;
+            }
+            if ($v instanceof DateTime || $v instanceof DateTimeImmutable) {
+                return $v->format("Y-m-d H:i:s");
+            }
+            return $v;
         }, $params);
     }
 

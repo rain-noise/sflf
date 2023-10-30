@@ -72,7 +72,7 @@ class DaoTest extends SflfTestCase
     public function test_connect_failed()
     {
         $this->expectException(DatabaseException::class);
-        $this->expectExceptionMessage("Dao::connect failed. : 1045 Access denied for user 'sflf'@'172.21.0.3' (using password: YES)");
+        $this->expectExceptionMessageMatches("/Dao::connect failed\. : 1045 Access denied for user 'sflf'@'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}' \(using password: YES\)/");
 
         Dao::close();
         Dao::connect('mariadb', 'sflf', 'invalid_pass', 'sflf');

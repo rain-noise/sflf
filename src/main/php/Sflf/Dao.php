@@ -36,7 +36,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/includes/paginate.tpl ページ送り Smarty テンプレート
  *
  * @package   SFLF
- * @version   v2.0.2
+ * @version   v2.0.3
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -464,7 +464,7 @@ class Dao
             $types[$meta->name] = $meta->type;
         }
 
-        $list  = [];
+        $list = [];
         foreach ($rs as $row) {
             $entity = new $clazz();
             foreach ($row as $col => $val) {
@@ -497,7 +497,7 @@ class Dao
             $types[$meta->name] = $meta->type;
         }
 
-        $list  = [];
+        $list = [];
         foreach ($rs as $row) {
             $list[] = self::_convertToPhp($row[$col], $types[$col]);
         }
@@ -588,7 +588,7 @@ class Dao
      * @return array{0: PageInfo, 1: T[]} ページ情報と検索結果
      * @throws DatabaseException
      */
-    public static function paginate($page, $page_size, $sql, $params = [], $clazz  = 'stdClass', $optimized_count_sql = null)
+    public static function paginate($page, $page_size, $sql, $params = [], $clazz = 'stdClass', $optimized_count_sql = null)
     {
         $hit_count = empty($optimized_count_sql) ? self::count($sql, $params) : self::get($optimized_count_sql, $params) ;
         $pi        = new PageInfo($page, $page_size, $hit_count);
@@ -723,7 +723,7 @@ class Dao
             function ($matches) use ($params, &$real_params, &$count) {
                 $key = trim($matches[1], ':');
                 if (!array_key_exists($key, $params)) {
-                    throw new DatabaseException("SQL query parameter key [ {$key} ] does not exist in given params.");
+                    return $matches[1];
                 }
                 $val    = $params[$key];
                 $holder = "";

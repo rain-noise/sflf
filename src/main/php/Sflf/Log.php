@@ -34,7 +34,7 @@
  * );
  *
  * @package   SFLF
- * @version   v1.1.3
+ * @version   v1.1.4
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -135,7 +135,7 @@ class Log
         'application/javascript' => ['line-comment' , '// '],
         'text/xml'               => ['block-comment', [['<!--', '-->'], ['[COMMENT]', '[/COMMENT]']]],
         'application/xml'        => ['block-comment', [['<!--', '-->'], ['[COMMENT]', '[/COMMENT]']]],
-        //'unknown'              => ['html'         , null],
+        'unknown'                => ['html'         , null],
         //'content/type'         => ['custom'       , function($body, $level) { ... }],
     ];
 

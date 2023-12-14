@@ -37,7 +37,7 @@
  * }
  *
  * @package   SFLF
- * @version   v1.1.2
+ * @version   v1.2.0
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -46,11 +46,9 @@ class Router
 {
     /** @var string デフォルトコントローラー名 (default: top) */
     const DEFAULT_CONTEOLLER_NAME = 'top';
+
     /** @var string デフォルトアクション名 (default: index) */
     const DEFAULT_ACTION_NAME     = 'index';
-
-    /** @var string コントローラークラス名のサフィックス (default: Controller) */
-    const CONTROLLER_CLASS_NAME_SUFFIX = 'Controller';
 
     /** @var string URI の ワード区切り文字を定義します。 */
     const URI_SNAKE_CASE_SEPARATOR = '-';
@@ -85,19 +83,37 @@ class Router
     private $accessible;
 
     /**
+     * コントローラークラスの名前空間
+     *
+     * @var string
+     */
+    private $controller_class_namespace;
+
+    /**
+     * コントローラークラス名のサフィックス
+     *
+     * @var string
+     */
+    private $controller_class_name_suffix;
+
+    /**
      * ルーティングオブジェクトを構築します。
      *
-     * @param string $uri          リクエストURL(= $_SERVER['REQUEST_URI'])
-     * @param string $context_path コンテキストパス (default: '')
+     * @param string $uri                          リクエストURL(= $_SERVER['REQUEST_URI'])
+     * @param string $context_path                 コンテキストパス (default: '')
+     * @param string $controller_class_namespace   コントローラークラスの名前空間 (default: '')
+     * @param string $controller_class_name_suffix コントローラークラス名のサフィックス (default: 'Controller')
      */
-    public function __construct($uri, $context_path = '')
+    public function __construct($uri, $context_path = '', $controller_class_namespace = '', $controller_class_name_suffix = 'Controller')
     {
         $this->uri          = (string)preg_replace('/^'.preg_quote($context_path, '/').'/', '', $uri);
         $this->context_path = $context_path;
         $part_of_uri        = explode('/', (string)preg_replace('/^\//', '', strstr($this->uri, '?', true) ?: $this->uri));
         assert(is_array($part_of_uri));
-        $this->part_of_uri  = $part_of_uri;
-        $this->accessible   = false;
+        $this->part_of_uri                  = $part_of_uri;
+        $this->accessible                   = false;
+        $this->controller_class_namespace   = $controller_class_namespace;
+        $this->controller_class_name_suffix = $controller_class_name_suffix;
     }
 
     /**
@@ -160,7 +176,7 @@ class Router
      */
     private function _getControllerName()
     {
-        return $this->_camelize($this->getPartOfController()) . self::CONTROLLER_CLASS_NAME_SUFFIX ;
+        return $this->controller_class_namespace . $this->_camelize($this->getPartOfController()) . $this->controller_class_name_suffix ;
     }
 
     /**

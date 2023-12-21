@@ -5,5 +5,7 @@ parameters:
     paths:
         - ./src/main/php
     excludePaths:
+        - ./src/main/php/extensions/config
         - ./src/main/php/vendor
         - ./tests
+        

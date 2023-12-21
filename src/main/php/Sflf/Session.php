@@ -14,7 +14,7 @@
  * Session::set('LOGIN', $user);
  *
  * @package   SFLF
- * @version   v1.0.4
+ * @version   v1.0.5
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -36,11 +36,11 @@ class Session
     /**
      * セッションを開始します。
      *
-     * @param SessionHandlerInterface $handler  セッションハンドラ (default: null)
-     * @param array<string, mixed>    $options  session_start のオプション引数 (default: [])
+     * @param \SessionHandlerInterface $handler  セッションハンドラ (default: null)
+     * @param array<string, mixed>     $options  session_start のオプション引数 (default: [])
      * @return bool
      */
-    public static function start(SessionHandlerInterface $handler = null, array $options = [])
+    public static function start(\SessionHandlerInterface $handler = null, array $options = [])
     {
         if (!empty($handler)) {
             session_set_save_handler($handler, true);
@@ -153,7 +153,7 @@ class Session
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
  */
-class RetrySessionHandler extends SessionHandler
+class RetrySessionHandler extends \SessionHandler
 {
     /** @var int リトライモード：OPEN */
     const RETRY_OPEN    =  1;
@@ -237,7 +237,7 @@ class RetrySessionHandler extends SessionHandler
                 if (!$this->has_error && ($is_opend || $retry++ >= $this->max_retry)) {
                     break;
                 }
-            } catch (Throwable $t) {
+            } catch (\Throwable $t) {
                 if ($retry++ >= $this->max_retry) {
                     throw $t;
                 }
@@ -271,7 +271,7 @@ class RetrySessionHandler extends SessionHandler
                 if (!$this->has_error || $retry++ >= $this->max_retry) {
                     break;
                 }
-            } catch (Throwable $t) {
+            } catch (\Throwable $t) {
                 if ($retry++ >= $this->max_retry) {
                     throw $t;
                 }
@@ -306,7 +306,7 @@ class RetrySessionHandler extends SessionHandler
                 if (!$this->has_error && ($is_wrote || $retry++ >= $this->max_retry)) {
                     break;
                 }
-            } catch (Throwable $t) {
+            } catch (\Throwable $t) {
                 if ($retry++ >= $this->max_retry) {
                     throw $t;
                 }
@@ -340,7 +340,7 @@ class RetrySessionHandler extends SessionHandler
                 if (!$this->has_error && ($is_destroied || $retry++ >= $this->max_retry)) {
                     break;
                 }
-            } catch (Throwable $t) {
+            } catch (\Throwable $t) {
                 if ($retry++ >= $this->max_retry) {
                     throw $t;
                 }

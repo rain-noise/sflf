@@ -10,7 +10,8 @@
  * Name:     domains
  * Params:
  *  - type       (required)          : output type (option|checkbox|radio|plain|label)
- *  - domain     (required)          : domain class name or array of domains(any objects which has value and label field also ok)
+ *  - domain     (required)          : domain class name (with/without namespace) or array of domains(any objects which has value and label field also ok)
+ *                                     NOTE: If domain class name dosen't include namespace then use default one that configured by constants of `SFLF_CONFIG['namespace']['domain']` if defined.
  *  - selected   (optional)          : selected values (value or array : default no selected)
  *  - value      (optional)          : value field name (default 'value')
  *  - label      (optional)          : label field name (default 'label')
@@ -24,6 +25,7 @@
  *  - prevtag    (optional)          : html code of previous position for each of items (default : '')
  *  - posttag    (optional)          : html code of post position for each of items (default : '')
  *  - addable    (optional)          : add to select option using unexsits selected value (default : false)
+ *  - data       (optional)          : add to data-xxxx attribute to option (default : [])
  *  - {tag_attr} (optional)          : html tag attribute and value like id, class, name, style, data-*
  * Purpose:  ドメイン選択フォーム及びラベルを表示する
  * -------------------------------------------------------------
@@ -31,7 +33,7 @@
  * @see       https://github.com/rain-noise/sflf/blob/master/src/main/php/Sflf/Domain.php
  *
  * @package   SFLF
- * @version   v1.0.4
+ * @version   v1.1.0
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -53,9 +55,10 @@
  *   prevtag?: string|null,
  *   posttag?: string|null,
  *   addable?: bool|null,
+ *   data?: string[]|null,
  *   name?: string|null,
- * }             $params  パラメータ
- * @param Smarty &$smarty テンプレートオブジェクト
+ * }              $params  パラメータ
+ * @param \Smarty &$smarty テンプレートオブジェクト
  * @return mixed|null
  */
 function smarty_function_domains($params, &$smarty)
@@ -72,12 +75,16 @@ function smarty_function_domains($params, &$smarty)
     }
 
     // パラメータ処理
-    $domain     = $params['domain'] ?? [];
-    $selected   = isset($params['selected']) ? (is_array($params['selected']) ? $params['selected'] : [$params['selected']]) : [] ;
-    $value      = isset($params['value']) ? $params['value'] : 'value' ;
-    $label      = isset($params['label']) ? $params['label'] : 'label' ;
-    $check      = isset($params['check']) ? $params['check'] : $value ;
-    $type       = $params['type'];
+    $domain = $params['domain'] ?? [];
+    if (is_string($domain) && strpos($domain, '\\') === false) {
+        $namespace = defined('SFLF_CONFIG') ? (SFLF_CONFIG['namespace']['domain'] ?? '') : '' ;
+        $domain    = empty($namespace) ? $domain : "{$namespace}\\{$domain}";
+    }
+    $selected = isset($params['selected']) ? (is_array($params['selected']) ? $params['selected'] : [$params['selected']]) : [] ;
+    $value    = isset($params['value']) ? $params['value'] : 'value' ;
+    $label    = isset($params['label']) ? $params['label'] : 'label' ;
+    $check    = isset($params['check']) ? $params['check'] : $value ;
+    $type     = $params['type'];
     if (!in_array($type, ['option', 'checkbox', 'radio', 'plain', 'label'])) {
         trigger_error("error: invalid 'type' parameter : {$type}", E_USER_NOTICE);
     }
@@ -90,10 +97,11 @@ function smarty_function_domains($params, &$smarty)
     $prevtag    = isset($params['prevtag']) ? $params['prevtag'] : '' ;
     $posttag    = isset($params['posttag']) ? $params['posttag'] : '' ;
     $addable    = isset($params['addable']) ? $params['addable'] : false ;
+    $data       = isset($params['data']) ? $params['data'] : [] ;
     $name       = '';
     $attrs      = '';
     foreach ($params as $k => $v) {
-        if (in_array($k, ['id', 'domain', 'selected', 'value', 'label', 'check', 'type', 'include', 'exclude', 'delimiter', 'null_label', 'case', 'current', 'prevtag', 'posttag', 'addable'])) {
+        if (in_array($k, ['id', 'domain', 'selected', 'value', 'label', 'check', 'type', 'include', 'exclude', 'delimiter', 'null_label', 'case', 'current', 'prevtag', 'posttag', 'addable', 'data'])) {
             continue;
         }
         $attrs .= $k.'="'.$v.'" ';
@@ -113,10 +121,13 @@ function smarty_function_domains($params, &$smarty)
     $html  = "";
     $lists = is_string($domain) ? (in_array($type, ['plain', 'label']) ? $domain::lists() : $domain::nexts($current, $case)) : $domain ;
     foreach ($lists as $d) {
-        $v = $d->$value;
-        $l = empty($d->$label) ? $null_label : $d->$label ;
-        $c = $d->$check;
-
+        $v  = $d->$value;
+        $l  = empty($d->$label) ? $null_label : $d->$label ;
+        $c  = $d->$check;
+        $da = '';
+        foreach ($data as $attr_name) {
+            $da .= 'data-'.str_replace('_', '-', $attr_name).'="'.htmlspecialchars($d->{$attr_name}).'" ';
+        }
         if (!empty($include) && !in_array($c, $include)) {
             continue;
         }

@@ -26,7 +26,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/function.token.php トークン出力用 Smarty タグ
  *
  * @package   SFLF
- * @version   v1.1.2
+ * @version   v1.1.3
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -49,12 +49,12 @@ class Token
      * @param string $key    キー名 (default: global)
      * @param int    $length 文字数 (default: 16)
      * @return string トークン文字列
-     * @throws Exception when failed to generate openssl_random_pseudo_bytes()
+     * @throws \Exception when failed to generate openssl_random_pseudo_bytes()
      */
     public static function generate($key = 'global', $length = 16)
     {
         if (($token = openssl_random_pseudo_bytes($length)) === false) {
-            throw new Exception("Failed to generate openssl_random_pseudo_bytes().");
+            throw new \Exception("Failed to generate openssl_random_pseudo_bytes().");
         }
         return $_SESSION[self::SESSION_KEY_PREFIX.$key] = bin2hex($token);
     }

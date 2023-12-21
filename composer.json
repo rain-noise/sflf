@@ -20,7 +20,7 @@
     "autoload": {
         "classmap": [
             "src/main/php/Sflf/",
-            "src/main/php/extensions/"
+            "src/main/php/extensions/modules"
         ]
     },
     "autoload-dev": {

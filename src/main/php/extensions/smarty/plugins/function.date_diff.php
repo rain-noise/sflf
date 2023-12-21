@@ -23,7 +23,7 @@
  * -------------------------------------------------------------
  *
  * @package   SFLF
- * @version   v1.0.2
+ * @version   v1.0.3
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -39,8 +39,8 @@
  *   positive_label?: string|null,
  *   zero_label?: string|null,
  *   negative_label?: string|null,
- * }             $params  パラメータ
- * @param Smarty &$smarty テンプレートオブジェクト
+ * }              $params  パラメータ
+ * @param \Smarty &$smarty テンプレートオブジェクト
  * @return mixed|null
  */
 function smarty_function_date_diff($params, &$smarty)
@@ -63,12 +63,12 @@ function smarty_function_date_diff($params, &$smarty)
     $ignore_time    = isset($params['ignore_time']) ? $params['ignore_time'] : false ;
     $from           = $params['from'] ;
     if (!empty($from)) {
-        $from       = $from instanceof DateTime ? clone $from : new DateTime($from) ;
+        $from       = $from instanceof \DateTime ? clone $from : new \DateTime($from) ;
         $from       = $ignore_time ? clone $from->setTime(0, 0, 0) : $from ;
     }
     $to             = $params['to'];
     if (!empty($to)) {
-        $to         = $to instanceof DateTime ? clone $to : new DateTime($to) ;
+        $to         = $to instanceof \DateTime ? clone $to : new \DateTime($to) ;
         $to         = $ignore_time ? $to->setTime(0, 0, 0) : $to ;
     }
     $format         = $params['format'];

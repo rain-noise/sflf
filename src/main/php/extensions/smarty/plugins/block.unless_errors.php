@@ -14,17 +14,17 @@
  * -------------------------------------------------------------
  *
  * @package   SFLF
- * @version   v1.0.2
+ * @version   v1.0.3
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
  *
  * @param array{
  *   name?: string,
- * }             $params  パラメータ
- * @param mixed  $content ブロックで囲われたコンテンツ
- * @param Smarty &$smarty テンプレートオブジェクト
- * @param bool   &$repeat 繰り返し制御
+ * }              $params  パラメータ
+ * @param mixed   $content ブロックで囲われたコンテンツ
+ * @param \Smarty &$smarty テンプレートオブジェクト
+ * @param bool    &$repeat 繰り返し制御
  * @return mixed|null
  */
 function smarty_block_unless_errors($params, $content, &$smarty, &$repeat)

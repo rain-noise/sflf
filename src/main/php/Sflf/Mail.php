@@ -31,7 +31,7 @@
  * $mail->send();
  *
  * @package   SFLF
- * @version   v1.2.2
+ * @version   v1.2.3
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -395,9 +395,9 @@ class MailSendException extends \RuntimeException
     /**
      * メール送信関連例外を構築します
      *
-     * @param string         $message  エラーメッセージ
-     * @param int            $code     エラーコード (default: 0)
-     * @param Throwable|null $previous 原因例外 (default: null)
+     * @param string          $message  エラーメッセージ
+     * @param int             $code     エラーコード (default: 0)
+     * @param \Throwable|null $previous 原因例外 (default: null)
      * @return MailSendException
      */
     public function __construct($message, $code = 0, $previous = null)

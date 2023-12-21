@@ -142,7 +142,7 @@
  * $form->avatar->saveTemporary("/path/to/temporary/dir"); // You can skip this step if your app doesn't have confirm action.
  *
  * // for complete action
- * $now = new DateTime();
+ * $now = new \DateTime();
  * $user = $form->describe(UserEntity::class);  // or $user = new UserEntity(); $form->inject($user); <- this way you can use code completion by IDE
  * $user->avatar_file   = $form->avatar->getPublishFileName();
  * $user->registered_at = $now;
@@ -175,7 +175,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/block.unless_errors.php エラー有無分岐用 Smarty タグ
  *
  * @package   SFLF
- * @version   v2.0.0
+ * @version   v2.0.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -557,7 +557,7 @@ abstract class Form
         if (is_array($obj)) {
             return isset($obj[$key]) ? $obj[$key] : $default ;
         }
-        if (!($obj instanceof stdClass)) {
+        if (!($obj instanceof \stdClass)) {
             $clazz = get_class($obj);
             if (!property_exists($clazz, $key)) {
                 return $default;
@@ -585,7 +585,7 @@ abstract class Form
         if (is_array($obj)) {
             return isset($obj[$key]);
         }
-        if (!($obj instanceof stdClass)) {
+        if (!($obj instanceof \stdClass)) {
             $clazz = get_class($obj);
             return property_exists($clazz, $key);
         }
@@ -698,7 +698,7 @@ abstract class Form
 
                 // Validation 実行
                 $method  = "valid_{$check}";
-                $invoker = new ReflectionMethod($clazz, $method);
+                $invoker = new \ReflectionMethod($clazz, $method);
                 $invoker->setAccessible(true);
 
                 $error = $invoker->invokeArgs($this, $args);
@@ -2472,7 +2472,7 @@ abstract class Form
         }
         $date = $this->_createDateTime($value, $main_format);
         if (empty($date)) {
-            return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
+            return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new \DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
         }
         return null;
     }
@@ -2481,9 +2481,9 @@ abstract class Form
      * DateTime オブジェクトを解析します。
      * ※本メソッドは _analyzeDateTime() から日付フォーマット情報を除外して日時のみを返す簡易メソッドです。
      *
-     * @param string|DateTime|null $value       日時文字列
-     * @param string|null          $main_format 優先受入れフォーマット (default: null)
-     * @return DateTime|null 解析後の日付
+     * @param string|\DateTime|null $value       日時文字列
+     * @param string|null           $main_format 優先受入れフォーマット (default: null)
+     * @return \DateTime|null 解析後の日付
      */
     protected function _createDateTime($value, $main_format = null)
     {
@@ -2495,8 +2495,8 @@ abstract class Form
      * DateTime オブジェクトを解析します。
      * ※本メソッドは解析に成功した日付フォーマットも返します
      *
-     * @param string|DateTime|null $value       日時文字列
-     * @param string|null          $main_format 優先受入れフォーマット (default: null)
+     * @param string|\DateTime|null $value       日時文字列
+     * @param string|null           $main_format 優先受入れフォーマット (default: null)
      * @return array{0: DateTime|null, 1: string|null} [日時, 実際に解析に利用されたフォーマット]
      */
     protected function _analyzeDateTime($value, $main_format = null)
@@ -2505,7 +2505,7 @@ abstract class Form
             return [null, null];
         }
         assert(!is_null($value));
-        if ($value instanceof DateTime) {
+        if ($value instanceof \DateTime) {
             return [$value, null];
         }
 
@@ -2532,13 +2532,13 @@ abstract class Form
      *
      * @param string $value  日時文字列
      * @param string $format 日時フォーマット
-     * @return DateTime|null
+     * @return \DateTime|null
      */
     private function _tryToParseDateTime($value, $format)
     {
-        $date = DateTime::createFromFormat("!{$format}", $value);
-        $le   = DateTime::getLastErrors();
-        return $date === false || !empty($le['errors']) || !empty($le['warnings']) ? null : $date->setTimezone(new DateTimeZone(date_default_timezone_get())) ;
+        $date = \DateTime::createFromFormat("!{$format}", $value);
+        $le   = \DateTime::getLastErrors();
+        return $date === false || !empty($le['errors']) || !empty($le['warnings']) ? null : $date->setTimezone(new \DateTimeZone(date_default_timezone_get())) ;
     }
 
     //--------------------------------------------------------------------------
@@ -2578,9 +2578,9 @@ abstract class Form
         }
         list($target, $apply_format) = $this->_analyzeDateTime($value, $main_format);
         if (empty($target)) {
-            return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
+            return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new \DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
         }
-        $point = new DateTime($point_time);
+        $point = new \DateTime($point_time);
         if ($target <= $point) {
             return "{$label}は ".$point->format($main_format ? $main_format : ($apply_format ? $apply_format : 'Y-m-d H:i:s'))." よりも未来日を指定して下さい。";
         }
@@ -2624,9 +2624,9 @@ abstract class Form
         }
         list($target, $apply_format) = $this->_analyzeDateTime($value, $main_format);
         if (empty($target)) {
-            return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
+            return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new \DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
         }
-        $point = new DateTime($point_time);
+        $point = new \DateTime($point_time);
         if ($target < $point) {
             return "{$label}は ".$point->format($main_format ? $main_format : ($apply_format ? $apply_format : 'Y-m-d H:i:s'))." よりも未来日(当日含む)を指定して下さい。";
         }
@@ -2670,9 +2670,9 @@ abstract class Form
         }
         list($target, $apply_format) = $this->_analyzeDateTime($value, $main_format);
         if (empty($target)) {
-            return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
+            return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new \DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
         }
-        $point = new DateTime($point_time);
+        $point = new \DateTime($point_time);
         if ($target >= $point) {
             return "{$label}は ".$point->format($main_format ? $main_format : ($apply_format ? $apply_format : 'Y-m-d H:i:s'))." よりも過去日を指定して下さい。";
         }
@@ -2716,9 +2716,9 @@ abstract class Form
         }
         list($target, $apply_format) = $this->_analyzeDateTime($value, $main_format);
         if (empty($target)) {
-            return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
+            return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new \DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
         }
-        $point  = new DateTime($point_time);
+        $point  = new \DateTime($point_time);
         if ($target > $point) {
             return "{$label}は ".$point->format($main_format ? $main_format : ($apply_format ? $apply_format : 'Y-m-d H:i:s'))." よりも過去日(当日含む)を指定して下さい。";
         }
@@ -2762,9 +2762,9 @@ abstract class Form
         }
         $target = $this->_createDateTime($value, $main_format);
         if (empty($target)) {
-            return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
+            return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new \DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
         }
-        $point = new DateTime("-{$age} year");
+        $point = new \DateTime("-{$age} year");
         if ($target > $point) {
             return "{$age}歳未満の方はご利用頂けません。";
         }
@@ -2808,10 +2808,10 @@ abstract class Form
         }
         $target = $this->_createDateTime($value, $main_format);
         if (empty($target)) {
-            return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
+            return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new \DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
         }
         $invalid_age = $age + 1;
-        $point       = new DateTime("-{$invalid_age} year");
+        $point       = new \DateTime("-{$invalid_age} year");
         if ($target <= $point) {
             return "{$invalid_age}歳以上の方はご利用頂けません。";
         }
@@ -3500,7 +3500,7 @@ abstract class Form
         }
         $target = $this->_createDateTime($value, $main_format);
         if (empty($target)) {
-            return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
+            return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new \DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
         }
         $point = $this->_createDateTime($this->$other, $main_format);
         if (empty($point) || !($point < $target)) {
@@ -3547,7 +3547,7 @@ abstract class Form
         }
         $target = $this->_createDateTime($value, $main_format);
         if (empty($target)) {
-            return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
+            return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new \DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
         }
         $point = $this->_createDateTime($this->$other, $main_format);
         if (empty($point) || !($point <= $target)) {
@@ -3594,7 +3594,7 @@ abstract class Form
         }
         $target = $this->_createDateTime($value, $main_format);
         if (empty($target)) {
-            return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
+            return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new \DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
         }
         $point = $this->_createDateTime($this->$other, $main_format);
         if (empty($point) || !($target < $point)) {
@@ -3641,7 +3641,7 @@ abstract class Form
         }
         $target = $this->_createDateTime($value, $main_format);
         if (empty($target)) {
-            return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
+            return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new \DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
         }
         $point = $this->_createDateTime($this->$other, $main_format);
         if (empty($point) || !($target <= $point)) {
@@ -3876,7 +3876,7 @@ class UploadFile
                 $imagesize    = getimagesize($this->tmp_name);
                 $this->width  = isset($imagesize[0]) ? $imagesize[0] : null ;
                 $this->height = isset($imagesize[1]) ? $imagesize[1] : null ;
-            } catch (ErrorException $e) {
+            } catch (\ErrorException $e) {
                 $this->width  = null ;
                 $this->height = null ;
             }
@@ -4065,6 +4065,7 @@ class UploadFile
      */
     private static function _fileId($form_name, $field_name)
     {
+        $form_name = str_replace('\\', '_', $form_name);
         return "SFLF_UPLOAD_FILE_{$form_name}_{$field_name}_".session_id();
     }
 }
@@ -4081,12 +4082,12 @@ class UploadFile
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
  */
-class InvalidValidateRuleException extends RuntimeException
+class InvalidValidateRuleException extends \RuntimeException
 {
     /**
-     * @param string         $message  エラーメッセージ
-     * @param int            $code     エラーコード (default: 0)
-     * @param Throwable|null $previous 原因例外 (default: null)
+     * @param string          $message  エラーメッセージ
+     * @param int             $code     エラーコード (default: 0)
+     * @param \Throwable|null $previous 原因例外 (default: null)
      * @return InvalidValidateRuleException
      */
     public function __construct($message, $code = 0, $previous = null)

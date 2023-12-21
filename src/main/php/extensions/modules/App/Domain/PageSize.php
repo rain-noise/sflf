@@ -1,5 +1,8 @@
 <?php
-//namespace Sflf; // 名前空間が必要な場合はコメントを解除して下さい。（任意の名前空間による設定も可）
+// 名前空間が必要な場合はコメントを解除して下さい。（任意の名前空間による設定も可）
+//namespace App\Domain;
+//
+//use Sflf\Domain;
 
 /**
  * Single File Low Functionality Class Tools - Extensions

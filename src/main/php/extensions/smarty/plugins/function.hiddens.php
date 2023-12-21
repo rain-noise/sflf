@@ -1,4 +1,7 @@
 <?php
+
+// use Sflf\Form; // 名前空間が必要な場合はコメントを解除して下さい。（任意の名前空間による設定も可）
+
 /**
  * Single File Low Functionality Class Tools - Extensions : Smarty Plugin
  *
@@ -27,7 +30,7 @@
  * @see       https://github.com/rain-noise/sflf/blob/master/src/main/php/Sflf/Form.php
  *
  * @package   SFLF
- * @version   v1.0.1
+ * @version   v1.0.2
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -37,8 +40,8 @@
  *   include?: string|null,
  *   exclude?: string|null,
  *   date_format?: string|null,
- * }             $params  パラメータ
- * @param Smarty &$smarty テンプレートオブジェクト
+ * }              $params  パラメータ
+ * @param \Smarty &$smarty テンプレートオブジェクト
  * @return string
  */
 function smarty_function_hiddens($params, &$smarty)
@@ -124,7 +127,7 @@ function smarty_function_hiddens__generate(&$hiddens, $form, $include, $exclude,
  */
 function smarty_function_hiddens__append_tag(&$hiddens, $name, $value, $date_format)
 {
-    $value     = $value instanceof DateTime ? $value->format($date_format) : $value ;
+    $value     = $value instanceof \DateTime ? $value->format($date_format) : $value ;
     $hiddens[] = '<input type="hidden" name="'.$name.'" value="'.htmlspecialchars("".$value).'" />';
     return;
 }

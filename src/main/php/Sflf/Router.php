@@ -37,7 +37,7 @@
  * }
  *
  * @package   SFLF
- * @version   v1.2.0
+ * @version   v1.2.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -101,10 +101,10 @@ class Router
      *
      * @param string $uri                          リクエストURL(= $_SERVER['REQUEST_URI'])
      * @param string $context_path                 コンテキストパス (default: '')
-     * @param string $controller_class_namespace   コントローラークラスの名前空間 (default: '')
+     * @param string $controller_class_namespace   コントローラークラスの名前空間 (default: null for use 'SFLF_CONFIG['namespace']['controller']' constants if define)
      * @param string $controller_class_name_suffix コントローラークラス名のサフィックス (default: 'Controller')
      */
-    public function __construct($uri, $context_path = '', $controller_class_namespace = '', $controller_class_name_suffix = 'Controller')
+    public function __construct($uri, $context_path = '', $controller_class_namespace = null, $controller_class_name_suffix = 'Controller')
     {
         $this->uri          = (string)preg_replace('/^'.preg_quote($context_path, '/').'/', '', $uri);
         $this->context_path = $context_path;
@@ -112,7 +112,7 @@ class Router
         assert(is_array($part_of_uri));
         $this->part_of_uri                  = $part_of_uri;
         $this->accessible                   = false;
-        $this->controller_class_namespace   = $controller_class_namespace;
+        $this->controller_class_namespace   = $controller_class_namespace ?? (defined('SFLF_CONFIG') ? (SFLF_CONFIG['namespace']['controller'] ?? '') : '') ;
         $this->controller_class_name_suffix = $controller_class_name_suffix;
     }
 
@@ -138,7 +138,7 @@ class Router
         $controller = $this->_getControllerName() ;
         try {
             return new $controller();
-        } catch(Throwable $e) {
+        } catch(\Throwable $e) {
             throw new NoRouteException("Route Not Found : Controller [ {$controller} ] can not instantiate.", 0, $e);
         }
     }
@@ -156,8 +156,8 @@ class Router
         $args   = $this->getArgs();
 
         try {
-            $invoker = new ReflectionMethod($clazz, $method);
-        } catch(Throwable $e) {
+            $invoker = new \ReflectionMethod($clazz, $method);
+        } catch(\Throwable $e) {
             throw new NoRouteException("Route Not Found : Controller [ {$clazz}->{$method}() ] can not invoke.", 0, $e);
         }
 
@@ -319,14 +319,14 @@ class Router
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
  */
-class NoRouteException extends RuntimeException
+class NoRouteException extends \RuntimeException
 {
     /**
      * ルーティング関連例外を構築します。
      *
-     * @param string         $message  エラーメッセージ
-     * @param int            $code     エラーコード (default: 0)
-     * @param Throwable|null $previous 原因例外 (default: null)
+     * @param string          $message  エラーメッセージ
+     * @param int             $code     エラーコード (default: 0)
+     * @param \Throwable|null $previous 原因例外 (default: null)
      * @return NoRouteException
      */
     public function __construct($message, $code = 0, $previous = null)

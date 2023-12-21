@@ -17,7 +17,7 @@
  * $pass = Util::randomCode(8);
  *
  * @package   SFLF
- * @version   v1.5.0
+ * @version   v1.5.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -59,9 +59,9 @@ class Util
      * DateTime オブジェクトを解析します。
      * ※本メソッドは analyzeDateTime() から日付フォーマット情報を除外して日付のみを返す簡易メソッドです。
      *
-     * @param string|DateTime|null $value              日時文字列
-     * @param string               ...$primary_formats 優先フォーマット (default: [])
-     * @return DateTime|null
+     * @param string|\DateTime|null $value              日時文字列
+     * @param string                ...$primary_formats 優先フォーマット (default: [])
+     * @return \DateTime|null
      */
     public static function createDateTime($value, ...$primary_formats)
     {
@@ -73,8 +73,8 @@ class Util
      * DateTime オブジェクトを解析します。
      * ※本メソッドは解析に成功した日付フォーマットも返します
      *
-     * @param string|DateTime|null $value              日時文字列
-     * @param string               ...$primary_formats 優先フォーマット (default: [])
+     * @param string|\DateTime|null $value              日時文字列
+     * @param string                ...$primary_formats 優先フォーマット (default: [])
      * @return array{0: DateTime|null, 1: string|null} [DateTime or null, apply_format or null]
      */
     public static function analyzeDateTime($value, ...$primary_formats)
@@ -82,7 +82,7 @@ class Util
         if ($value === null || $value === '') {
             return [null, null];
         }
-        if ($value instanceof DateTime) {
+        if ($value instanceof \DateTime) {
             return [$value, null];
         }
 
@@ -109,13 +109,13 @@ class Util
      *
      * @param string $value  日付文字列
      * @param string $format 日付フォーマット
-     * @return DateTime|null
+     * @return \DateTime|null
      */
     private static function _tryToParseDateTime($value, $format)
     {
-        $date = DateTime::createFromFormat("!{$format}", $value);
-        $le   = DateTime::getLastErrors();
-        return $date === false || !empty($le['errors']) || !empty($le['warnings']) ? null : $date->setTimezone(new DateTimeZone(date_default_timezone_get())) ;
+        $date = \DateTime::createFromFormat("!{$format}", $value);
+        $le   = \DateTime::getLastErrors();
+        return $date === false || !empty($le['errors']) || !empty($le['warnings']) ? null : $date->setTimezone(new \DateTimeZone(date_default_timezone_get())) ;
     }
 
     /**
@@ -268,14 +268,14 @@ class Util
      * @param int    $stretching ストレッチング回数 (default: 1000)
      * @param string $algorithm  ハッシュアルゴリズム (default: SHA256)
      * @return string ハッシュ文字列
-     * @throws ValueError when invalid algorithm value given.
+     * @throws \ValueError when invalid algorithm value given.
      */
     public static function hash($text, $salt = '', $pepper = '', $stretching = 1000, $algorithm = 'SHA256')
     {
         for ($i = 0 ; $i < $stretching ; $i++) {
             $text = \hash($algorithm, $salt.md5($text).$pepper);
             if ($text === false) {
-                throw new ValueError("Invalid algorithm value given.");
+                throw new \ValueError("Invalid algorithm value given.");
             }
         }
         return $text;
@@ -323,12 +323,12 @@ class Util
      * @param string $secret_key 秘密鍵
      * @param string $cipher     暗号器 (default: AES-256-CBC)
      * @return string 暗号
-     * @throws ValueError when failed to get the cipher iv length, perhaps invlid cipher was given
+     * @throws \ValueError when failed to get the cipher iv length, perhaps invlid cipher was given
      */
     public static function encript($plain, $secret_key, $cipher = 'AES-256-CBC')
     {
         if (($iv_size = openssl_cipher_iv_length($cipher)) === false || $iv_size < 1) {
-            throw new ValueError("Failed to get the cipher iv length, perhaps invlid cipher was given.");
+            throw new \ValueError("Failed to get the cipher iv length, perhaps invlid cipher was given.");
         }
         $iv        = random_bytes($iv_size);
         $encrypted = openssl_encrypt($plain, $cipher, $secret_key, OPENSSL_RAW_DATA, $iv);
@@ -342,12 +342,12 @@ class Util
      * @param string $secret_key 秘密鍵
      * @param string $cipher     暗号器 (default: AES-256-CBC)
      * @return string|null 復号文 (復号失敗時は null)
-     * @throws ValueError when failed to get the cipher iv length, perhaps invlid cipher was given
+     * @throws \ValueError when failed to get the cipher iv length, perhaps invlid cipher was given
      */
     public static function decript($encrypted, $secret_key, $cipher = 'AES-256-CBC')
     {
         if (($iv_size = openssl_cipher_iv_length($cipher)) === false || $iv_size < 1) {
-            throw new ValueError("Failed to get the cipher iv length, perhaps invlid cipher was given.");
+            throw new \ValueError("Failed to get the cipher iv length, perhaps invlid cipher was given.");
         }
         $iv        = substr($encrypted, 0, $iv_size);
         $encrypted = substr($encrypted, $iv_size);
@@ -511,7 +511,7 @@ class Util
      */
     public static function unzip($zip_path, $dest_dir)
     {
-        $zip = new ZipArchive();
+        $zip = new \ZipArchive();
         $res = $zip->open($zip_path);
         if ($res === true) {
             $zip->extractTo($dest_dir);
@@ -546,8 +546,8 @@ class Util
             mkdir($dest_dir, $out_dir_permission, true);
         }
 
-        $z = new ZipArchive();
-        $z->open($out_zip_path, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+        $z = new \ZipArchive();
+        $z->open($out_zip_path, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
         if ($include_target_dir) {
             $z->addEmptyDir($dir_name);
         }
@@ -559,7 +559,7 @@ class Util
      * ディレクトリを再帰的にZIP圧縮します。
      *
      * @param string                      $folder           対象ディレクトリ
-     * @param ZipArchive                  $zip_file         ZIPファイル
+     * @param \ZipArchive                 $zip_file         ZIPファイル
      * @param int                         $exclusive_length 除外ファイルパス
      * @param callable(string $path):bool $filter           格納データ取捨選択用フィルタ
      * @return void
@@ -567,7 +567,7 @@ class Util
     private static function folderToZip($folder, &$zip_file, $exclusive_length, $filter)
     {
         if (($handle = opendir($folder)) === false) {
-            throw new Exception("Can not open directory '{$folder}'.");
+            throw new \Exception("Can not open directory '{$folder}'.");
         }
         while (false !== ($f = readdir($handle))) {
             if ($f != '.' && $f != '..') {
@@ -614,12 +614,12 @@ class Util
      *
      * @param string $string 文字列
      * @return string[] 文字の配列
-     * @throws Exception when failed split to letters by preg_split()
+     * @throws \Exception when failed split to letters by preg_split()
      */
     public static function stringToArray($string)
     {
         if (($letters = preg_split("//u", $string, -1, PREG_SPLIT_NO_EMPTY)) === false) {
-            throw new Exception("Failed split to letters by preg_split().");
+            throw new \Exception("Failed split to letters by preg_split().");
         }
         return $letters;
     }
@@ -766,7 +766,7 @@ class Util
      */
     public static function flatten(array $array)
     {
-        return iterator_to_array(new RecursiveIteratorIterator(new RecursiveArrayIterator($array)), false);
+        return iterator_to_array(new \RecursiveIteratorIterator(new \RecursiveArrayIterator($array)), false);
     }
 
     /**
@@ -898,8 +898,8 @@ class Util
     public static function csv($file_name, $converter, array $rs, $cols, $has_header = true, $col_labels = [], $encoding = 'SJIS-win')
     {
         if (is_string($cols)) {
-            $reflect = new ReflectionClass($cols);
-            $props   = $reflect->getProperties(ReflectionProperty::IS_PUBLIC);
+            $reflect = new \ReflectionClass($cols);
+            $props   = $reflect->getProperties(\ReflectionProperty::IS_PUBLIC);
             $cols    = [];
             foreach ($props as $prop) {
                 $cols[] = $prop->getName();
@@ -1036,16 +1036,16 @@ class Util
     /**
      * 指定日時点での年齢を計算します。
      *
-     * @param DateTime|null $birthday 生年月日 (default: null)
-     * @param DateTime|null $at       起点日 (default: null)
+     * @param \DateTime|null $birthday 生年月日 (default: null)
+     * @param \DateTime|null $at       起点日 (default: null)
      * @return int|null 起点日における年齢
      */
-    public static function ageAt(DateTime $birthday = null, DateTime $at = null)
+    public static function ageAt(\DateTime $birthday = null, \DateTime $at = null)
     {
         if (empty($birthday)) {
             return null;
         }
-        $at = self::nvl($at, new DateTime());
+        $at = self::nvl($at, new \DateTime());
         return intval(floor(($at->format('Ymd') - $birthday->format('Ymd')) / 10000));
     }
 
@@ -1140,19 +1140,19 @@ class Util
      * @param string|string[] $encode CSVファイルのエンコード候補 (default: SJIS-win,SJIS,ASCII,JIS,UTF-8,EUC-JP)
      * @param int $flags SplFileObject用フラグ (default: SplFileObject::READ_CSV)
      * @return \SplFileObject
-     * @throws Exception when failed to get file contents by file_get_contents().
+     * @throws \Exception when failed to get file contents by file_get_contents().
      */
-    public static function loadCsv($file, $encode = 'SJIS-win,SJIS,ASCII,JIS,UTF-8,EUC-JP', $flags = SplFileObject::READ_CSV)
+    public static function loadCsv($file, $encode = 'SJIS-win,SJIS,ASCII,JIS,UTF-8,EUC-JP', $flags = \SplFileObject::READ_CSV)
     {
         if (($data = file_get_contents($file)) === false) {
-            throw new Exception("Failed to get file contents by file_get_contents().");
+            throw new \Exception("Failed to get file contents by file_get_contents().");
         }
         $data = mb_convert_encoding($data, 'UTF-8', $encode);
         $data = preg_replace('/^\xEF\xBB\xBF/', '', $data); // BOMがあれば除去
         file_put_contents($file, $data);
 
         setlocale(LC_ALL, 'ja_JP.UTF-8');
-        $csv = new SplFileObject($file);
+        $csv = new \SplFileObject($file);
         $csv->setFlags($flags);
         $csv->setCsvControl(',', '"', '"');
         return $csv;

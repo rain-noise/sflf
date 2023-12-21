@@ -1,5 +1,8 @@
 <?php
-//namespace Sflf; // 名前空間が必要な場合はコメントを解除して下さい。（任意の名前空間による設定も可）
+// 名前空間が必要な場合はコメントを解除して下さい。（任意の名前空間による設定も可）
+//namespace App\Domain;
+//
+//use Sflf\Domain;
 
 /**
  * Single File Low Functionality Class Tools - Extensions
@@ -7,7 +10,7 @@
  * ■性別ドメイン
  *
  * @package   SFLF
- * @version   v1.0.2
+ * @version   v1.0.3
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE

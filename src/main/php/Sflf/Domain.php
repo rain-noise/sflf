@@ -110,7 +110,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/function.domains.php ドメイン整形出力用 Smarty タグ
  *
  * @package   SFLF
- * @version   v1.0.1
+ * @version   v1.0.2
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -197,11 +197,11 @@ abstract class Domain
      */
     protected static function generate()
     {
-        $rc   = new ReflectionClass(get_called_class());
+        $rc   = new \ReflectionClass(get_called_class());
         $list = [];
         foreach ($rc->getStaticProperties() as $domain) {
             if (empty($domain)) {
-                throw new Exception('Domain field not initialzed.');
+                throw new \Exception('Domain field not initialzed.');
             }
             $list[] = $domain;
         }

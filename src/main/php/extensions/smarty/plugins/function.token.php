@@ -1,4 +1,7 @@
 <?php
+
+// use Sflf\Token; // 名前空間が必要な場合はコメントを解除して下さい。（任意の名前空間による設定も可）
+
 /**
  * Single File Low Functionality Class Tools - Extensions : Smarty Plugin
  *
@@ -25,8 +28,8 @@
  * @param array{
  *   key?: string|null,
  *   name?: string|null,
- * }             $params  パラメータ
- * @param Smarty &$smarty テンプレートオブジェクト
+ * }              $params  パラメータ
+ * @param \Smarty &$smarty テンプレートオブジェクト
  * @return string
  */
 function smarty_function_token($params, &$smarty)

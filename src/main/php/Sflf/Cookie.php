@@ -14,7 +14,7 @@
  * Cookie::remove('key');
  *
  * @package   SFLF
- * @version   v2.0.2
+ * @version   v2.0.3
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -62,13 +62,13 @@ class Cookie
      * @param bool                                        $secure   セキュア (default: false)
      * @param 'Lax'|'lax'|'None'|'none'|'Strict'|'strict' $samesite セイムサイト (default: 'Lax')
      * @return bool true : 成功／false : 失敗
-     * @throws InvalidArgumentException Invalid expiry format, expiry MUST be able to converted by strtotime()
+     * @throws \InvalidArgumentException Invalid expiry format, expiry MUST be able to converted by strtotime()
      */
     public static function set($name, $value, $expiry = '+1 day', $path = '/', $domain = '', $secure = false, $samesite = 'Lax')
     {
         //$domain = $domain ? $domain : $_SERVER['HTTP_HOST'] ;
         if (($expiry = strtotime($expiry)) === false) {
-            throw new InvalidArgumentException("Invalid expiry format, expiry MUST be able to converted by strtotime()");
+            throw new \InvalidArgumentException("Invalid expiry format, expiry MUST be able to converted by strtotime()");
         }
         if (version_compare(PHP_VERSION, '7.3.0', '>=')) {
             $result = setcookie($name, $value, [

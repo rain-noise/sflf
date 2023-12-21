@@ -34,7 +34,7 @@
  * );
  *
  * @package   SFLF
- * @version   v1.1.4
+ * @version   v1.1.5
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -167,7 +167,7 @@ class Log
      *
      * @param string|array|object|mixed      $message   ログメッセージ
      * @param string|array|object|mixed|null $params    パラメータ (default: null)
-     * @param Throwable|null                 $exception 例外 (default: null)
+     * @param \Throwable|null                $exception 例外 (default: null)
      * @return void
      */
     public static function trace($message, $params = null, $exception = null)
@@ -180,7 +180,7 @@ class Log
      *
      * @param string|array|object|mixed      $message   ログメッセージ
      * @param string|array|object|mixed|null $params    パラメータ (default: null)
-     * @param Throwable|null                 $exception 例外 (default: null)
+     * @param \Throwable|null                $exception 例外 (default: null)
      * @return void
      */
     public static function debug($message, $params = null, $exception = null)
@@ -193,7 +193,7 @@ class Log
      *
      * @param string|array|object|mixed      $message   ログメッセージ
      * @param string|array|object|mixed|null $params    パラメータ (default: null)
-     * @param Throwable|null                 $exception 例外 (default: null)
+     * @param \Throwable|null                $exception 例外 (default: null)
      * @return void
      */
     public static function info($message, $params = null, $exception = null)
@@ -206,7 +206,7 @@ class Log
      *
      * @param string|array|object|mixed      $message   ログメッセージ
      * @param string|array|object|mixed|null $params    パラメータ (default: null)
-     * @param Throwable|null                 $exception 例外 (default: null)
+     * @param \Throwable|null                $exception 例外 (default: null)
      * @return void
      */
     public static function warn($message, $params = null, $exception = null)
@@ -219,7 +219,7 @@ class Log
      *
      * @param string|array|object|mixed      $message   ログメッセージ
      * @param string|array|object|mixed|null $params    パラメータ (default: null)
-     * @param Throwable|null                 $exception 例外 (default: null)
+     * @param \Throwable|null                $exception 例外 (default: null)
      * @return void
      */
     public static function error($message, $params = null, $exception = null)
@@ -232,7 +232,7 @@ class Log
      *
      * @param string|array|object|mixed      $message   ログメッセージ
      * @param string|array|object|mixed|null $params    パラメータ (default: null)
-     * @param Throwable|null                 $exception 例外 (default: null)
+     * @param \Throwable|null                $exception 例外 (default: null)
      * @return void
      */
     public static function fatal($message, $params = null, $exception = null)
@@ -262,7 +262,7 @@ class Log
      * @param int                            $level     ログレベル
      * @param string|array|object|mixed      $message   ログメッセージ
      * @param string|array|object|mixed|null $params    パラメータ (default: null)
-     * @param Throwable|null                 $exception 例外 (default: null)
+     * @param \Throwable|null                $exception 例外 (default: null)
      * @return void
      */
     private static function _log($level, $message, $params = null, $exception = null)
@@ -424,7 +424,7 @@ EOS;
                     break;
                 case 'wrap-escape':
                     if (!is_array($option) || count($option) !== 3) {
-                        throw new ValueError("Invalid 'wrap-escape' options given.");
+                        throw new \ValueError("Invalid 'wrap-escape' options given.");
                     }
                     [$open, $escape, $close] = $option;
                     foreach (self::$_OUT_BUFFER as [$level, $body]) {
@@ -433,7 +433,7 @@ EOS;
                     break;
                 case 'block-comment':
                     if (!is_array($option) || count($option) !== 2) {
-                        throw new ValueError("Invalid 'block-comment' options given.");
+                        throw new \ValueError("Invalid 'block-comment' options given.");
                     }
                     [$comment, $replacement] = $option;
                     foreach (self::$_OUT_BUFFER as [$level, $body]) {
@@ -442,7 +442,7 @@ EOS;
                     break;
                 case 'line-comment':
                     if (!is_string($option)) {
-                        throw new ValueError("Invalid 'line-comment' options given.");
+                        throw new \ValueError("Invalid 'line-comment' options given.");
                     }
                     foreach (self::$_OUT_BUFFER as [$level, $body]) {
                         echo "\n".self::_indent($body, 1, $option);
@@ -450,7 +450,7 @@ EOS;
                     break;
                 case 'custom':
                     if (!is_callable($option)) {
-                        throw new ValueError("Invalid 'custom' options given.");
+                        throw new \ValueError("Invalid 'custom' options given.");
                     }
                     foreach (self::$_OUT_BUFFER as [$level, $body]) {
                         echo "\n".$option($body, $level);

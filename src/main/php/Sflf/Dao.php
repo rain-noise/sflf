@@ -36,7 +36,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/includes/paginate.tpl ページ送り Smarty テンプレート
  *
  * @package   SFLF
- * @version   v2.0.3
+ * @version   v2.0.4
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -46,7 +46,7 @@ class Dao
     /**
      * データベースオブジェクト
      *
-     * @var mysqli|null
+     * @var \mysqli|null
      */
     private static $_DB;
 
@@ -71,7 +71,7 @@ class Dao
      * DB接続を取得します。
      * 接続が確率されていない場合は例外を throw します。
      *
-     * @return mysqli
+     * @return \mysqli
      * @throws DatabaseException when do not connect database yet, or already closed connection.
      */
     public static function db()
@@ -137,7 +137,7 @@ class Dao
                 }
 
                 $port      = $port ? $port : intval(ini_get("mysqli.default_port") ?: 3306) ;
-                self::$_DB = new mysqli($host, $user, $pass, $db_name, $port);
+                self::$_DB = new \mysqli($host, $user, $pass, $db_name, $port);
                 if (self::$_DB->connect_error) {
                     throw new DatabaseException(self::_createErrorMessage(__METHOD__));
                 }
@@ -146,7 +146,7 @@ class Dao
                 self::$_DB->autocommit(false);
 
                 return true;
-            } catch(mysqli_sql_exception $e) {
+            } catch(\mysqli_sql_exception $e) {
                 throw new DatabaseException(self::_createErrorMessage(__METHOD__)." : ".$e->getCode()." ".$e->getMessage(), $e->getCode(), $e);
             }
         }
@@ -205,7 +205,7 @@ class Dao
         try {
             static::db()->close();
             self::$_DB = null;
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             // 何もしない
         }
     }
@@ -222,7 +222,7 @@ class Dao
             self::begin();
             $callback();
             self::commit();
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             self::rollback(true);
             throw $e;
         }
@@ -283,7 +283,7 @@ class Dao
      *
      * @param string                      $sql    SQL文
      * @param array<string, mixed>|object $params パラメータ (default: [])
-     * @return mysqli_result|int 結果セット: SELECT/SHOW/DESCRIBE/EXPLAIN 発行時, 更新件数: その他クエリ発行時
+     * @return \mysqli_result|int 結果セット: SELECT/SHOW/DESCRIBE/EXPLAIN 発行時, 更新件数: その他クエリ発行時
      * @throws DatabaseException SQL実行エラー時
      */
     public static function query($sql, $params = [])
@@ -315,7 +315,7 @@ class Dao
                 throw new DatabaseException("Execute query failed : ".self::db()->errno." ".self::db()->error."\n--- [SQL] ---\n{$sql}\n-------------\n", self::db()->errno);
             }
             return $rs;
-        } catch(mysqli_sql_exception $e) {
+        } catch(\mysqli_sql_exception $e) {
             throw new DatabaseException("Execute query failed : ".$e->getCode()." ".$e->getMessage()."\n--- [SQL] ---\n{$sql}\n-------------\n", $e->getCode(), $e);
         } finally {
             if ($stmt) {
@@ -330,7 +330,7 @@ class Dao
      *
      * @param string                      $sql    SQL文
      * @param array<string, mixed>|object $params パラメータ (default: [])
-     * @return mysqli_result 結果セット
+     * @return \mysqli_result 結果セット
      * @throws DatabaseException SQL実行エラー時、又は SELECT/SHOW/DESCRIBE/EXPLAIN 以外のSQL指定時
      */
     public static function querySelect($sql, $params = [])
@@ -610,7 +610,7 @@ class Dao
     {
         $ignore = [];
         if (!is_array($entity)) {
-            $reflect = new ReflectionClass(get_class($entity));
+            $reflect = new \ReflectionClass(get_class($entity));
             $ignore  = $reflect->hasConstant('DAO_IGNORE_FILED') ? $reflect->getConstant('DAO_IGNORE_FILED') : [] ;
             $entity  = get_object_vars($entity) ;
         }
@@ -645,7 +645,7 @@ class Dao
     {
         $ignore = [];
         if (!is_array($entity)) {
-            $reflect = new ReflectionClass(get_class($entity));
+            $reflect = new \ReflectionClass(get_class($entity));
             $ignore  = $reflect->hasConstant('DAO_IGNORE_FILED') ? $reflect->getConstant('DAO_IGNORE_FILED') : [] ;
             $entity  = get_object_vars($entity);
         }
@@ -803,11 +803,11 @@ class Dao
 
             case MYSQLI_TYPE_TIMESTAMP:
             case MYSQLI_TYPE_DATETIME:
-                return $value == '0000-00-00 00:00:00' ? null : DateTime::createFromFormat('Y-m-d H:i:s', $value) ;
+                return $value == '0000-00-00 00:00:00' ? null : \DateTime::createFromFormat('Y-m-d H:i:s', $value) ;
 
             case MYSQLI_TYPE_DATE:
             case MYSQLI_TYPE_NEWDATE:
-                return $value == '0000-00-00' ? null : DateTime::createFromFormat('!Y-m-d', $value) ;
+                return $value == '0000-00-00' ? null : \DateTime::createFromFormat('!Y-m-d', $value) ;
 
             case MYSQLI_TYPE_YEAR:
                 return intval($value);
@@ -857,14 +857,14 @@ class Dao
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
  */
-class DatabaseException extends RuntimeException
+class DatabaseException extends \RuntimeException
 {
     /**
      * DB例外を構築します。
      *
-     * @param string         $message   エラーメッセージ
-     * @param int            $code      エラーコード (default: 0)
-     * @param Throwable|null $previous  原因例外 (default: null)
+     * @param string          $message   エラーメッセージ
+     * @param int             $code      エラーコード (default: 0)
+     * @param \Throwable|null $previous  原因例外 (default: null)
      * @return DatabaseException
      */
     public function __construct($message, $code = 0, $previous = null)
@@ -913,7 +913,7 @@ class Query
             if ($v === '') {
                 return null;
             }
-            if ($v instanceof DateTime || $v instanceof DateTimeImmutable) {
+            if ($v instanceof \DateTime || $v instanceof \DateTimeImmutable) {
                 return $v->format("Y-m-d H:i:s");
             }
             return $v;
@@ -1013,7 +1013,7 @@ class Query
             return $value ? '1' : '0' ;
         }
 
-        if ($value instanceof DateTime || $value instanceof DateTimeImmutable) {
+        if ($value instanceof \DateTime || $value instanceof \DateTimeImmutable) {
             return "'".$value->format("Y-m-d H:i:s")."'";
         }
 
@@ -1170,12 +1170,12 @@ class PageInfo
      *
      * @param  int $size ページ番号リストのサイズ（奇数のみ）
      * @return int[] 現在のページの近隣ページ番号リスト
-     * @throws InvalidArgumentException
+     * @throws \InvalidArgumentException
      */
     public function getNeighborPages($size)
     {
         if ($size % 2 == 0) {
-            throw new InvalidArgumentException('size must be odd number');
+            throw new \InvalidArgumentException('size must be odd number');
         }
 
         $start = intval($this->page - floor($size / 2));

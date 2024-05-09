@@ -33,7 +33,7 @@
  * @see       https://github.com/rain-noise/sflf/blob/master/src/main/php/Sflf/Domain.php
  *
  * @package   SFLF
- * @version   v1.1.0
+ * @version   v1.1.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -126,7 +126,7 @@ function smarty_function_domains($params, &$smarty)
         $c  = $d->$check;
         $da = '';
         foreach ($data as $attr_name) {
-            $da .= 'data-'.str_replace('_', '-', $attr_name).'="'.htmlspecialchars($d->{$attr_name}).'" ';
+            $da .= 'data-'.str_replace('_', '-', $attr_name).'="'.htmlspecialchars($d->{$attr_name} ?? '').'" ';
         }
         if (!empty($include) && !in_array($c, $include)) {
             continue;
@@ -138,15 +138,15 @@ function smarty_function_domains($params, &$smarty)
         switch ($type) {
             case 'option':
                 $select = in_array($v, $selected) ? ' selected' : '';
-                $html .= '<option '.$attrs.' value="'.htmlspecialchars($v).'"'.$select.'>'.$prevtag.$l.$posttag.'</option>'.$delimiter;
+                $html .= '<option '.$attrs.' value="'.htmlspecialchars($v).'" '.$da.' '.$select.'>'.$prevtag.$l.$posttag.'</option>'.$delimiter;
                 break;
             case 'checkbox':
                 $select = in_array($v, $selected) ? ' checked' : '';
-                $html .= $prevtag.'<input id="'.$name.'_'.$v.'" type="checkbox" '.$attrs.' value="'.htmlspecialchars($v).'"'.$select.'/><label for="'.$name.'_'.$v.'">'.htmlspecialchars($l).'</label>'.$posttag.$delimiter;
+                $html .= $prevtag.'<input id="'.$name.'_'.$v.'" type="checkbox" '.$attrs.' value="'.htmlspecialchars($v).'" '.$da.' '.$select.'/><label for="'.$name.'_'.$v.'">'.htmlspecialchars($l).'</label>'.$posttag.$delimiter;
                 break;
             case 'radio':
                 $select = in_array($v, $selected) ? ' checked' : '';
-                $html .= $prevtag.'<input id="'.$name.'_'.$v.'" type="radio" '.$attrs.' value="'.htmlspecialchars($v).'"'.$select.'/><label for="'.$name.'_'.$v.'">'.htmlspecialchars($l).'</label>'.$posttag.$delimiter;
+                $html .= $prevtag.'<input id="'.$name.'_'.$v.'" type="radio" '.$attrs.' value="'.htmlspecialchars($v).'" '.$da.' '.$select.'/><label for="'.$name.'_'.$v.'">'.htmlspecialchars($l).'</label>'.$posttag.$delimiter;
                 break;
             case 'plain':
                 $html .= $prevtag.htmlspecialchars($l).$posttag.$delimiter;

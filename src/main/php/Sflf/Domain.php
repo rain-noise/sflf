@@ -110,7 +110,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/function.domains.php ドメイン整形出力用 Smarty タグ
  *
  * @package   SFLF
- * @version   v1.0.2
+ * @version   v1.1.0
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -143,7 +143,7 @@ abstract class Domain
      *
      * @var array<array-key, static[]>
      */
-    private static $DOMAIN_MAP_CACHE  = [];
+    private static $DOMAIN_MAP_CACHE = [];
 
     /**
      * ドメイン生成
@@ -210,11 +210,33 @@ abstract class Domain
 
     /**
      * ドメイン定数の一覧 array(Domain) を取得します。
+     *
+     * @param null|callable(static $domain):bool $matcher リストに含めるドメインの条件 (default: null)
+     *
+     * @return static[]
+     */
+    public static function lists($matcher = null)
+    {
+        if ($matcher == null) {
+            return static::listAll();
+        }
+
+        $lists = [];
+        foreach (self::listAll() as $domain) {
+            if ($matcher == null || $matcher($domain)) {
+                $lists[] = $domain;
+            }
+        }
+        return $lists;
+    }
+
+    /**
+     * ドメイン定数の全件一覧を取得します。
      * ※ドメインクラス名単位で generate されたドメイン一覧をキャッシュし、再利用します。
      *
      * @return static[]
      */
-    public static function lists()
+    protected static function listAll()
     {
         $clazz = get_called_class();
         if (isset(self::$DOMAIN_LIST_CACHE[$clazz])) {
@@ -229,9 +251,10 @@ abstract class Domain
      * ※同じ値を持つドメインが存在する場合、 Domain::lists() の順序で後勝ちとなります
      *
      * @param string $field 変換元にするフィールド名 (default: value)
+     * @param null|callable(static $domain):bool $matcher リストに含めるドメインの条件 (default: null)
      * @return array<array-key, static>
      */
-    public static function maps($field = 'value')
+    public static function maps($field = 'value', $matcher = null)
     {
         $key = get_called_class()."@".$field;
         if (isset(self::$DOMAIN_MAP_CACHE[$key])) {
@@ -239,7 +262,7 @@ abstract class Domain
         }
 
         $maps = [];
-        foreach (self::lists() as $domain) {
+        foreach (self::lists($matcher) as $domain) {
             $maps[$domain->$field] = $domain;
         }
         self::$DOMAIN_MAP_CACHE[$key] = $maps;
@@ -320,10 +343,8 @@ abstract class Domain
     public static function listOf($name, $matcher = null)
     {
         $values = [];
-        foreach (self::lists() as $domain) {
-            if ($matcher == null || $matcher($domain)) {
-                $values[] = $domain->$name;
-            }
+        foreach (self::lists($matcher) as $domain) {
+            $values[] = $domain->$name;
         }
         return $values;
     }
@@ -338,7 +359,7 @@ abstract class Domain
      */
     public static function nexts($current, $case = null)
     {
-        return self::lists();
+        return self::listAll();
     }
 
     /**

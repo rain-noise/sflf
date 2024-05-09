@@ -1,7 +1,5 @@
 <?php
 
-// use Sflf\Form; // 名前空間が必要な場合はコメントを解除して下さい。（任意の名前空間による設定も可）
-
 /**
  * Single File Low Functionality Class Tools - Extensions : Smarty Plugin
  *
@@ -30,13 +28,13 @@
  * @see       https://github.com/rain-noise/sflf/blob/master/src/main/php/Sflf/Form.php
  *
  * @package   SFLF
- * @version   v1.0.2
+ * @version   v1.0.3
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
  *
  * @param array{
- *   form?: Form|object|null,
+ *   form?: object|null,
  *   include?: string|null,
  *   exclude?: string|null,
  *   date_format?: string|null,
@@ -55,7 +53,7 @@ function smarty_function_hiddens($params, &$smarty)
     }
 
     // パラメータ処理
-    $form        = $params['form'];
+    $form = $params['form'];
     assert(!is_null($form));
     $include     = isset($params['include']) ? explode(',', $params['include']) : [] ;
     $exclude     = isset($params['exclude']) ? explode(',', $params['exclude']) : [] ;
@@ -77,7 +75,7 @@ function smarty_function_hiddens($params, &$smarty)
  * フォームオブジェクトのプロパティから <hidden/> タグを構築します。
  *
  * @param string[]    &$hiddens    <hidden/>タグ配列
- * @param Form|object $form        フォーム
+ * @param object      $form        フォーム
  * @param string[]    $include     <hidden/>タグに含める項目
  * @param string[]    $exclude     <hidden/>タグに含めない項目
  * @param string      $date_format 日付フォーマット
@@ -98,14 +96,14 @@ function smarty_function_hiddens__generate(&$hiddens, $form, $include, $exclude,
 
         if (is_array($value)) {
             foreach ($value as $i => $v) {
-                if ($v instanceof Form) {
+                if (is_object($v)) {
                     smarty_function_hiddens__generate($hiddens, $v, $include, $exclude, $date_format, "{$key}[{$i}]");
                 } else {
                     smarty_function_hiddens__append_tag($hiddens, "{$key}[{$i}]", $v, $date_format);
                 }
             }
         } else {
-            if ($value instanceof Form) {
+            if (is_object($value)) {
                 smarty_function_hiddens__generate($hiddens, $value, $include, $exclude, $date_format, $key);
             } else {
                 smarty_function_hiddens__append_tag($hiddens, $key, $value, $date_format);

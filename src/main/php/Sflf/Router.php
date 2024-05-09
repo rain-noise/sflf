@@ -37,7 +37,7 @@
  * }
  *
  * @package   SFLF
- * @version   v1.2.1
+ * @version   v1.2.2
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -280,11 +280,14 @@ class Router
     /**
      * スネークケース(snake_case)文字列をキャメルケース(CamelCase)文字列に変換します。
      *
-     * @param  string $str スネークケース文字列
-     * @return string キャメライズ文字列
+     * @param  string|null $str スネークケース文字列
+     * @return ($str is null ? null : string) キャメライズ文字列
      */
     private function _camelize($str)
     {
+        if ($str === null) {
+            return null;
+        }
         return str_replace(self::URI_SNAKE_CASE_SEPARATOR, '', ucwords($str, self::URI_SNAKE_CASE_SEPARATOR));
     }
 

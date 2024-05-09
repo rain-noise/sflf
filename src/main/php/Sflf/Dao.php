@@ -36,7 +36,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/includes/paginate.tpl ページ送り Smarty テンプレート
  *
  * @package   SFLF
- * @version   v2.0.4
+ * @version   v2.0.5
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -754,12 +754,15 @@ class Dao
     /**
      * 指定の文字列 [$haystack] が指定の文字列 [$needle] で始まるか検査します。
      *
-     * @param string  $haystack 検査対象文字列
-     * @param string  $needle   被検査文字列
+     * @param string|null $haystack 検査対象文字列
+     * @param string      $needle   被検査文字列
      * @return bool true : 始まる／false : 始まらない
      */
     private static function _startWith($haystack, $needle)
     {
+        if ($haystack === null) {
+            return false;
+        }
         return $needle === "" || strrpos($haystack, $needle, -strlen($haystack)) !== false;
     }
 

@@ -175,7 +175,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/block.unless_errors.php エラー有無分岐用 Smarty タグ
  *
  * @package   SFLF
- * @version   v2.0.1
+ * @version   v2.0.2
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -2017,12 +2017,15 @@ abstract class Form
     /**
      * 機種依存文字を抽出します。
      *
-     * @param string $text   チェック対象文字列
-     * @param string $encode 機種依存判定用文字コード (default: 'sjis-win')
+     * @param string|null $text   チェック対象文字列
+     * @param string      $encode 機種依存判定用文字コード (default: 'sjis-win')
      * @return string[] 機種依存文字のリスト
      */
     private function _checkDependenceChar($text, $encode = 'sjis-win')
     {
+        if ($text === null) {
+            return [];
+        }
         $org  = $text;
         $conv = mb_convert_encoding(mb_convert_encoding($text, $encode, 'UTF-8'), 'UTF-8', $encode);
         if (strlen($org) != strlen($conv)) {
@@ -3871,7 +3874,7 @@ class UploadFile
             $pi           = pathinfo($this->name);
             $this->suffix = isset($pi['extension']) ? strtolower($pi['extension']) : null ;
         }
-        if (strrpos($this->type, "image/", -strlen($this->type)) !== false) {
+        if (!empty($this->type) && strrpos($this->type, "image/", -strlen($this->type)) !== false) {
             try {
                 $imagesize    = getimagesize($this->tmp_name);
                 $this->width  = isset($imagesize[0]) ? $imagesize[0] : null ;

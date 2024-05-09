@@ -40,7 +40,7 @@
  * $obj = new ClassName();
  *
  * @package   SFLF
- * @version   v1.0.2
+ * @version   v1.0.3
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -177,12 +177,15 @@ class AutoLoader
     /**
      * 指定の文字列 [$haystack] が指定の文字列 [$needle] で終わるか検査します。
      *
-     * @param string $haystack 検査対象文字列
-     * @param string $needle   被検査文字列
+     * @param string|null $haystack 検査対象文字列
+     * @param string      $needle   被検査文字列
      * @return bool true : 終わる／false : 終わらない
      */
     private static function _endsWith($haystack, $needle)
     {
+        if ($haystack === null) {
+            return false;
+        }
         return $needle === "" || (($temp = strlen($haystack) - strlen($needle)) >= 0 && strpos($haystack, $needle, $temp) !== false);
     }
 }

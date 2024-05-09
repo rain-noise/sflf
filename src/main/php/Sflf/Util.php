@@ -17,7 +17,7 @@
  * $pass = Util::randomCode(8);
  *
  * @package   SFLF
- * @version   v1.5.1
+ * @version   v1.5.2
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -150,13 +150,16 @@ class Util
     /**
      * 最も左側にある指定文字列より左側(Left Before)の文字をトリムします。
      *
-     * @param string $str       トリム対象
-     * @param string $delimiter 区切り文字
-     * @param bool   $remove    true : 区切り文字も削除する, false : 区切り文字は削除しない (default: true)
-     * @return string トリムされた文字列
+     * @param string|null $str       トリム対象
+     * @param string      $delimiter 区切り文字
+     * @param bool        $remove    true : 区切り文字も削除する, false : 区切り文字は削除しない (default: true)
+     * @return ($str is null ? null : string) トリムされた文字列
      */
     public static function lbtrim($str, $delimiter, $remove = true)
     {
+        if ($str === null) {
+            return null;
+        }
         $start = strpos($str, $delimiter);
         if ($start === false) {
             return $str;
@@ -167,13 +170,16 @@ class Util
     /**
      * 最も左側にある指定文字列より右側(Left After)の文字をトリムします。
      *
-     * @param string $str       トリム対象
-     * @param string $delimiter 区切り文字
-     * @param bool   $remove    true : 区切り文字も削除する, false : 区切り文字は削除しない (default: true)
-     * @return string トリムされた文字列
+     * @param string|null $str       トリム対象
+     * @param string      $delimiter 区切り文字
+     * @param bool        $remove    true : 区切り文字も削除する, false : 区切り文字は削除しない (default: true)
+     * @return ($str is null ? null : string) トリムされた文字列
      */
     public static function latrim($str, $delimiter, $remove = true)
     {
+        if ($str === null) {
+            return null;
+        }
         $end = strpos($str, $delimiter);
         if ($end === false) {
             return $str;
@@ -184,13 +190,16 @@ class Util
     /**
      * 最も右側にある指定文字列より左側(Right Before)の文字をトリムします。
      *
-     * @param string $str       トリム対象
-     * @param string $delimiter 区切り文字
-     * @param bool   $remove    true : 区切り文字も削除する, false : 区切り文字は削除しない (default: true)
-     * @return string トリムされた文字列
+     * @param string|null $str       トリム対象
+     * @param string      $delimiter 区切り文字
+     * @param bool        $remove    true : 区切り文字も削除する, false : 区切り文字は削除しない (default: true)
+     * @return ($str is null ? null : string) トリムされた文字列
      */
     public static function rbtrim($str, $delimiter, $remove = true)
     {
+        if ($str === null) {
+            return null;
+        }
         $start = strrpos($str, $delimiter);
         if ($start === false) {
             return $str;
@@ -201,13 +210,16 @@ class Util
     /**
      * 最も右側にある指定文字列より右側(Right After)の文字をトリムします。
      *
-     * @param string $str       トリム対象
-     * @param string $delimiter 区切り文字
-     * @param bool   $remove    true : 区切り文字も削除する, false : 区切り文字は削除しない (default: true)
-     * @return string トリムされた文字列
+     * @param string|null $str       トリム対象
+     * @param string      $delimiter 区切り文字
+     * @param bool        $remove    true : 区切り文字も削除する, false : 区切り文字は削除しない (default: true)
+     * @return ($str is null ? null : string) トリムされた文字列
      */
     public static function ratrim($str, $delimiter, $remove = true)
     {
+        if ($str === null) {
+            return null;
+        }
         $end = strrpos($str, $delimiter);
         if ($end === false) {
             return $str;
@@ -218,12 +230,15 @@ class Util
     /**
      * 左端の指定文字列の繰り返しをトリムします。
      *
-     * @param string $str    トリム対象
-     * @param string $prefix トリム文字列 (default: ' ')
-     * @return string トリムされた文字列
+     * @param string|null $str    トリム対象
+     * @param string      $prefix トリム文字列 (default: ' ')
+     * @return ($str is null ? null : string) トリムされた文字列
      */
     public static function ltrim($str, $prefix = ' ')
     {
+        if ($str === null) {
+            return null;
+        }
         $str = preg_replace("/^(".preg_quote($prefix).")*/u", '', $str);
         assert(is_string($str));
         return $str;
@@ -232,12 +247,15 @@ class Util
     /**
      * 右端の指定文字列の繰り返しをトリムします。
      *
-     * @param string $str    トリム対象
-     * @param string $suffix トリム文字列 (default: ' ')
-     * @return string トリムされた文字列
+     * @param string|null $str    トリム対象
+     * @param string      $suffix トリム文字列 (default: ' ')
+     * @return ($str is null ? null : string) トリムされた文字列
      */
     public static function rtrim($str, $suffix = ' ')
     {
+        if ($str === null) {
+            return null;
+        }
         $str = preg_replace("/(".preg_quote($suffix).")*$/u", '', $str);
         assert(is_string($str));
         return $str;
@@ -481,24 +499,30 @@ class Util
     /**
      * 指定の文字列 [$haystack] が指定の文字列 [$needle] で始まるか検査します。
      *
-     * @param string $haystack 検査対象文字列
-     * @param string $needle   被検査文字列
+     * @param string|null $haystack 検査対象文字列
+     * @param string      $needle   被検査文字列
      * @return bool true : 始まる／false : 始まらない
      */
     public static function startsWith($haystack, $needle)
     {
+        if ($haystack === null) {
+            return false;
+        }
         return $needle === "" || strrpos($haystack, $needle, -strlen($haystack)) !== false;
     }
 
     /**
      * 指定の文字列 [$haystack] が指定の文字列 [$needle] で終わるか検査します。
      *
-     * @param string $haystack 検査対象文字列
-     * @param string $needle   被検査文字列
+     * @param string|null $haystack 検査対象文字列
+     * @param string      $needle   被検査文字列
      * @return bool true : 終わる／false : 終わらない
      */
     public static function endsWith($haystack, $needle)
     {
+        if ($haystack === null) {
+            return false;
+        }
         return $needle === "" || (($temp = strlen($haystack) - strlen($needle)) >= 0 && strpos($haystack, $needle, $temp) !== false);
     }
 
@@ -593,12 +617,15 @@ class Util
     /**
      * 機種依存文字が含まれるかチェックします。
      *
-     * @param string $text   検査対象文字列
-     * @param string $encode 機種依存チェックを行う文字コード (default: sjis-win)
+     * @param string|null $text   検査対象文字列
+     * @param string      $encode 機種依存チェックを行う文字コード (default: sjis-win)
      * @return string[] 機種依存文字の配列
      */
     public static function checkDependenceChar($text, $encode = 'sjis-win')
     {
+        if ($text === null) {
+            return [];
+        }
         $org  = $text;
         $conv = mb_convert_encoding(mb_convert_encoding($text, $encode, 'UTF-8'), 'UTF-8', $encode);
         if (strlen($org) != strlen($conv)) {
@@ -627,22 +654,28 @@ class Util
     /**
      * スネークケース(snake_case)文字列をキャメルケース(CamelCase)文字列に変換します。
      *
-     * @param string $str スネークケース文字列
-     * @return string キャメルケース文字列
+     * @param string|null $str スネークケース文字列
+     * @return ($str is null ? null : string) キャメルケース文字列
      */
     public static function camelize($str)
     {
+        if ($str === null) {
+            return null;
+        }
         return str_replace('_', '', ucwords($str, '_'));
     }
 
     /**
      * キャメルケース(CamelCase) 文字列をスネークケース(snake_case)文字列に変換します。
      *
-     * @param string $str キャメルケース文字列
-     * @return string スネークケース文字列
+     * @param string|null $str キャメルケース文字列
+     * @return ($str is null ? null : string) スネークケース文字列
      */
     public static function snakize($str)
     {
+        if ($str === null) {
+            return null;
+        }
         return strtolower((string)preg_replace('/[a-z]+(?=[A-Z])|[A-Z]+(?=[A-Z][a-z])/', '\0_', $str));
     }
 
@@ -953,7 +986,7 @@ class Util
         $isMap = self::isMap($col_labels);
         foreach ($cols as $i => $col) {
             $val = $isMap ? self::get($col_labels, $col, $col) : self::get($col_labels, $i, $col) ;
-            $line .= '"'.str_replace('"', '""', $val).'",';
+            $line .= '"'.str_replace('"', '""', $val ?? '').'",';
         }
         $line  = substr($line, 0, -1);
         echo mb_convert_encoding($line, $encoding, "UTF-8");
@@ -979,7 +1012,7 @@ class Util
             if ($converter) {
                 $val = $converter($row, $col, $val);
             }
-            $line .= '"'.str_replace('"', '""', $val).'",';
+            $line .= '"'.str_replace('"', '""', $val ?? '').'",';
         }
         $line  = substr($line, 0, -1);
         echo mb_convert_encoding($line, $encoding, "UTF-8");
@@ -990,16 +1023,16 @@ class Util
      * ※CSVダウンロードに伴うメモリ使用量を削減したい場合はこれらのCSV出力パーツ関数を組み合わせて利用して下さい。
      * ※出力データ分だけ繰り返し呼び出して下さい。
      *
-     * @param bool     $is_first_line 最初の行か否か
-     * @param string[] $row           CSV文字列データ
-     * @param string   $encoding      CSVファイルデータエンコーディング (default: SJIS-win)
+     * @param bool               $is_first_line 最初の行か否か
+     * @param array<string|null> $row           CSV文字列データ
+     * @param string             $encoding      CSVファイルデータエンコーディング (default: SJIS-win)
      * @return void
      */
     public static function csvRawLine(bool $is_first_line, array $row, $encoding = 'SJIS-win')
     {
         $line = $is_first_line ? '' : "\n" ;
         foreach ($row as $val) {
-            $line .= '"'.str_replace('"', '""', $val).'",';
+            $line .= '"'.str_replace('"', '""', $val ?? '').'",';
         }
         $line  = substr($line, 0, -1);
         echo mb_convert_encoding($line, $encoding, "UTF-8");

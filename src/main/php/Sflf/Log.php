@@ -34,7 +34,7 @@
  * );
  *
  * @package   SFLF
- * @version   v1.1.5
+ * @version   v1.1.6
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -271,7 +271,7 @@ class Log
             return;
         }
         if (!is_string($message)) {
-            $message = method_exists($message, '__toString') ? $message->__toString() : print_r($message, true) ;
+            $message = is_object($message) && method_exists($message, '__toString') ? $message->__toString() : print_r($message, true) ;
         }
         if (self::$_LOG_SUPPRESS_PATTERN && preg_match(self::$_LOG_SUPPRESS_PATTERN, $message)) {
             return;
@@ -394,10 +394,10 @@ EOS;
      */
     private static function _indent($string, $depth = 1, $char = "\t")
     {
-        $indent = str_repeat($char, $depth);
         if (empty($string)) {
             return $string;
         }
+        $indent = str_repeat($char, $depth);
         return str_replace("\n", "\n{$indent}", $string);
     }
 

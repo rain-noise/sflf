@@ -15,13 +15,13 @@
  * -------------------------------------------------------------
  *
  * @package   SFLF
- * @version   v1.0.0
+ * @version   v1.0.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
  *
  * @param string|null $string 日時文字列
- * @return string|null
+ * @return ($string is null ? null : string)
  */
 function smarty_modifier_weekday2ja($string)
 {

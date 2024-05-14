@@ -175,7 +175,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/block.unless_errors.php エラー有無分岐用 Smarty タグ
  *
  * @package   SFLF
- * @version   v2.0.2
+ * @version   v2.0.3
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -2721,7 +2721,7 @@ abstract class Form
         if (empty($target)) {
             return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new \DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
         }
-        $point  = new \DateTime($point_time);
+        $point = new \DateTime($point_time);
         if ($target > $point) {
             return "{$label}は ".$point->format($main_format ? $main_format : ($apply_format ? $apply_format : 'Y-m-d H:i:s'))." よりも過去日(当日含む)を指定して下さい。";
         }
@@ -3104,7 +3104,7 @@ abstract class Form
         if (!($value instanceof UploadFile)) {
             throw new InvalidValidateRuleException("{$label} in not UploadFile.");
         }
-        if ($value->width == $width) {
+        if ($value->width != $width) {
             return "{$label}の幅 [ ".$value->width." px ] を {$width} px にして下さい。";
         }
         return null;
@@ -3174,8 +3174,8 @@ abstract class Form
         if (!($value instanceof UploadFile)) {
             throw new InvalidValidateRuleException("{$label} in not UploadFile.");
         }
-        if ($value->width > $height) {
-            return "{$label}の高さ [ ".$value->width." px ] を {$height} px 以下にして下さい。";
+        if ($value->height > $height) {
+            return "{$label}の高さ [ ".$value->height." px ] を {$height} px 以下にして下さい。";
         }
         return null;
     }
@@ -3209,8 +3209,8 @@ abstract class Form
         if (!($value instanceof UploadFile)) {
             throw new InvalidValidateRuleException("{$label} in not UploadFile.");
         }
-        if ($value->width == $height) {
-            return "{$label}の高さ [ ".$value->width." px ] を {$height} px にして下さい。";
+        if ($value->height != $height) {
+            return "{$label}の高さ [ ".$value->height." px ] を {$height} px にして下さい。";
         }
         return null;
     }
@@ -3244,8 +3244,8 @@ abstract class Form
         if (!($value instanceof UploadFile)) {
             throw new InvalidValidateRuleException("{$label} in not UploadFile.");
         }
-        if ($value->width < $height) {
-            return "{$label}の高さ [ ".$value->width." px ] を {$height} px 以上にして下さい。";
+        if ($value->height < $height) {
+            return "{$label}の高さ [ ".$value->height." px ] を {$height} px 以上にして下さい。";
         }
         return null;
     }
@@ -3958,8 +3958,8 @@ class UploadFile
             mkdir($dir, 0775, true);
         }
 
-        $file   = "{$fileId}.".$this->suffix;
-        $path   = "{$dir}/{$file}";
+        $file = "{$fileId}.".$this->suffix;
+        $path = "{$dir}/{$file}";
 
         if (is_uploaded_file($this->tmp_name)) {
             move_uploaded_file($this->tmp_name, $path);

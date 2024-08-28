@@ -1,5 +1,4 @@
 <?php
-
 //namespace Sflf; // 名前空間が必要な場合はコメントを解除して下さい。（任意の名前空間による設定も可）
 
 /**
@@ -175,7 +174,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/block.unless_errors.php エラー有無分岐用 Smarty タグ
  *
  * @package   SFLF
- * @version   v2.0.3
+ * @version   v2.2.0
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -820,6 +819,9 @@ abstract class Form
     {
         if ($value instanceof UploadFile) {
             return $value->isEmpty();
+        }
+        if (is_array($value)) {
+            return empty(array_filter($value, function ($i) { return $i !== null && $i !== ''; }));
         }
         return $value === null || $value === '';
     }
@@ -2500,7 +2502,7 @@ abstract class Form
      *
      * @param string|\DateTime|null $value       日時文字列
      * @param string|null           $main_format 優先受入れフォーマット (default: null)
-     * @return array{0: DateTime|null, 1: string|null} [日時, 実際に解析に利用されたフォーマット]
+     * @return array{0: \DateTime|null, 1: string|null} [日時, 実際に解析に利用されたフォーマット]
      */
     protected function _analyzeDateTime($value, $main_format = null)
     {
@@ -3506,7 +3508,7 @@ abstract class Form
             return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new \DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
         }
         $point = $this->_createDateTime($this->$other, $main_format);
-        if (empty($point) || !($point < $target)) {
+        if (!empty($point) && !($point < $target)) {
             $labels = $this->labels();
             return "{$label}は{$labels[$other]}よりも未来日を指定して下さい。";
         }
@@ -3553,7 +3555,7 @@ abstract class Form
             return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new \DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
         }
         $point = $this->_createDateTime($this->$other, $main_format);
-        if (empty($point) || !($point <= $target)) {
+        if (!empty($point) && !($point <= $target)) {
             $labels = $this->labels();
             return "{$label}は{$labels[$other]}よりも未来日(当日含む)を指定して下さい。";
         }
@@ -3600,7 +3602,7 @@ abstract class Form
             return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new \DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
         }
         $point = $this->_createDateTime($this->$other, $main_format);
-        if (empty($point) || !($target < $point)) {
+        if (!empty($point) && !($target < $point)) {
             $labels = $this->labels();
             return "{$label}は{$labels[$other]}よりも過去日を指定して下さい。";
         }
@@ -3647,7 +3649,7 @@ abstract class Form
             return "{$label}は".($main_format ? " {$main_format} 形式（例：".(new \DateTime())->format($main_format)."）" : "正しい日付／日時")." で入力して下さい。";
         }
         $point = $this->_createDateTime($this->$other, $main_format);
-        if (empty($point) || !($target <= $point)) {
+        if (!empty($point) && !($target <= $point)) {
             $labels = $this->labels();
             return "{$label}は{$labels[$other]}よりも過去日(当日含む)を指定して下さい。";
         }

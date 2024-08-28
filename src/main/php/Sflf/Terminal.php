@@ -1,5 +1,6 @@
 <?php
 //namespace Sflf; // 名前空間が必要な場合はコメントを解除して下さい。（任意の名前空間による設定も可）
+namespace App\Core;
 
 /**
  * Single File Low Functionality Class Tools
@@ -15,7 +16,7 @@
  * }
  *
  * @package   SFLF
- * @version   v1.0.3
+ * @version   v1.0.4
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -25,9 +26,9 @@ class Terminal
     /** @var int 端末タイプ：スマートフォン */
     const TYPE_SMARTPHONE = 1;
     /** @var int 端末タイプ：タブレット */
-    const TYPE_TABLET     = 2;
+    const TYPE_TABLET = 2;
     /** @var int 端末タイプ：その他(PC) */
-    const TYPE_OTHERS     = 3;
+    const TYPE_OTHERS = 3;
 
     /**
      * ユーザーエージェント
@@ -173,7 +174,7 @@ class Terminal
         self::$_XRIP = $xrip;
         self::$_IP   = $ip;
         self::$_UA   = $ua;
-        $ua          = mb_strtolower($ua);
+        $ua          = mb_strtolower($ua ?? '');
 
         // 端末タイプ判定
         if (strpos($ua, 'iphone') !== false) {

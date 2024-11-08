@@ -37,7 +37,7 @@
  * }
  *
  * @package   SFLF
- * @version   v1.2.2
+ * @version   v1.2.3
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -48,7 +48,7 @@ class Router
     const DEFAULT_CONTEOLLER_NAME = 'top';
 
     /** @var string デフォルトアクション名 (default: index) */
-    const DEFAULT_ACTION_NAME     = 'index';
+    const DEFAULT_ACTION_NAME = 'index';
 
     /** @var string URI の ワード区切り文字を定義します。 */
     const URI_SNAKE_CASE_SEPARATOR = '-';
@@ -112,7 +112,7 @@ class Router
         assert(is_array($part_of_uri));
         $this->part_of_uri                  = $part_of_uri;
         $this->accessible                   = false;
-        $this->controller_class_namespace   = $controller_class_namespace ?? (defined('SFLF_CONFIG') ? (SFLF_CONFIG['namespace']['controller'] ?? '') : '') ;
+        $this->controller_class_namespace   = $controller_class_namespace ?? (defined('SFLF_CONFIG') ? (SFLF_CONFIG['namespace']['controller'] ?? '').(isset(SFLF_CONFIG['namespace']['controller']) ? '\\' : '') : '') ;
         $this->controller_class_name_suffix = $controller_class_name_suffix;
     }
 
@@ -138,7 +138,7 @@ class Router
         $controller = $this->_getControllerName() ;
         try {
             return new $controller();
-        } catch(\Throwable $e) {
+        } catch (\Throwable $e) {
             throw new NoRouteException("Route Not Found : Controller [ {$controller} ] can not instantiate.", 0, $e);
         }
     }
@@ -157,7 +157,7 @@ class Router
 
         try {
             $invoker = new \ReflectionMethod($clazz, $method);
-        } catch(\Throwable $e) {
+        } catch (\Throwable $e) {
             throw new NoRouteException("Route Not Found : Controller [ {$clazz}->{$method}() ] can not invoke.", 0, $e);
         }
 

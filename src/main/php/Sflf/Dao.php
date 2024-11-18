@@ -1,6 +1,6 @@
 <?php
 //namespace Sflf; // 名前空間が必要な場合はコメントを解除して下さい。（任意の名前空間による設定も可）
-
+namespace App\Core;
 
 /**
  * Single File Low Functionality Class Tools
@@ -36,7 +36,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/includes/paginate.tpl ページ送り Smarty テンプレート
  *
  * @package   SFLF
- * @version   v2.0.5
+ * @version   v2.0.6
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -416,8 +416,8 @@ class Dao
         $cursor = null;
         while (true) {
             $sql = $sqler($params, $cursor);
-            $sql = preg_match('/LIMIT/i', $sql) ? "SELECT * FROM ({$sql}) AS T" : $sql ;
-            $rs  = self::querySelect("{$sql} LIMIT {$chunk}", $params);
+            $sql = preg_match("/\s+LIMIT\s+[0-9]+\s*$/i", $sql) ? $sql : "{$sql} LIMIT {$chunk}" ;
+            $rs  = self::querySelect($sql, $params);
             if ($rs->num_rows === 0) {
                 return;
             }

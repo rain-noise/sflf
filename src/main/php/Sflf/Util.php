@@ -17,7 +17,7 @@
  * $pass = Util::randomCode(8);
  *
  * @package   SFLF
- * @version   v1.5.2
+ * @version   v2.0.0
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -988,7 +988,7 @@ class Util
             $val = $isMap ? self::get($col_labels, $col, $col) : self::get($col_labels, $i, $col) ;
             $line .= '"'.str_replace('"', '""', $val ?? '').'",';
         }
-        $line  = substr($line, 0, -1);
+        $line = substr($line, 0, -1);
         echo mb_convert_encoding($line, $encoding, "UTF-8");
     }
 
@@ -1014,7 +1014,7 @@ class Util
             }
             $line .= '"'.str_replace('"', '""', $val ?? '').'",';
         }
-        $line  = substr($line, 0, -1);
+        $line = substr($line, 0, -1);
         echo mb_convert_encoding($line, $encoding, "UTF-8");
     }
 
@@ -1034,7 +1034,7 @@ class Util
         foreach ($row as $val) {
             $line .= '"'.str_replace('"', '""', $val ?? '').'",';
         }
-        $line  = substr($line, 0, -1);
+        $line = substr($line, 0, -1);
         echo mb_convert_encoding($line, $encoding, "UTF-8");
     }
 
@@ -1167,27 +1167,33 @@ class Util
     }
 
     /**
-     * 対象のCSVファイルを読み込みます。
+     * 対象のCSV（又はTSV）ファイルを読み込みます。
+     * ※TSVファイルを読み込む場合は $csv_control を指定して下さい
      *
      * @param string $file CSVファイル
+     * @param string[] $csv_control CSVコントール文字  (default: [',', '"', '"'])
      * @param string|string[] $encode CSVファイルのエンコード候補 (default: SJIS-win,SJIS,ASCII,JIS,UTF-8,EUC-JP)
+     *                                UTF-16LE,UTF-16BE,UTF-16 を利用する場合は明示的に指定してください。
      * @param int $flags SplFileObject用フラグ (default: SplFileObject::READ_CSV)
      * @return \SplFileObject
      * @throws \Exception when failed to get file contents by file_get_contents().
      */
-    public static function loadCsv($file, $encode = 'SJIS-win,SJIS,ASCII,JIS,UTF-8,EUC-JP', $flags = \SplFileObject::READ_CSV)
+    public static function loadCsv($file, $csv_control = [',', '"', '"'], $encode = 'SJIS-win,SJIS,ASCII,JIS,UTF-8,EUC-JP', $flags = \SplFileObject::READ_CSV)
     {
         if (($data = file_get_contents($file)) === false) {
             throw new \Exception("Failed to get file contents by file_get_contents().");
         }
-        $data = mb_convert_encoding($data, 'UTF-8', $encode);
-        $data = preg_replace('/^\xEF\xBB\xBF/', '', $data); // BOMがあれば除去
+        // BOMがあれば除去
+        $data = preg_replace('/^\xEF\xBB\xBF/', '', $data); # UTF-8
+        $data = preg_replace('/^\xFF\xFE/', '', $data ?? ''); # UTF-16LE
+        $data = preg_replace('/^\xFE\xFF/', '', $data ?? ''); # UTF-16BE
+        $data = mb_convert_encoding($data ?? '', 'UTF-8', $encode);
         file_put_contents($file, $data);
 
         setlocale(LC_ALL, 'ja_JP.UTF-8');
         $csv = new \SplFileObject($file);
         $csv->setFlags($flags);
-        $csv->setCsvControl(',', '"', '"');
+        $csv->setCsvControl(...$csv_control);
         return $csv;
     }
 }

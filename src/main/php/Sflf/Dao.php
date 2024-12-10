@@ -36,7 +36,7 @@ namespace App\Core;
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/includes/paginate.tpl ページ送り Smarty テンプレート
  *
  * @package   SFLF
- * @version   v2.0.6
+ * @version   v2.1.0
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -146,7 +146,7 @@ class Dao
                 self::$_DB->autocommit(false);
 
                 return true;
-            } catch(\mysqli_sql_exception $e) {
+            } catch (\mysqli_sql_exception $e) {
                 throw new DatabaseException(self::_createErrorMessage(__METHOD__)." : ".$e->getCode()." ".$e->getMessage(), $e->getCode(), $e);
             }
         }
@@ -315,7 +315,7 @@ class Dao
                 throw new DatabaseException("Execute query failed : ".self::db()->errno." ".self::db()->error."\n--- [SQL] ---\n{$sql}\n-------------\n", self::db()->errno);
             }
             return $rs;
-        } catch(\mysqli_sql_exception $e) {
+        } catch (\mysqli_sql_exception $e) {
             throw new DatabaseException("Execute query failed : ".$e->getCode()." ".$e->getMessage()."\n--- [SQL] ---\n{$sql}\n-------------\n", $e->getCode(), $e);
         } finally {
             if ($stmt) {
@@ -603,10 +603,11 @@ class Dao
      *
      * @param string                      $table_name テーブル名
      * @param array<string, mixed>|object $entity     エンティティ情報
+     * @param string|null                 $upsert     ON DUPLICATE KEY UPDATE の設定内容 (default: null)
      * @return int|string インサートID
      * @throws DatabaseException
      */
-    public static function insert($table_name, $entity)
+    public static function insert($table_name, $entity, $upsert = null)
     {
         $ignore = [];
         if (!is_array($entity)) {
@@ -623,8 +624,9 @@ class Dao
             $cols[]   = $col;
             $values[] = $value;
         }
+        $upsert = empty($upsert) ? '' : " ON DUPLICATE KEY UPDATE {$upsert}";
 
-        self::query("INSERT INTO {$table_name} (".join(',', $cols).") VALUES (:values)", ['values' => $values]) ;
+        self::query("INSERT INTO {$table_name} (".join(',', $cols).") VALUES (:values){$upsert}", ['values' => $values]) ;
         return self::getInsertId();
     }
 

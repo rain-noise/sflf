@@ -17,7 +17,7 @@
  * $pass = Util::randomCode(8);
  *
  * @package   SFLF
- * @version   v2.0.0
+ * @version   v3.0.0
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -527,16 +527,35 @@ class Util
     }
 
     /**
+     * 指定の文字列 [$haystack] に指定の文字列 [$needle] に含まれるか検査します。
+     *
+     * @param string|null $haystack 検査対象文字列
+     * @param string      $needle   被検査文字列
+     * @return bool true : 含む／false : 含まない
+     */
+    public static function contains($haystack, $needle)
+    {
+        if (empty($haystack)) {
+            return false;
+        }
+        return strpos($haystack, $needle) !== false;
+    }
+
+    /**
      * 対象の ZIP ファイルを展開します。
      *
      * @param string $zip_path ZIPファイルパス
      * @param string $dest_dir 展開先ディレクトリパス
+     * @param string|null $zip_password ZIPパスワード (default: null)
      * @return void
      */
-    public static function unzip($zip_path, $dest_dir)
+    public static function unzip($zip_path, $dest_dir, $zip_password = null)
     {
         $zip = new \ZipArchive();
         $res = $zip->open($zip_path);
+        if (!empty($zip_password)) {
+            $zip->setPassword($zip_password);
+        }
         if ($res === true) {
             $zip->extractTo($dest_dir);
             $zip->close();
@@ -549,21 +568,23 @@ class Util
      * @param  string                      $source_path        圧縮対象ファイル or ディレクトリ
      * @param  string                      $out_zip_path       圧縮後のZIPファイルパス
      * @param  bool                        $include_target_dir 指定ディレクトリをZIPアーカイブに含めるか否か (default: true[=含める])
+     * @param  string                      $zip_password       ZIPパスワード （default: null）
      * @param  callable(string $path):bool $filter             格納データ取捨選択用フィルタ
      *                                                         ⇒ $path を引数に取り、 true を返すとそのパスを含み, false を返すとそのパスを除外する。
      *                                            　           (default: null = function($path) { return true; }; = 全データ格納)
      * @param  int                         $out_dir_permission ZIP格納ディレクトリ自動生成時のパーミッション (default: 0775)
      * @return void
      */
-    public static function zip($source_path, $out_zip_path, $include_target_dir = true, $filter = null, $out_dir_permission = 0775)
+    public static function zip($source_path, $out_zip_path, $include_target_dir = true, $zip_password = null, $filter = null, $out_dir_permission = 0775)
     {
         if (empty($filter)) {
             $filter = function ($path) { return true; };
         }
 
-        $path_info   = pathInfo($source_path);
-        $parent_path = $path_info['dirname'] ?? '';
-        $dir_name    = $path_info['basename'];
+        $path_info     = pathInfo($source_path);
+        $parent_path   = $path_info['dirname'] ?? '';
+        $dir_name      = $path_info['basename'];
+        $with_password = !empty($zip_password);
 
         $dest_dir = dirname($out_zip_path);
         if (!file_exists($dest_dir)) {
@@ -572,10 +593,13 @@ class Util
 
         $z = new \ZipArchive();
         $z->open($out_zip_path, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+        if ($with_password) {
+            $z->setPassword($zip_password);
+        }
         if ($include_target_dir) {
             $z->addEmptyDir($dir_name);
         }
-        self::folderToZip($source_path, $z, strlen($include_target_dir ? "$parent_path/" : "$parent_path/$dir_name/"), $filter);
+        self::folderToZip($source_path, $z, strlen($include_target_dir ? "$parent_path/" : "$parent_path/$dir_name/"), $filter, $with_password);
         $z->close();
     }
 
@@ -586,28 +610,32 @@ class Util
      * @param \ZipArchive                 $zip_file         ZIPファイル
      * @param int                         $exclusive_length 除外ファイルパス
      * @param callable(string $path):bool $filter           格納データ取捨選択用フィルタ
+     * @param bool                        $with_password    パスワード設定を伴うか否か
      * @return void
      */
-    private static function folderToZip($folder, &$zip_file, $exclusive_length, $filter)
+    private static function folderToZip($folder, &$zip_file, $exclusive_length, $filter, $with_password)
     {
         if (($handle = opendir($folder)) === false) {
             throw new \Exception("Can not open directory '{$folder}'.");
         }
         while (false !== ($f = readdir($handle))) {
             if ($f != '.' && $f != '..') {
-                $filePath = "$folder/$f";
-                if (!$filter($filePath)) {
+                $file_path = "$folder/$f";
+                if (!$filter($file_path)) {
                     continue;
                 }
 
                 // Remove prefix from file path before add to zip.
-                $localPath = substr($filePath, $exclusive_length);
-                if (is_file($filePath)) {
-                    $zip_file->addFile($filePath, $localPath);
-                } elseif (is_dir($filePath)) {
+                $local_path = substr($file_path, $exclusive_length);
+                if (is_file($file_path)) {
+                    $zip_file->addFile($file_path, $local_path);
+                    if ($with_password) {
+                        $zip_file->setEncryptionName($local_path, \ZipArchive::EM_TRAD_PKWARE);
+                    }
+                } elseif (is_dir($file_path)) {
                     // Add sub-directory.
-                    $zip_file->addEmptyDir($localPath);
-                    self::folderToZip($filePath, $zip_file, $exclusive_length, $filter);
+                    $zip_file->addEmptyDir($local_path);
+                    self::folderToZip($file_path, $zip_file, $exclusive_length, $filter, $with_password);
                 }
             }
         }
@@ -702,6 +730,32 @@ class Util
     }
 
     /**
+     * 既存文字の後ろに文字を追加します。
+     *
+     * @param string|null $text        文字列
+     * @param string|null $append_text 追記文字列
+     * @param string|null $separator   区切り文字 (default: \n)
+     * @return string|null
+     */
+    public static function appendTo($text, $append_text, $separator = "\n")
+    {
+        return empty($text) ? $append_text : "{$text}{$separator}{$append_text}" ;
+    }
+
+    /**
+     * 既存文字の前に文字を追加します。
+     *
+     * @param string|null $text         文字列
+     * @param string|null $prepend_text 追記文字列
+     * @param string|null $separator    区切り文字 (default: \n)
+     * @return string|null
+     */
+    public static function prependTo($text, $prepend_text, $separator = "\n")
+    {
+        return empty($text) ? $prepend_text : "{$prepend_text}{$separator}{$text}" ;
+    }
+
+    /**
      * 簡易的な BASIC認証 を掛けます。
      *
      * @param array<string, string>   $auth_list   認証許可リスト [user_name => hashed_password, ...]
@@ -736,11 +790,12 @@ class Util
      * ※本メソッドは exit を call します。
      *
      * @param string $url リダイレクトURL
+     * @param array<string, mixed> $query クエリパラメータ (default: [])
      * @return void
-     * @todo パラメータ構築などの機能を追加
      */
-    public static function redirect($url)
+    public static function redirect($url, $query = [])
     {
+        $url = static::buildUrl($url, $query);
         ob_clean();
         header("HTTP/1.1 302 Found");
         header("Location: {$url}");
@@ -748,16 +803,46 @@ class Util
     }
 
     /**
+     * 指定のベースURLとクエリパラメータを用いて URL を構築します。
+     *
+     * @param string $url ベースURL
+     * @param array<string, mixed> $query クエリパラメータ (default: [])
+     * @return string
+     */
+    public static function buildUrl($url, $query = [])
+    {
+        return $url.(empty($query) ?  '' : ((static::contains($url, '?') ? '&' : '?').http_build_query($query)));
+    }
+
+    /**
+     * データを Plain Text形式 で出力します。
+     * ※本メソッドは exit を call します。
+     *
+     * @param string $data        出力内容
+     * @param int    $http_status HTTPステータス (default: 200)
+     * @return void
+     */
+    protected function writePlain($data, $http_status = 200)
+    {
+        ob_clean();
+        http_response_code($http_status);
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo $data;
+        exit();
+    }
+
+    /**
      * データを JSON形式 で書き出します。
      * ※本メソッドは exit を call します。
      *
-     * @param object|array<array-key, mixed> $data オブジェクト
+     * @param object|array<array-key, mixed> $data        オブジェクト
+     * @param int                            $http_status HTTPステータス (default: 200)
      * @return void
      */
-    public static function json($data)
+    public static function writeJson($data, $http_status = 200)
     {
         ob_clean();
-        header("HTTP/1.1 200 OK");
+        http_response_code($http_status);
         header('Content-Type: application/json; charset=UTF-8');
         echo json_encode($data);
         exit();
@@ -767,14 +852,15 @@ class Util
      * データを JSONP形式 で書き出します。
      * ※本メソッドは exit を call します。
      *
-     * @param object|array<array-key, mixed> $data     オブジェクト
-     * @param string                         $callback コールバック関数
+     * @param object|array<array-key, mixed> $data        オブジェクト
+     * @param string                         $callback    コールバック関数
+     * @param int                            $http_status HTTPステータス (default: 200)
      * @return void
      */
-    public static function jsonp($data, $callback)
+    public static function writeJsonp($data, $callback, $http_status = 200)
     {
         ob_clean();
-        header("HTTP/1.1 200 OK");
+        http_response_code($http_status);
         header('Content-Type: application/javascript; charset=UTF-8');
         echo "{$callback}(".json_encode($data).")";
         exit();
@@ -792,6 +878,25 @@ class Util
     }
 
     /**
+     * 指定の配列が二元配列かチェックします。
+     *
+     * @param mixed[]|null $array 配列 or 連想配列 or 二元配列
+     * @return bool
+     */
+    public static function isMatrix($array)
+    {
+        if (!is_array($array)) {
+            return false;
+        }
+        foreach ($array as $i => $item) {
+            if (!is_int($i) || !is_array($item)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * 多次元配列を一次元配列に変換します。
      *
      * @param array<mixed[]> $array 多次元配列
@@ -800,6 +905,29 @@ class Util
     public static function flatten(array $array)
     {
         return iterator_to_array(new \RecursiveIteratorIterator(new \RecursiveArrayIterator($array)), false);
+    }
+
+    /**
+     * 多次元配列から null の要素を取り除きます。
+     *
+     * @param mixed[]|array<mixed[]>|null $array
+     * @return mixed[]|array<mixed[]>|null
+     */
+    public static function compact(?array $array)
+    {
+        if ($array === null) {
+            return null;
+        }
+        $compacted = [];
+        foreach ($array as $key => $value) {
+            if (is_array($value)) {
+                $value = static::compact($value);
+            }
+            if ($value !== null) {
+                $compacted[$key] = $value;
+            }
+        }
+        return array_merge($compacted);
     }
 
     /**
@@ -822,8 +950,40 @@ class Util
     }
 
     /**
+     * 括弧で括る形式のプレースホルダーを展開します。
+     *
+     * @param string|mixed[]|mixed|null $message メッセージ
+     * @param array<string, mixed> $replacements 置換文字列 [$placeholder => $value, ...]
+     * @param array{0: string, 1:string} $brackets プレースホルダー囲い文字 [$open_bracket, $close_bracket] (default: ['[', ']'])
+     * @return string|mixed[]|mixed|null
+     */
+    public static function replacePlaceholders($message, array $replacements, $brackets = ['[', ']'])
+    {
+        if (empty($message) || empty($replacements)) {
+            return $message;
+        }
+
+        if (is_string($message)) {
+            foreach ($replacements as $placeholder => $value) {
+                $message = preg_replace("/".preg_quote($brackets[0]).$placeholder.preg_quote($brackets[1])."/u", $value ?? '', $message ?? '');
+            }
+            return $message;
+        }
+
+        $replaced = [];
+        if (is_array($message)) {
+            foreach ($message as $key => $item) {
+                $replaced[$key] = static::replacePlaceholders($item, $replacements, $brackets);
+            }
+            return $replaced;
+        }
+
+        return $message;
+    }
+
+    /**
      * データを CSV形式 で書き出します。
-     * ※本メソッドは exit を call します。
+     * ※本メソッドは $as_file = false 指定時に exit を call します。
      *
      * 【コンバーター定義】
      * $converter = function($line, $col, $val) {
@@ -835,16 +995,18 @@ class Util
      *
      * 【使い方】
      * // ケース1 ： $rs 内の UserDetailDto クラスの全フィールドを出力
-     * Util::csv(
+     * Util::writeCsv(
      *    "user_list_".date('YmdHis').'.csv',
+     *    false,
      *    function($line, $col, $val) { return $val; },
      *    $rs,
      *    UserDetailDto::class
      *  );
      *
      * // ケース2 ： $rs 内の UserDetailDto クラスの全フィールドを出力／日付のフォーマットを指定
-     * Util::csv(
+     * Util::writeCsv(
      *    "user_list_".date('YmdHis').'.csv',
+     *    false,
      *    function($line, $col, $val) {
      *         if($val instanceof DateTime) { return $val->format('Y年m月d日 H:i'); }
      *         return $val;
@@ -854,16 +1016,18 @@ class Util
      *  );
      *
      * // ケース3 ： 指定のフィールドを任意の列順で出力
-     * Util::csv(
+     * Util::writeCsv(
      *    "user_list_".date('YmdHis').'.csv',
+     *    false,
      *    function($line, $col, $val) { return $val; },
      *    $rs,
      *    ['user_id','mail_address','last_name','first_name']
      *  );
      *
      * // ケース4 ： 存在しない項目を固定値で追加
-     * Util::csv(
+     * Util::writeCsv(
      *    "user_list_".date('YmdHis').'.csv',
+     *    false,
      *    function($line, $col, $val) {
      *         if($col == 'fixed_col') { return 1; }
      *         return $val;
@@ -873,8 +1037,9 @@ class Util
      *  );
      *
      * // ケース5 ： 複数項目を結合して出力
-     * Util::csv(
+     * Util::writeCsv(
      *    "user_list_".date('YmdHis').'.csv',
+     *    false,
      *    function($line, $col, $val) {
      *         if($col == 'name') { return "{$line->last_name} {$line->first_name}"; }
      *         return $val;
@@ -884,8 +1049,9 @@ class Util
      *  );
      *
      * // ケース6 ： ヘッダ行を出力しない
-     * Util::csv(
+     * Util::writeCsv(
      *    "user_list_".date('YmdHis').'.csv',
+     *    false,
      *    function($line, $col, $val) { return $val; },
      *    $rs,
      *    UserDetailDto::class,
@@ -894,8 +1060,9 @@ class Util
      *
      * // ケース7 ： ヘッダラベル指定（配列指定）
      * // ※配列の範囲外の項目はシステムラベルで出力されます
-     * Util::csv(
+     * Util::writeCsv(
      *    "user_list_".date('YmdHis').'.csv',
+     *    false,
      *    function($line, $col, $val) { return $val; },
      *    $rs,
      *    ['user_id','mail_address','last_name','first_name'],
@@ -905,8 +1072,9 @@ class Util
      *
      * // ケース8 ： ヘッダラベル指定（連想配列指定）
      * // ※連想配列に定義の無い項目はシステムラベルで出力されます
-     * Util::csv(
+     * Util::writeCsv(
      *    "user_list_".date('YmdHis').'.csv',
+     *    false,
      *    function($line, $col, $val) { return $val; },
      *    $rs,
      *    UserDetailDto::class,
@@ -920,46 +1088,70 @@ class Util
      *  );
      *
      * @param string                                                                         $file_name  出力ファイル名
+     * @param bool                                                                           $as_file    ファイルとして出力するか否か
      * @param callable(object|array<string, mixed> $row, string|int $col, mixed $val):string $converter  コンバータ
      * @param array<mixed[]>|object[]                                                        $rs         結果セット
      * @param string[]|class-string                                                          $cols       出力対象列名リスト or DTOクラス名
      * @param bool                                                                           $has_header true : ヘッダ行を出力する／false : ヘッダ行を出力しない (default: true)
-     * @param string[]|array<string, string>                                                 $col_labels ヘッダ行のラベル指定(配列又は連想配列) (default: [])
+     * @param string[]|array<string, string>|array<string[]>                                 $col_labels ヘッダ行のラベル指定(配列又は連想配列) (default: [])
      * @param string                                                                         $encoding   CSVファイルエンコーディング (default: SJIS-win)
      * @return void
      */
-    public static function csv($file_name, $converter, array $rs, $cols, $has_header = true, $col_labels = [], $encoding = 'SJIS-win')
+    public static function writeCsv($file_name, $as_file, $converter, array $rs, $cols, $has_header = true, $col_labels = [], $encoding = 'SJIS-win')
     {
-        if (is_string($cols)) {
-            $reflect = new \ReflectionClass($cols);
-            $props   = $reflect->getProperties(\ReflectionProperty::IS_PUBLIC);
-            $cols    = [];
-            foreach ($props as $prop) {
-                $cols[] = $prop->getName();
-            }
-        }
-
         // 出力
-        static::csvOpen($file_name);
+        $cols   = is_string($cols) ? static::getPropertyNames($cols) : $cols;
+        $stream = static::csvOpen($file_name, $as_file);
         if ($has_header) {
-            static::csvHeader($cols, $col_labels, $encoding);
+            static::csvHeader($stream, $cols, $col_labels, $encoding);
         }
         foreach ($rs as $i => $row) {
-            static::csvLine(!$has_header && $i === 0, $row, $cols, $converter, $encoding);
+            static::csvLine($stream, !$has_header && $i === 0, $row, $cols, $converter, $encoding);
         }
-        static::csvClose();
+        static::csvClose($stream, $as_file);
     }
 
     /**
-     * CSV出力：手順(1)　HTTPヘッダを出力し、CSVデータダウンロードを開始します。
-     * ※CSVダウンロードに伴うメモリ使用量を削減したい場合はこれらのCSV出力パーツ関数を組み合わせて利用して下さい。
+     * 指定クラスの public なプロパティ名一覧を取得します。
+     *
+     * @param class-string $class クラス名
+     * @return string[]
+     */
+    public static function getPropertyNames(string $class)
+    {
+        $reflect    = new \ReflectionClass($class);
+        $props      = $reflect->getProperties(\ReflectionProperty::IS_PUBLIC);
+        $prop_names = [];
+        foreach ($props as $prop) {
+            $prop_names[] = $prop->getName();
+        }
+        return $prop_names;
+    }
+
+    /**
+     * CSV出力：手順(1)　HTTPヘッダを出力し、CSVデータダウンロードを開始します。（又は CSVファイル の出力を開始します）
+     * ※CSVダウンロード／ファイル出力に伴うメモリ使用量を削減したい場合はこれらのCSV出力パーツ関数を組み合わせて利用して下さい。
      *
      * @param string $file_name 出力ファイル名
+     * @param bool $as_file ファイルとして出力するか否か
      * @param string $encoding CSVファイル名エンコーディング (default: SJIS-win)
-     * @return void
+     * @param int $out_dir_permission ファイル出力する際の親ディレクトリ自動生成時のパーミッション (default: 0775)
+     * @return resource CSVデータの出力先ストリーム
      */
-    public static function csvOpen($file_name, $encoding = 'SJIS-win')
+    public static function csvOpen($file_name, $as_file, $encoding = 'SJIS-win', $out_dir_permission = 0775)
     {
+        if ($as_file) {
+            $base_dir = dirname($file_name);
+            if (!file_exists($base_dir)) {
+                mkdir($base_dir, $out_dir_permission, true);
+            }
+            $stream = fopen($file_name, 'a');
+            if ($stream === false) {
+                throw new \Exception("Can not open file `{$file_name}`.");
+            }
+            return $stream;
+        }
+
         ob_clean();
         header("Pragma: public");
         header("Expires: 0");
@@ -968,28 +1160,44 @@ class Util
         header("Content-Type: application/force-download");
         header('Content-Disposition: attachment; filename=' . mb_convert_encoding($file_name, $encoding, "UTF-8"));
         header("Content-Transfer-Encoding: binary");
+        $stream = fopen('php://output', 'a');
+        if ($stream === false) {
+            throw new \Exception("Can not open stream `php://output`.");
+        }
+        return $stream;
     }
 
     /**
-     * CSV出力：手順(2)　CSVファイルのヘッダ行を書き出します。
-     * ※CSVダウンロードに伴うメモリ使用量を削減したい場合はこれらのCSV出力パーツ関数を組み合わせて利用して下さい。
-     * ※ヘッダ行が存在しない CSV ファイルでは呼び出す必要はありません。
-     *
-     * @param string[]                       $cols       出力対象列名リスト
-     * @param string[]|array<string, string> $col_labels ヘッダ行のラベル指定(配列又は連想配列) (default: [])
-     * @param string                         $encoding   CSVファイルデータエンコーディング (default: SJIS-win)
-     * @return void
-     */
-    public static function csvHeader(array $cols, array $col_labels = [], $encoding = 'SJIS-win')
+         * CSV出力：手順(2)　CSVファイルのヘッダ行を書き出します。
+         * ※CSVダウンロードに伴うメモリ使用量を削減したい場合はこれらのCSV出力パーツ関数を組み合わせて利用して下さい。
+         * ※ヘッダ行が存在しない CSV ファイルでは呼び出す必要はありません。
+         *
+         * @param resource                                       $stream     出力先ストリーム
+         * @param string[]                                       $cols       出力対象列名リスト
+         * @param string[]|array<string, string>|array<string[]> $col_labels ヘッダ行のラベル指定(配列又は連想配列) (default: [])
+         * @param string                                         $encoding   CSVファイルデータエンコーディング (default: SJIS-win)
+         * @return void
+         */
+    public static function csvHeader($stream, array $cols, array $col_labels = [], $encoding = 'SJIS-win')
     {
-        $line  = '';
-        $isMap = self::isMap($col_labels);
+        if (static::isMatrix($col_labels)) {
+            foreach ($col_labels as $i => $header_row) {
+                if ($i !== 0) {
+                    fwrite($stream, "\n");
+                }
+                static::csvHeader($stream, $cols, is_array($header_row) ? $header_row : [], $encoding);
+            }
+            return;
+        }
+
+        $line   = '';
+        $is_map = self::isMap($col_labels);
         foreach ($cols as $i => $col) {
-            $val = $isMap ? self::get($col_labels, $col, $col) : self::get($col_labels, $i, $col) ;
+            $val = $is_map ? self::get($col_labels, $col, $col) : self::get($col_labels, $i, $col) ;
             $line .= '"'.str_replace('"', '""', $val ?? '').'",';
         }
         $line = substr($line, 0, -1);
-        echo mb_convert_encoding($line, $encoding, "UTF-8");
+        fwrite($stream, mb_convert_encoding($line, $encoding, "UTF-8"));
     }
 
     /**
@@ -997,6 +1205,7 @@ class Util
      * ※CSVダウンロードに伴うメモリ使用量を削減したい場合はこれらのCSV出力パーツ関数を組み合わせて利用して下さい。
      * ※出力データ分だけ繰り返し呼び出して下さい。
      *
+     * @param resource                                                                            $stream        出力先ストリーム
      * @param bool                                                                                $is_first_line 最初の行か否か
      * @param array<string, mixed>|object                                                         $row           結果データ（１行分のデータ）
      * @param string[]                                                                            $cols          出力対象列名リスト
@@ -1004,7 +1213,7 @@ class Util
      * @param string                                                                              $encoding      CSVファイルデータエンコーディング (default: SJIS-win)
      * @return void
      */
-    public static function csvLine(bool $is_first_line, $row, array $cols, $converter = null, $encoding = 'SJIS-win')
+    public static function csvLine($stream, bool $is_first_line, $row, array $cols, $converter = null, $encoding = 'SJIS-win')
     {
         $line = $is_first_line ? '' : "\n" ;
         foreach ($cols as $col) {
@@ -1015,7 +1224,7 @@ class Util
             $line .= '"'.str_replace('"', '""', $val ?? '').'",';
         }
         $line = substr($line, 0, -1);
-        echo mb_convert_encoding($line, $encoding, "UTF-8");
+        fwrite($stream, mb_convert_encoding($line, $encoding, "UTF-8"));
     }
 
     /**
@@ -1023,30 +1232,37 @@ class Util
      * ※CSVダウンロードに伴うメモリ使用量を削減したい場合はこれらのCSV出力パーツ関数を組み合わせて利用して下さい。
      * ※出力データ分だけ繰り返し呼び出して下さい。
      *
+     * @param resource           $stream        出力先ストリーム
      * @param bool               $is_first_line 最初の行か否か
      * @param array<string|null> $row           CSV文字列データ
      * @param string             $encoding      CSVファイルデータエンコーディング (default: SJIS-win)
      * @return void
      */
-    public static function csvRawLine(bool $is_first_line, array $row, $encoding = 'SJIS-win')
+    public static function csvRawLine($stream, bool $is_first_line, array $row, $encoding = 'SJIS-win')
     {
         $line = $is_first_line ? '' : "\n" ;
         foreach ($row as $val) {
             $line .= '"'.str_replace('"', '""', $val ?? '').'",';
         }
         $line = substr($line, 0, -1);
-        echo mb_convert_encoding($line, $encoding, "UTF-8");
+        fwrite($stream, mb_convert_encoding($line, $encoding, "UTF-8"));
     }
 
     /**
      * CSV出力：手順(4)　CSVファイル出力を閉じます。
      * ※CSVダウンロードに伴うメモリ使用量を削減したい場合はこれらのCSV出力パーツ関数を組み合わせて利用して下さい。
+     * ※本メソッドは $as_file = false 指定時に exit を call します。
      *
+     * @param resource $stream 出力先ストリーム
+     * @param bool $as_file 対象ストリームがファイルか否か
      * @return void
      */
-    public static function csvClose()
+    public static function csvClose($stream, $as_file)
     {
-        exit();
+        fclose($stream);
+        if (!$as_file) {
+            exit();
+        }
     }
 
     /**

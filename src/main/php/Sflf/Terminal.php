@@ -158,7 +158,7 @@ class Terminal
     /**
      * 端末情報を初期化します。
      *
-     * @param string $ua   ユーザーエージェント
+     * @param string|null $ua   ユーザーエージェント
      * @param string $ip   IPアドレス：REMOTE_ADDR 値
      * @param string $xrip IPアドレス：X_REAL_IP 値
      * @param string $xff  IPアドレス：X_FORWARDED_FOR 値
@@ -173,7 +173,7 @@ class Terminal
         }
         self::$_XRIP = $xrip;
         self::$_IP   = $ip;
-        self::$_UA   = $ua;
+        self::$_UA   = $ua ?? '';
         $ua          = mb_strtolower($ua ?? '');
 
         // 端末タイプ判定

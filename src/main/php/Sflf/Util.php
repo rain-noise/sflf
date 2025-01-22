@@ -17,7 +17,7 @@
  * $pass = Util::randomCode(8);
  *
  * @package   SFLF
- * @version   v3.0.0
+ * @version   v3.0.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -822,7 +822,7 @@ class Util
      * @param int    $http_status HTTPステータス (default: 200)
      * @return void
      */
-    protected function writePlain($data, $http_status = 200)
+    public static function writePlain($data, $http_status = 200)
     {
         ob_clean();
         http_response_code($http_status);

@@ -3,9 +3,9 @@
 # =========================================================
 # Show/Edit/Source this file
 # ---------------------------------------------------------
-alias bacat="cat ~/.bash_aliases"
-alias bavim="vim ~/.bash_aliases"
-alias basrc="source ~/.bash_aliases"
+alias ba-show="cat ~/.bash_aliases | egrep '^(alias|function)'"
+alias ba-edit="vim ~/.bash_aliases"
+alias ba-load="source ~/.bash_aliases"
 
 # ---------------------------------------------------------
 # Utility aliases

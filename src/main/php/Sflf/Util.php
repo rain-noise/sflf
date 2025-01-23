@@ -910,7 +910,7 @@ class Util
     /**
      * 多次元配列から null の要素を取り除きます。
      *
-     * @param mixed[]|array<mixed[]>|null $array
+     * @param mixed[]|array<mixed[]>|null $array 対象配列
      * @return mixed[]|array<mixed[]>|null
      */
     public static function compact(?array $array)
@@ -1168,16 +1168,16 @@ class Util
     }
 
     /**
-         * CSV出力：手順(2)　CSVファイルのヘッダ行を書き出します。
-         * ※CSVダウンロードに伴うメモリ使用量を削減したい場合はこれらのCSV出力パーツ関数を組み合わせて利用して下さい。
-         * ※ヘッダ行が存在しない CSV ファイルでは呼び出す必要はありません。
-         *
-         * @param resource                                       $stream     出力先ストリーム
-         * @param string[]                                       $cols       出力対象列名リスト
-         * @param string[]|array<string, string>|array<string[]> $col_labels ヘッダ行のラベル指定(配列又は連想配列) (default: [])
-         * @param string                                         $encoding   CSVファイルデータエンコーディング (default: SJIS-win)
-         * @return void
-         */
+     * CSV出力：手順(2)　CSVファイルのヘッダ行を書き出します。
+     * ※CSVダウンロードに伴うメモリ使用量を削減したい場合はこれらのCSV出力パーツ関数を組み合わせて利用して下さい。
+     * ※ヘッダ行が存在しない CSV ファイルでは呼び出す必要はありません。
+     *
+     * @param resource                                       $stream     出力先ストリーム
+     * @param string[]                                       $cols       出力対象列名リスト
+     * @param string[]|array<string, string>|array<string[]> $col_labels ヘッダ行のラベル指定(配列又は連想配列) (default: [])
+     * @param string                                         $encoding   CSVファイルデータエンコーディング (default: SJIS-win)
+     * @return void
+     */
     public static function csvHeader($stream, array $cols, array $col_labels = [], $encoding = 'SJIS-win')
     {
         if (static::isMatrix($col_labels)) {

@@ -174,7 +174,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/block.unless_errors.php エラー有無分岐用 Smarty タグ
  *
  * @package   SFLF
- * @version   v2.2.0
+ * @version   v2.2.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -495,7 +495,7 @@ abstract class Form
      * ※サブフォームは処理されません
      *
      * @template T of object
-     * @param T                                                                                                   $dto       コピー対象DTOオブジェクト
+     * @param T                                                                                                   &$dto      コピー対象DTOオブジェクト
      * @param callable(string $field, bool $defined, Form $form, mixed $value, T $dest, mixed $origin):mixed|null $converter 出力用コンバータの戻り値が設定されます (default: null = Form::converterOutputDefault())
      * @return T
      * @see Form::converterOutputDefault()
@@ -625,8 +625,8 @@ abstract class Form
     /**
      * 指定のルールに従って validation を実施します。
      *
-     * @param  array<string, string[]> $errors エラー情報格納オブジェクト
-     * @param  int                     $apply  Form::APPLY_* の Form オプションクラス定数の論理和
+     * @param  array<string, string[]> &$errors エラー情報格納オブジェクト
+     * @param  int                     $apply   Form::APPLY_* の Form オプションクラス定数の論理和
      * @return void
      * @throws InvalidValidateRuleException
      */
@@ -638,7 +638,7 @@ abstract class Form
     /**
      * 指定のルールに従って validation を実施します。
      *
-     * @param  array<string, string[]> $errors      エラー情報格納オブジェクト
+     * @param  array<string, string[]> &$errors     エラー情報格納オブジェクト
      * @param  int                     $apply       Form::APPLY_* の Form オプションクラス定数の論理和
      * @param  string                  $parent_name サブフォーム時の親 name 名
      * @param  int                     $index       サブフォームリスト時のインデックス (default: null)
@@ -799,8 +799,8 @@ abstract class Form
      * Validate 失敗時処理
      * ※必要に応じてサブクラスでオーバーライド
      *
-     * @param array<string, string[]> $errors エラー情報
-     * @param int                     $apply  適用オプション
+     * @param array<string, string[]> &$errors エラー情報
+     * @param int                     $apply   適用オプション
      * @return void
      */
     protected function failed(&$errors, $apply)

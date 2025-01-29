@@ -17,7 +17,7 @@
  * $pass = Util::randomCode(8);
  *
  * @package   SFLF
- * @version   v3.0.2
+ * @version   v3.0.3
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -607,7 +607,7 @@ class Util
      * ディレクトリを再帰的にZIP圧縮します。
      *
      * @param string                      $folder           対象ディレクトリ
-     * @param \ZipArchive                 $zip_file         ZIPファイル
+     * @param \ZipArchive                 &$zip_file        ZIPファイル
      * @param int                         $exclusive_length 除外ファイルパス
      * @param callable(string $path):bool $filter           格納データ取捨選択用フィルタ
      * @param bool                        $with_password    パスワード設定を伴うか否か

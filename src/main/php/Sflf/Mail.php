@@ -31,7 +31,7 @@
  * $mail->send();
  *
  * @package   SFLF
- * @version   v1.2.3
+ * @version   v1.2.4
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -42,7 +42,7 @@ class Mail
      * メール送信ロジック
      * ※検証環境などでメールを送信せずにログ出力する場合などは本送信ロジックを上書きして下さい。
      *
-     * @var callable(Mail) function(Mail $mail){ ... }
+     * @var callable(Mail):bool function(Mail $mail){ ... }
      */
     public static $SENDER = null;
 

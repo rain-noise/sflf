@@ -17,7 +17,7 @@
  * $pass = Util::randomCode(8);
  *
  * @package   SFLF
- * @version   v3.0.1
+ * @version   v3.0.2
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -75,7 +75,7 @@ class Util
      *
      * @param string|\DateTime|null $value              日時文字列
      * @param string                ...$primary_formats 優先フォーマット (default: [])
-     * @return array{0: DateTime|null, 1: string|null} [DateTime or null, apply_format or null]
+     * @return array{0: \DateTime|null, 1: string|null} [DateTime or null, apply_format or null]
      */
     public static function analyzeDateTime($value, ...$primary_formats)
     {

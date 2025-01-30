@@ -28,7 +28,7 @@
  * @see       https://github.com/rain-noise/sflf/blob/master/src/main/php/Sflf/Form.php
  *
  * @package   SFLF
- * @version   v1.0.3
+ * @version   v1.0.4
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -39,7 +39,7 @@
  *   exclude?: string|null,
  *   date_format?: string|null,
  * }              $params  パラメータ
- * @param \Smarty &$smarty テンプレートオブジェクト
+ * @param Smarty\Smarty &$smarty テンプレートオブジェクト
  * @return string
  */
 function smarty_function_hiddens($params, &$smarty)

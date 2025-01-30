@@ -1,5 +1,5 @@
 <?php
-//namespace Sflf; // 名前空間が必要な場合はコメントを解除して下さい。（任意の名前空間による設定も可）
+// namespace App\Core; // 名前空間が必要な場合はコメントを解除して下さい。（任意の名前空間による設定も可）
 
 /**
  * Single File Low Functionality Class Tools
@@ -34,7 +34,7 @@
  * );
  *
  * @package   SFLF
- * @version   v1.1.6
+ * @version   v1.1.7
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -46,16 +46,16 @@ class Log
     /** @var int エラーレベル定義：エラー */
     const LEVEL_ERROR = 1;
     /** @var int エラーレベル定義：ワーニング */
-    const LEVEL_WARN  = 2;
+    const LEVEL_WARN = 2;
     /** @var int エラーレベル定義：インフォメーション */
-    const LEVEL_INFO  = 3;
+    const LEVEL_INFO = 3;
     /** @var int エラーレベル定義：デバッグ */
     const LEVEL_DEBUG = 4;
     /** @var int エラーレベル定義：トレース */
     const LEVEL_TRACE = 5;
 
     /** @var int ブラウザ画面表示モード定義：ブラウザ画面への表示を行わない */
-    const DISPLAY_NONE    = 1;
+    const DISPLAY_NONE = 1;
     /** @var int ブラウザ画面表示モード定義：ログ内容をストックし、 シャットダウン時にウェブレスポンスに出力 */
     const DISPLAY_FINALLY = 2;
 
@@ -81,13 +81,13 @@ class Log
     ];
 
     /** @var int ロガー設定定義：ログレベル（default: LEVEL_ERROR） */
-    private static $_LOG_LEVEL            = self::LEVEL_ERROR;
+    private static $_LOG_LEVEL = self::LEVEL_ERROR;
     /** @var string|null ロガー設定定義：ログファイル */
-    private static $_LOG_FILE             = null;
+    private static $_LOG_FILE = null;
     /** @var string ロガー設定定義：ログファイル拡張子 */
-    private static $_LOG_FILE_SUFFIX      = "_Ym";
+    private static $_LOG_FILE_SUFFIX = "_Ym";
     /** @var int ロガー設定定義：ログ画面表示設定 */
-    private static $_LOG_DISPLAY          = self::DISPLAY_NONE;
+    private static $_LOG_DISPLAY = self::DISPLAY_NONE;
     /** @var string|null ロガー設定定義：ログ出力抑止パターン */
     private static $_LOG_SUPPRESS_PATTERN = null;
 
@@ -365,7 +365,7 @@ EOS;
         $file_suffix  = null;
         $matcher      = [];
         foreach (\headers_list() as $header) {
-            $header  = mb_decode_mimeheader($header);
+            $header = mb_decode_mimeheader($header);
 
             if (\preg_match('|content-type:\s*(?<type>[^/]+/[^ ;]+).*|i', $header, $matcher)) {
                 $content_type = $matcher['type'];
@@ -494,7 +494,7 @@ EOS;
     public static function error_handle($errno, $errstr, $errfile, $errline)
     {
         $level = self::LEVEL_WARN;
-        switch($errno) {
+        switch ($errno) {
             case E_CORE_ERROR:
             case E_COMPILE_ERROR:
             case E_PARSE:

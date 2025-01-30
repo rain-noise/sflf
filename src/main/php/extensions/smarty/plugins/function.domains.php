@@ -33,15 +33,14 @@
  * @see       https://github.com/rain-noise/sflf/blob/master/src/main/php/Sflf/Domain.php
  *
  * @package   SFLF
- * @version   v1.1.1
+ * @version   v1.1.2
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
  *
- * @template T of Domain
  * @param array{
  *   type?: 'option'|'checkbox'|'radio'|'plain'|'label'|null,
- *   domain?: class-string<T>|T[]|object{value: mixed, label: string}[],
+ *   domain?: string|object{value: mixed, label: string}[],
  *   selected?: mixed|mixed[],
  *   value?: string|null,
  *   label?: string|null,
@@ -57,8 +56,11 @@
  *   addable?: bool|null,
  *   data?: string[]|null,
  *   name?: string|null,
+ *   class?: string|null,
+ *   id?: string|null,
+ *   style?: string|null,
  * }              $params  パラメータ
- * @param \Smarty &$smarty テンプレートオブジェクト
+ * @param Smarty\Smarty &$smarty テンプレートオブジェクト
  * @return mixed|null
  */
 function smarty_function_domains($params, &$smarty)
@@ -77,6 +79,7 @@ function smarty_function_domains($params, &$smarty)
     // パラメータ処理
     $domain = $params['domain'] ?? [];
     if (is_string($domain) && strpos($domain, '\\') === false) {
+        // @phpstan-ignore-next-line SFLF_CONFIG は設定されていない可能性もある
         $namespace = defined('SFLF_CONFIG') ? (SFLF_CONFIG['namespace']['domain'] ?? '') : '' ;
         $domain    = empty($namespace) ? $domain : "{$namespace}\\{$domain}";
     }

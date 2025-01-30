@@ -1,5 +1,5 @@
 <?php
-//namespace Sflf; // 名前空間が必要な場合はコメントを解除して下さい。（任意の名前空間による設定も可）
+// namespace App\Core; // 名前空間が必要な場合はコメントを解除して下さい。（任意の名前空間による設定も可）
 
 /**
  * Single File Low Functionality Class Tools
@@ -37,7 +37,7 @@
  * }
  *
  * @package   SFLF
- * @version   v1.2.3
+ * @version   v1.2.4
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -99,20 +99,20 @@ class Router
     /**
      * ルーティングオブジェクトを構築します。
      *
-     * @param string $uri                          リクエストURL(= $_SERVER['REQUEST_URI'])
-     * @param string $context_path                 コンテキストパス (default: '')
-     * @param string $controller_class_namespace   コントローラークラスの名前空間 (default: null for use 'SFLF_CONFIG['namespace']['controller']' constants if define)
-     * @param string $controller_class_name_suffix コントローラークラス名のサフィックス (default: 'Controller')
+     * @param string      $uri                          リクエストURL(= $_SERVER['REQUEST_URI'])
+     * @param string      $context_path                 コンテキストパス (default: '')
+     * @param string|null $controller_class_namespace   コントローラークラスの名前空間 (default: null for use 'SFLF_CONFIG['namespace']['controller']' constants if define)
+     * @param string      $controller_class_name_suffix コントローラークラス名のサフィックス (default: 'Controller')
      */
     public function __construct($uri, $context_path = '', $controller_class_namespace = null, $controller_class_name_suffix = 'Controller')
     {
         $this->uri          = (string)preg_replace('/^'.preg_quote($context_path, '/').'/', '', $uri);
         $this->context_path = $context_path;
         $part_of_uri        = explode('/', (string)preg_replace('/^\//', '', strstr($this->uri, '?', true) ?: $this->uri));
-        assert(is_array($part_of_uri));
-        $this->part_of_uri                  = $part_of_uri;
-        $this->accessible                   = false;
-        $this->controller_class_namespace   = $controller_class_namespace ?? (defined('SFLF_CONFIG') ? (SFLF_CONFIG['namespace']['controller'] ?? '').(isset(SFLF_CONFIG['namespace']['controller']) ? '\\' : '') : '') ;
+        $this->part_of_uri  = $part_of_uri;
+        $this->accessible   = false;
+        // @phpstan-ignore-next-line SFLF_CONFIG は定義されない可能性がある
+        $this->controller_class_namespace   = $controller_class_namespace ?? (defined('SFLF_CONFIG') ? (SFLF_CONFIG['namespace']['controller'] ?? '') : '') ;
         $this->controller_class_name_suffix = $controller_class_name_suffix;
     }
 

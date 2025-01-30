@@ -1,5 +1,5 @@
 <?php
-//namespace Sflf; // 名前空間が必要な場合はコメントを解除して下さい。（任意の名前空間による設定も可）
+// namespace App\Core; // 名前空間が必要な場合はコメントを解除して下さい。（任意の名前空間による設定も可）
 
 /**
  * Single File Low Functionality Class Tools
@@ -39,11 +39,12 @@
  *
  * $obj = new ClassName();
  *
- * @package   SFLF
- * @version   v1.0.3
- * @author    github.com/rain-noise
- * @copyright Copyright (c) 2017 github.com/rain-noise
- * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
+ * @package    SFLF
+ * @version    v1.0.4
+ * @author     github.com/rain-noise
+ * @copyright  Copyright (c) 2017 github.com/rain-noise
+ * @license    MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
+ * @deprecated You should use Composer
  */
 class AutoLoader
 {
@@ -121,7 +122,7 @@ class AutoLoader
 
         // 推定親クラス名で検索
         $split = preg_split("/([A-Z][^A-Z]+)/", $class, -1, PREG_SPLIT_NO_EMPTY | PREG_SPLIT_DELIM_CAPTURE);
-        while (count($split) > 1) {
+        while (count($split ?: []) > 1) {
             array_shift($split);
             $expect = join('', $split);
             if (isset(self::$CLASS_FILE_PATH[$expect])) {

@@ -1,5 +1,5 @@
 <?php
-//namespace Sflf; // 名前空間が必要な場合はコメントを解除して下さい。（任意の名前空間による設定も可）
+// namespace App\Core; // 名前空間が必要な場合はコメントを解除して下さい。（任意の名前空間による設定も可）
 
 /**
  * Single File Low Functionality Class Tools
@@ -110,7 +110,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/function.domains.php ドメイン整形出力用 Smarty タグ
  *
  * @package   SFLF
- * @version   v1.1.0
+ * @version   v1.1.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -127,7 +127,7 @@ abstract class Domain
     /**
      * ラベル
      *
-     * @var string
+     * @var string|null
      */
     public $label;
 
@@ -148,8 +148,8 @@ abstract class Domain
     /**
      * ドメイン生成
      *
-     * @param mixed  $value 値
-     * @param string $label ラベル
+     * @param mixed|null  $value 値
+     * @param string|null $label ラベル
      * @return static
      */
     protected function __construct($value, $label)
@@ -274,7 +274,7 @@ abstract class Domain
      * 対象の値を持つドメインを取得します。
      * ※同じ値を持つドメインが存在する場合、 Domain::lists() の順序で後勝ちとなります
      *
-     * @param string  $value 値
+     * @param mixed $value 値
      * @return static|null 指定の値を持つドメイン
      */
     public static function valueOf($value)

@@ -1,6 +1,5 @@
 <?php
-
-// use Sflf\Token; // 名前空間が必要な場合はコメントを解除して下さい。（任意の名前空間による設定も可）
+// use App\Core\Token; // 名前空間が必要な場合はコメントを解除して下さい。（任意の名前空間による設定も可）
 
 /**
  * Single File Low Functionality Class Tools - Extensions : Smarty Plugin
@@ -20,7 +19,7 @@
  * @see       https://github.com/rain-noise/sflf/blob/master/src/main/php/Sflf/Token.php
  *
  * @package   SFLF
- * @version   v1.0.1
+ * @version   v1.0.2
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -29,7 +28,7 @@
  *   key?: string|null,
  *   name?: string|null,
  * }              $params  パラメータ
- * @param \Smarty &$smarty テンプレートオブジェクト
+ * @param Smarty\Smarty &$smarty テンプレートオブジェクト
  * @return string
  */
 function smarty_function_token($params, &$smarty)

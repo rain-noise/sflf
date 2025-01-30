@@ -1,5 +1,5 @@
 <?php
-//namespace Sflf; // 名前空間が必要な場合はコメントを解除して下さい。（任意の名前空間による設定も可）
+// namespace App\Core; // 名前空間が必要な場合はコメントを解除して下さい。（任意の名前空間による設定も可）
 
 /**
  * Single File Low Functionality Class Tools
@@ -14,7 +14,7 @@
  * Session::set('LOGIN', $user);
  *
  * @package   SFLF
- * @version   v1.0.5
+ * @version   v1.0.6
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -52,7 +52,7 @@ class Session
      * セッションに値を保存します。
      *
      * @param string $key   キー名
-     * @param object $value 値
+     * @param mixed  $value 値
      * @return void
      */
     public static function set($key, $value)
@@ -63,8 +63,8 @@ class Session
     /**
      * セッションから値を取得します。
      *
-     * @param string      $key     キー名
-     * @param object|null $default デフォルト値 (default: null)
+     * @param string $key     キー名
+     * @param mixed  $default デフォルト値 (default: null)
      * @return mixed 格納した値
      */
     public static function get($key, $default = null)
@@ -99,8 +99,8 @@ class Session
     /**
      * セッションから値を取得し、その値を削除します。
      *
-     * @param string      $key     キー名
-     * @param object|null $default デフォルト値 (default: null)
+     * @param string $key     キー名
+     * @param mixed  $default デフォルト値 (default: null)
      * @return mixed 格納した値
      */
     public static function pull($key, $default = null)
@@ -156,13 +156,13 @@ class Session
 class RetrySessionHandler extends \SessionHandler
 {
     /** @var int リトライモード：OPEN */
-    const RETRY_OPEN    =  1;
+    const RETRY_OPEN = 1;
     /** @var int リトライモード：READ */
-    const RETRY_READ    =  2;
+    const RETRY_READ = 2;
     /** @var int リトライモード：WRITE */
-    const RETRY_WRITE   =  4;
+    const RETRY_WRITE = 4;
     /** @var int リトライモード：DESTROY */
-    const RETRY_DESTROY =  8;
+    const RETRY_DESTROY = 8;
 
     /** @var int リトライモード：ALL(= OPEN + READ + WRITE + DESTROY) */
     const RETRY_ALL = self::RETRY_OPEN | self::RETRY_READ | self::RETRY_WRITE | self::RETRY_DESTROY ;

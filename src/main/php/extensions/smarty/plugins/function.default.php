@@ -15,7 +15,7 @@
  * -------------------------------------------------------------
  *
  * @package   SFLF
- * @version   v1.0.3
+ * @version   v1.0.4
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -24,7 +24,7 @@
  *   var?: string|null,
  *   default?: mixed|null,
  * }              $params  パラメータ
- * @param \Smarty &$smarty テンプレートオブジェクト
+ * @param Smarty\Smarty &$smarty テンプレートオブジェクト
  * @return mixed|null
  */
 function smarty_function_default($params, &$smarty)
@@ -41,7 +41,7 @@ function smarty_function_default($params, &$smarty)
     }
 
     // パラメータ処理
-    $var     = $params['var'];
+    $var = $params['var'];
     assert(is_string($var));
     $value   = $smarty->getTemplateVars($var);
     $default = $params['default'] ?? null;

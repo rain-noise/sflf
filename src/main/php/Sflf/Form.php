@@ -1,5 +1,5 @@
 <?php
-//namespace Sflf; // 名前空間が必要な場合はコメントを解除して下さい。（任意の名前空間による設定も可）
+// namespace App\Core; // 名前空間が必要な場合はコメントを解除して下さい。（任意の名前空間による設定も可）
 
 /**
  * Single File Low Functionality Class Tools
@@ -174,7 +174,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/block.unless_errors.php エラー有無分岐用 Smarty タグ
  *
  * @package   SFLF
- * @version   v2.2.1
+ * @version   v2.2.2
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -625,8 +625,8 @@ abstract class Form
     /**
      * 指定のルールに従って validation を実施します。
      *
-     * @param  array<string, string[]> &$errors エラー情報格納オブジェクト
-     * @param  int                     $apply   Form::APPLY_* の Form オプションクラス定数の論理和
+     * @param  array<string, string[]|mixed[]> &$errors エラー情報格納オブジェクト
+     * @param  int                             $apply   Form::APPLY_* の Form オプションクラス定数の論理和
      * @return void
      * @throws InvalidValidateRuleException
      */
@@ -638,10 +638,10 @@ abstract class Form
     /**
      * 指定のルールに従って validation を実施します。
      *
-     * @param  array<string, string[]> &$errors     エラー情報格納オブジェクト
-     * @param  int                     $apply       Form::APPLY_* の Form オプションクラス定数の論理和
-     * @param  string                  $parent_name サブフォーム時の親 name 名
-     * @param  int                     $index       サブフォームリスト時のインデックス (default: null)
+     * @param array<string, string[]|mixed[]> &$errors     エラー情報格納オブジェクト
+     * @param int                             $apply       Form::APPLY_* の Form オプションクラス定数の論理和
+     * @param string                          $parent_name サブフォーム時の親 name 名
+     * @param int                             $index       サブフォームリスト時のインデックス (default: null)
      * @return void
      * @throws InvalidValidateRuleException
      */
@@ -1798,10 +1798,10 @@ abstract class Form
     /**
      * IPv4(CIDR)アドレスリスト（デフォルト区切り：改行)
      *
-     * @param string      $field     検査対象フィールド名
-     * @param string      $label     検査対象フィールドのラベル名
-     * @param string|null $value     検索対象フィールドの値
-     * @param string      $delimiter 区切り文字 (default: PHP_EOL)
+     * @param string           $field     検査対象フィールド名
+     * @param string           $label     検査対象フィールドのラベル名
+     * @param string|null      $value     検索対象フィールドの値
+     * @param non-empty-string $delimiter 区切り文字 (default: PHP_EOL)
      * @return string[]|null null: OK, string: NG = エラーメッセージ
      */
     protected function valid_ip_v4_address_list($field, $label, $value, $delimiter = PHP_EOL)
@@ -1811,7 +1811,7 @@ abstract class Form
         }
         assert(!is_null($value));
         $errors = [];
-        foreach (explode($delimiter, $value) ?: [] as $i => $ip) {
+        foreach (explode($delimiter, $value) as $i => $ip) {
             $ip = trim($ip);
             if (!empty($ip) && !preg_match(self::IP_V4_PATTERN, $ip)) {
                 $errors[] = ($i + 1)." 行目の{$label} [ {$ip} ] はIPアドレス(CIDR)形式で入力して下さい。";
@@ -1905,8 +1905,8 @@ abstract class Form
     public const VALID_HALF_ALPHA_DIGIT_MARK = 'half_alpha_digit_mark';
 
     /**
-     * 半角英数記号(デフォルト記号：!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~ )
-     *
+     * 半角英数記号
+     * 
      * @param string      $field 検査対象フィールド名
      * @param string      $label 検査対象フィールドのラベル名
      * @param string|null $value 検索対象フィールドの値

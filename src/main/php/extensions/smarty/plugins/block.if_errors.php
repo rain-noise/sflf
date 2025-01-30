@@ -14,7 +14,7 @@
  * -------------------------------------------------------------
  *
  * @package   SFLF
- * @version   v1.0.3
+ * @version   v1.0.4
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -23,7 +23,7 @@
  *   name?: string,
  * }              $params  パラメータ
  * @param mixed   $content ブロックで囲われたコンテンツ
- * @param \Smarty &$smarty テンプレートオブジェクト
+ * @param Smarty\Smarty &$smarty テンプレートオブジェクト
  * @param bool    &$repeat 繰り返し制御
  * @return mixed|null
  */

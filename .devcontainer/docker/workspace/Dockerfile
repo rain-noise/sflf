@@ -1,4 +1,4 @@
-FROM php:7.4-cli
+FROM php:8.3-cli
 
 # Use bash
 SHELL ["/bin/bash", "-c"]
@@ -14,7 +14,7 @@ COPY --from=composer /usr/bin/composer /usr/bin/composer
 # Install DevContainer/Development tools and depends
 RUN apt-get update \
     && apt-get install -y --no-install-recommends git openssh-client vim unzip jq \
-    && pecl install xdebug-3.1.6 \
+    && pecl install xdebug \
     && docker-php-ext-enable xdebug
 
 # Install Required extensions and depends

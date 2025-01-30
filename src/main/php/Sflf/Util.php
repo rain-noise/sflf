@@ -1,5 +1,5 @@
 <?php
-//namespace Sflf; // 名前空間が必要な場合はコメントを解除して下さい。（任意の名前空間による設定も可）
+// namespace App\Core; // 名前空間が必要な場合はコメントを解除して下さい。（任意の名前空間による設定も可）
 
 /**
  * Single File Low Functionality Class Tools
@@ -17,7 +17,7 @@
  * $pass = Util::randomCode(8);
  *
  * @package   SFLF
- * @version   v3.0.3
+ * @version   v3.0.4
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -239,7 +239,7 @@ class Util
         if ($str === null) {
             return null;
         }
-        $str = preg_replace("/^(".preg_quote($prefix).")*/u", '', $str);
+        $str = preg_replace("/^(".preg_quote($prefix, '/').")*/u", '', $str);
         assert(is_string($str));
         return $str;
     }
@@ -256,7 +256,7 @@ class Util
         if ($str === null) {
             return null;
         }
-        $str = preg_replace("/(".preg_quote($suffix).")*$/u", '', $str);
+        $str = preg_replace("/(".preg_quote($suffix, '/').")*$/u", '', $str);
         assert(is_string($str));
         return $str;
     }
@@ -292,9 +292,6 @@ class Util
     {
         for ($i = 0 ; $i < $stretching ; $i++) {
             $text = \hash($algorithm, $salt.md5($text).$pepper);
-            if ($text === false) {
-                throw new \ValueError("Invalid algorithm value given.");
-            }
         }
         return $text;
     }
@@ -910,7 +907,7 @@ class Util
     /**
      * 多次元配列から null の要素を取り除きます。
      *
-     * @param mixed[]|array<mixed[]>|null $array 対象配列
+     * @param mixed[]|array<mixed[]>|null $array
      * @return mixed[]|array<mixed[]>|null
      */
     public static function compact(?array $array)
@@ -965,7 +962,7 @@ class Util
 
         if (is_string($message)) {
             foreach ($replacements as $placeholder => $value) {
-                $message = preg_replace("/".preg_quote($brackets[0]).$placeholder.preg_quote($brackets[1])."/u", $value ?? '', $message ?? '');
+                $message = preg_replace("/".preg_quote($brackets[0], '/').$placeholder.preg_quote($brackets[1], '/')."/u", $value ?? '', $message ?? '');
             }
             return $message;
         }
@@ -1168,16 +1165,16 @@ class Util
     }
 
     /**
-     * CSV出力：手順(2)　CSVファイルのヘッダ行を書き出します。
-     * ※CSVダウンロードに伴うメモリ使用量を削減したい場合はこれらのCSV出力パーツ関数を組み合わせて利用して下さい。
-     * ※ヘッダ行が存在しない CSV ファイルでは呼び出す必要はありません。
-     *
-     * @param resource                                       $stream     出力先ストリーム
-     * @param string[]                                       $cols       出力対象列名リスト
-     * @param string[]|array<string, string>|array<string[]> $col_labels ヘッダ行のラベル指定(配列又は連想配列) (default: [])
-     * @param string                                         $encoding   CSVファイルデータエンコーディング (default: SJIS-win)
-     * @return void
-     */
+         * CSV出力：手順(2)　CSVファイルのヘッダ行を書き出します。
+         * ※CSVダウンロードに伴うメモリ使用量を削減したい場合はこれらのCSV出力パーツ関数を組み合わせて利用して下さい。
+         * ※ヘッダ行が存在しない CSV ファイルでは呼び出す必要はありません。
+         *
+         * @param resource                                       $stream     出力先ストリーム
+         * @param string[]                                       $cols       出力対象列名リスト
+         * @param string[]|array<string, string>|array<string[]> $col_labels ヘッダ行のラベル指定(配列又は連想配列) (default: [])
+         * @param string                                         $encoding   CSVファイルデータエンコーディング (default: SJIS-win)
+         * @return void
+         */
     public static function csvHeader($stream, array $cols, array $col_labels = [], $encoding = 'SJIS-win')
     {
         if (static::isMatrix($col_labels)) {
@@ -1358,7 +1355,7 @@ class Util
      */
     public static function urlGetHeaders($url, $associative = false)
     {
-        $headers = @get_headers($url, $associative ? 1 : 0, stream_context_create([
+        $headers = @get_headers($url, $associative, stream_context_create([
             'http' => ['ignore_errors' => true],
             'ssl'  => [
                 'verify_peer'      => false,

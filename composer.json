@@ -13,9 +13,9 @@
         "vendor-dir": "src/main/php/vendor"
     },
     "require-dev": {
-        "smarty/smarty": "^4.3",
-        "phpunit/phpunit": "^9.6",
-        "symfony/var-dumper": "^5.4"
+        "smarty/smarty": "^5.4",
+        "phpunit/phpunit": "^11.5",
+        "symfony/var-dumper": "^7.2"
     },
     "autoload": {
         "classmap": [

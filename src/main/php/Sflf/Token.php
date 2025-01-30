@@ -1,5 +1,5 @@
 <?php
-//namespace Sflf; // 名前空間が必要な場合はコメントを解除して下さい。（任意の名前空間による設定も可）
+// namespace App\Core; // 名前空間が必要な場合はコメントを解除して下さい。（任意の名前空間による設定も可）
 
 /**
  * Single File Low Functionality Class Tools
@@ -26,7 +26,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/function.token.php トークン出力用 Smarty タグ
  *
  * @package   SFLF
- * @version   v1.1.3
+ * @version   v1.1.4
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -53,10 +53,7 @@ class Token
      */
     public static function generate($key = 'global', $length = 16)
     {
-        if (($token = openssl_random_pseudo_bytes($length)) === false) {
-            throw new \Exception("Failed to generate openssl_random_pseudo_bytes().");
-        }
-        return $_SESSION[self::SESSION_KEY_PREFIX.$key] = bin2hex($token);
+        return $_SESSION[self::SESSION_KEY_PREFIX.$key] = bin2hex(openssl_random_pseudo_bytes($length));
     }
 
     /**

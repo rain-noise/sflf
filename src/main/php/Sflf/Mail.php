@@ -1,5 +1,5 @@
 <?php
-//namespace Sflf; // 名前空間が必要な場合はコメントを解除して下さい。（任意の名前空間による設定も可）
+// namespace App\Core; // 名前空間が必要な場合はコメントを解除して下さい。（任意の名前空間による設定も可）
 
 /**
  * Single File Low Functionality Class Tools
@@ -31,7 +31,7 @@
  * $mail->send();
  *
  * @package   SFLF
- * @version   v1.2.4
+ * @version   v1.2.5
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -42,7 +42,7 @@ class Mail
      * メール送信ロジック
      * ※検証環境などでメールを送信せずにログ出力する場合などは本送信ロジックを上書きして下さい。
      *
-     * @var callable(Mail):bool function(Mail $mail){ ... }
+     * @var callable(Mail):bool|null function(Mail $mail){ ... }
      */
     public static $SENDER = null;
 
@@ -247,7 +247,7 @@ class Mail
      */
     public function __toString()
     {
-        $text  = "";
+        $text = "";
         $text .= "Subject: {$this->_subject}\n";
         $text .= "From: {$this->_from}\n";
         $text .= "To: ".join(', ', $this->_to)."\n";
@@ -295,10 +295,10 @@ class Mail
         if (empty($this->_from)) {
             throw new MailSendException("Mail 'from' not set.");
         }
-        $from       = self::encodeMailAddress($this->_from);
-        $reply_to   = self::encodeMailAddress($this->_replyTo);
-        $headers[]  = "From: ".$from;
-        $headers[]  = "Reply-To: ".(empty($reply_to) ? $from : $reply_to);
+        $from      = self::encodeMailAddress($this->_from);
+        $reply_to  = self::encodeMailAddress($this->_replyTo);
+        $headers[] = "From: ".$from;
+        $headers[] = "Reply-To: ".(empty($reply_to) ? $from : $reply_to);
 
         // 宛先(To)
         if (empty($this->_to)) {
@@ -356,7 +356,7 @@ class Mail
         }
         $matches = [];
         if (preg_match('/^("([^"].*)" *)|(([^<].*) *)<(.*)>$/', trim($address), $matches)) {
-            return mb_encode_mimeheader(trim(!empty($matches[2]) ? $matches[2] : $matches[4]), $charset, $transfer_encoding, $linefeed)."<".$matches[5].">";
+            return mb_encode_mimeheader(trim(!empty($matches[2]) ? $matches[2] : ($matches[4] ?? '')), $charset, $transfer_encoding, $linefeed)."<".($matches[5] ?? '').">";
         }
         return "<".$address.">";
     }
@@ -374,7 +374,7 @@ class Mail
         }
         $matches = [];
         if (preg_match('/^("([^"].*)" *)|(([^<].*) *)<(.*)>$/', trim($address), $matches)) {
-            return $matches[5];
+            return $matches[5] ?? null;
         }
         return $address;
     }

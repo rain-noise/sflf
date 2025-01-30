@@ -2,9 +2,11 @@ parameters:
     level: 8
     bootstrapFiles:
         - ./src/main/php/vendor/autoload.php
+        - ./src/main/php/extensions/config/config.sample.php
     paths:
         - ./src/main/php
     excludePaths:
+        - .php-cs-fixer.dist.php
         - ./src/main/php/extensions/config
         - ./src/main/php/vendor
         - ./tests

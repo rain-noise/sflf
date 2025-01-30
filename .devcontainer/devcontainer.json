@@ -23,8 +23,11 @@
                 }
             },
             "extensions": [
+                "aswinkumar863.smarty-template-support",
                 "bmewburn.vscode-intelephense-client",
+                "donjayamanne.githistory", // 試用期間中（ファイル単位の Git 履歴差分確認のため）
                 "EditorConfig.EditorConfig",
+                "formulahendry.auto-rename-tag", // 試用期間中
                 "junstyle.php-cs-fixer",
                 "mikestead.dotenv",
                 "mhutchie.git-graph",
@@ -32,7 +35,8 @@
                 "oderwat.indent-rainbow",
                 "sanderronde.phpstan-vscode",
                 "xdebug.php-debug",
-                "xyz.local-history"
+                "xyz.local-history",
+                "usernamehw.errorlens"
             ]
         }
     },

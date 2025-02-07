@@ -17,7 +17,7 @@
  * $pass = Util::randomCode(8);
  *
  * @package   SFLF
- * @version   v3.0.4
+ * @version   v3.1.0
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -1092,13 +1092,17 @@ class Util
      * @param bool                                                                           $has_header true : ヘッダ行を出力する／false : ヘッダ行を出力しない (default: true)
      * @param string[]|array<string, string>|array<string[]>                                 $col_labels ヘッダ行のラベル指定(配列又は連想配列) (default: [])
      * @param string                                                                         $encoding   CSVファイルエンコーディング (default: SJIS-win)
+     * @param bool                                                                           $with_bom   BOM付き (default: false)
      * @return void
      */
-    public static function writeCsv($file_name, $as_file, $converter, array $rs, $cols, $has_header = true, $col_labels = [], $encoding = 'SJIS-win')
+    public static function writeCsv($file_name, $as_file, $converter, array $rs, $cols, $has_header = true, $col_labels = [], $encoding = 'SJIS-win', $with_bom = false)
     {
         // 出力
         $cols   = is_string($cols) ? static::getPropertyNames($cols) : $cols;
         $stream = static::csvOpen($file_name, $as_file);
+        if ($with_bom) {
+            static::csvBom($stream, $encoding);
+        }
         if ($has_header) {
             static::csvHeader($stream, $cols, $col_labels, $encoding);
         }
@@ -1165,16 +1169,48 @@ class Util
     }
 
     /**
-         * CSV出力：手順(2)　CSVファイルのヘッダ行を書き出します。
-         * ※CSVダウンロードに伴うメモリ使用量を削減したい場合はこれらのCSV出力パーツ関数を組み合わせて利用して下さい。
-         * ※ヘッダ行が存在しない CSV ファイルでは呼び出す必要はありません。
-         *
-         * @param resource                                       $stream     出力先ストリーム
-         * @param string[]                                       $cols       出力対象列名リスト
-         * @param string[]|array<string, string>|array<string[]> $col_labels ヘッダ行のラベル指定(配列又は連想配列) (default: [])
-         * @param string                                         $encoding   CSVファイルデータエンコーディング (default: SJIS-win)
-         * @return void
-         */
+     * CSV出力：手順(2)　CSVファイルのBOMを書き出します。
+     * ※BOMが不要な場合は呼び出さなくても構いません。
+     * ※必要に応じてBOMを付与して下さい。
+     *
+     * @param resource $stream 出力先ストリーム
+     * @param string   $encode CSVファイルデータエンコーディング
+     * @return void
+     */
+    public static function csvBom($stream, $encode)
+    {
+        fwrite($stream, static::getBom($encode));
+    }
+
+    /**
+     * 指定エンコードに対応したBOMを取得します。
+     *
+     * @param string $encode  エンコーディング
+     * @return string BOM
+     */
+    public static function getBom(string $encode)
+    {
+        return match (strtoupper($encode)) {
+            'UTF-8'    => "\xEF\xBB\xBF",
+            'UTF-16LE' => "\xFF\xFE",
+            'UTF-16BE' => "\xFE\xFF",
+            'UTF-32LE' => "\xFF\xFE\x00\x00",
+            'UTF-32BE' => "\x00\x00\xFE\xFF",
+            default    => "",
+        };
+    }
+
+    /**
+     * CSV出力：手順(3)　CSVファイルのヘッダ行を書き出します。
+     * ※CSVダウンロードに伴うメモリ使用量を削減したい場合はこれらのCSV出力パーツ関数を組み合わせて利用して下さい。
+     * ※ヘッダ行が存在しない CSV ファイルでは呼び出す必要はありません。
+     *
+     * @param resource                                       $stream     出力先ストリーム
+     * @param string[]                                       $cols       出力対象列名リスト
+     * @param string[]|array<string, string>|array<string[]> $col_labels ヘッダ行のラベル指定(配列又は連想配列) (default: [])
+     * @param string                                         $encoding   CSVファイルデータエンコーディング (default: SJIS-win)
+     * @return void
+     */
     public static function csvHeader($stream, array $cols, array $col_labels = [], $encoding = 'SJIS-win')
     {
         if (static::isMatrix($col_labels)) {
@@ -1198,7 +1234,7 @@ class Util
     }
 
     /**
-     * CSV出力：手順(3)　CSVファイルのデータ行を書き出します。
+     * CSV出力：手順(4)　CSVファイルのデータ行を書き出します。
      * ※CSVダウンロードに伴うメモリ使用量を削減したい場合はこれらのCSV出力パーツ関数を組み合わせて利用して下さい。
      * ※出力データ分だけ繰り返し呼び出して下さい。
      *
@@ -1225,7 +1261,7 @@ class Util
     }
 
     /**
-     * CSV出力：手順(3´)　CSVファイルのデータ行（文字列データ）をそのまま書き出します。
+     * CSV出力：手順(4´)　CSVファイルのデータ行（文字列データ）をそのまま書き出します。
      * ※CSVダウンロードに伴うメモリ使用量を削減したい場合はこれらのCSV出力パーツ関数を組み合わせて利用して下さい。
      * ※出力データ分だけ繰り返し呼び出して下さい。
      *
@@ -1246,7 +1282,7 @@ class Util
     }
 
     /**
-     * CSV出力：手順(4)　CSVファイル出力を閉じます。
+     * CSV出力：手順(5)　CSVファイル出力を閉じます。
      * ※CSVダウンロードに伴うメモリ使用量を削減したい場合はこれらのCSV出力パーツ関数を組み合わせて利用して下さい。
      * ※本メソッドは $as_file = false 指定時に exit を call します。
      *
@@ -1400,6 +1436,8 @@ class Util
         $data = preg_replace('/^\xEF\xBB\xBF/', '', $data); # UTF-8
         $data = preg_replace('/^\xFF\xFE/', '', $data ?? ''); # UTF-16LE
         $data = preg_replace('/^\xFE\xFF/', '', $data ?? ''); # UTF-16BE
+        $data = preg_replace('/^\xFF\xFE\x00\x00/', '', $data ?? ''); # UTF-32LE
+        $data = preg_replace('/^\x00\x00\xFE\xFF/', '', $data ?? ''); # UTF-32BE
         $data = mb_convert_encoding($data ?? '', 'UTF-8', $encode);
         file_put_contents($file, $data);
 

@@ -174,7 +174,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/block.unless_errors.php エラー有無分岐用 Smarty タグ
  *
  * @package   SFLF
- * @version   v2.2.2
+ * @version   v2.2.3
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -3916,7 +3916,8 @@ class UploadFile
      */
     public function matchFileName($pattern)
     {
-        return preg_match($pattern, $this->name) === 1;
+        $normalized_name = \Normalizer::normalize($this->name, \Normalizer::FORM_C);
+        return preg_match($pattern, $normalized_name) === 1;
     }
 
     /**

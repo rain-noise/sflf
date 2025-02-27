@@ -33,7 +33,7 @@
  * @see       https://github.com/rain-noise/sflf/blob/master/src/main/php/Sflf/Domain.php
  *
  * @package   SFLF
- * @version   v1.1.2
+ * @version   v1.1.3
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -141,7 +141,7 @@ function smarty_function_domains($params, &$smarty)
         switch ($type) {
             case 'option':
                 $select = in_array($v, $selected) ? ' selected' : '';
-                $html .= '<option '.$attrs.' value="'.htmlspecialchars($v).'" '.$da.' '.$select.'>'.$prevtag.$l.$posttag.'</option>'.$delimiter;
+                $html .= '<option '.$attrs.' value="'.htmlspecialchars($v).'" '.$da.' '.$select.'>'.$prevtag.htmlspecialchars($l).$posttag.'</option>'.$delimiter;
                 break;
             case 'checkbox':
                 $select = in_array($v, $selected) ? ' checked' : '';

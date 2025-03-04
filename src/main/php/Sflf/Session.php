@@ -14,7 +14,7 @@
  * Session::set('LOGIN', $user);
  *
  * @package   SFLF
- * @version   v4.0.0
+ * @version   v4.0.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE

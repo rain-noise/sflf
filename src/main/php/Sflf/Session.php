@@ -36,11 +36,11 @@ class Session
     /**
      * セッションを開始します。
      *
-     * @param \SessionHandlerInterface $handler  セッションハンドラ (default: null)
-     * @param array<string, mixed>     $options  session_start のオプション引数 (default: [])
+     * @param \SessionHandlerInterface|null $handler  セッションハンドラ (default: null)
+     * @param array<string, mixed>          $options  session_start のオプション引数 (default: [])
      * @return bool
      */
-    public static function start(\SessionHandlerInterface $handler = null, array $options = [])
+    public static function start(?\SessionHandlerInterface $handler = null, array $options = [])
     {
         if (!empty($handler)) {
             session_set_save_handler($handler, true);

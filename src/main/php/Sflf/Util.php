@@ -17,7 +17,7 @@
  * $pass = Util::randomCode(8);
  *
  * @package   SFLF
- * @version   v3.0.3
+ * @version   v3.0.4
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -908,12 +908,13 @@ class Util
     }
 
     /**
-     * 多次元配列から null の要素を取り除きます。
+     * 多次元配列から 指定要素（デフォルト：null）を取り除きます。
      *
      * @param mixed[]|array<mixed[]>|null $array 対象配列
+     * @param mixed[] $exclusions 除外対象値リスト (default: [null])
      * @return mixed[]|array<mixed[]>|null
      */
-    public static function compact(?array $array)
+    public static function compact(?array $array, $exclusions = [null])
     {
         if ($array === null) {
             return null;
@@ -921,9 +922,9 @@ class Util
         $compacted = [];
         foreach ($array as $key => $value) {
             if (is_array($value)) {
-                $value = static::compact($value);
+                $value = static::compact($value, $exclusions);
             }
-            if ($value !== null) {
+            if (!in_array($value, $exclusions, true)) {
                 $compacted[$key] = $value;
             }
         }

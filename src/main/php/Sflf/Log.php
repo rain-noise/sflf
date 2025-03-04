@@ -515,7 +515,6 @@ EOS;
             case E_USER_NOTICE:
             case E_DEPRECATED:
             case E_USER_DEPRECATED:
-            case E_STRICT:
                 $level = self::LEVEL_TRACE;
                 break;
         }

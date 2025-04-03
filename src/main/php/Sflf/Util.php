@@ -17,7 +17,7 @@
  * $pass = Util::randomCode(8);
  *
  * @package   SFLF
- * @version   v4.0.2
+ * @version   v4.1.0
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -340,7 +340,7 @@ class Util
      * @return string 暗号
      * @throws \ValueError when failed to get the cipher iv length, perhaps invlid cipher was given
      */
-    public static function encript($plain, $secret_key, $cipher = 'AES-256-CBC')
+    public static function encrypt($plain, $secret_key, $cipher = 'AES-256-CBC')
     {
         if (($iv_size = openssl_cipher_iv_length($cipher)) === false || $iv_size < 1) {
             throw new \ValueError("Failed to get the cipher iv length, perhaps invlid cipher was given.");
@@ -359,7 +359,7 @@ class Util
      * @return string|null 復号文 (復号失敗時は null)
      * @throws \ValueError when failed to get the cipher iv length, perhaps invlid cipher was given
      */
-    public static function decript($encrypted, $secret_key, $cipher = 'AES-256-CBC')
+    public static function decrypt($encrypted, $secret_key, $cipher = 'AES-256-CBC')
     {
         if (($iv_size = openssl_cipher_iv_length($cipher)) === false || $iv_size < 1) {
             throw new \ValueError("Failed to get the cipher iv length, perhaps invlid cipher was given.");

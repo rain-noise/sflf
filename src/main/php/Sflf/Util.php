@@ -17,7 +17,7 @@
  * $pass = Util::randomCode(8);
  *
  * @package   SFLF
- * @version   v4.0.1
+ * @version   v4.1.0
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -340,7 +340,7 @@ class Util
      * @return string 暗号
      * @throws \ValueError when failed to get the cipher iv length, perhaps invlid cipher was given
      */
-    public static function encript($plain, $secret_key, $cipher = 'AES-256-CBC')
+    public static function encrypt($plain, $secret_key, $cipher = 'AES-256-CBC')
     {
         if (($iv_size = openssl_cipher_iv_length($cipher)) === false || $iv_size < 1) {
             throw new \ValueError("Failed to get the cipher iv length, perhaps invlid cipher was given.");
@@ -359,7 +359,7 @@ class Util
      * @return string|null 復号文 (復号失敗時は null)
      * @throws \ValueError when failed to get the cipher iv length, perhaps invlid cipher was given
      */
-    public static function decript($encrypted, $secret_key, $cipher = 'AES-256-CBC')
+    public static function decrypt($encrypted, $secret_key, $cipher = 'AES-256-CBC')
     {
         if (($iv_size = openssl_cipher_iv_length($cipher)) === false || $iv_size < 1) {
             throw new \ValueError("Failed to get the cipher iv length, perhaps invlid cipher was given.");
@@ -755,14 +755,14 @@ class Util
     /**
      * 簡易的な BASIC認証 を掛けます。
      *
-     * @param array<string, string>   $auth_list   認証許可リスト [user_name => hashed_password, ...]
-     * @param callable(string):string $to_hash     ハッシュ関数 function($password):string { ... } (default: null = function ($password) { return $password; })
-     * @param string                  $realm       認証入力時テキスト (default: 'Enter your ID and PASSWORD.')
-     * @param string                  $failed_text 認証失敗時テキスト (default: 'Authenticate Failed.')
-     * @param string                  $charset     文字コード (default: utf-8)
+     * @param array<string, string>        $auth_list   認証許可リスト [user_name => hashed_password, ...]
+     * @param null|callable(string):string $to_hash     ハッシュ関数 function($password):string { ... } (default: null = function ($password) { return $password; })
+     * @param string                       $realm       認証入力時テキスト (default: 'Enter your ID and PASSWORD.')
+     * @param string                       $failed_text 認証失敗時テキスト (default: 'Authenticate Failed.')
+     * @param string                       $charset     文字コード (default: utf-8)
      * @return string|void
      */
-    public static function basicAuthenticate(array $auth_list, callable $to_hash = null, $realm = "Enter your ID and PASSWORD.", $failed_text = "Authenticate Failed.", $charset = 'utf-8')
+    public static function basicAuthenticate(array $auth_list, ?callable $to_hash = null, $realm = "Enter your ID and PASSWORD.", $failed_text = "Authenticate Failed.", $charset = 'utf-8')
     {
         if (empty($to_hash)) {
             $to_hash = function ($password) { return $password; };
@@ -1323,7 +1323,7 @@ class Util
      * @param \DateTime|null $at       起点日 (default: null)
      * @return int|null 起点日における年齢
      */
-    public static function ageAt(\DateTime $birthday = null, \DateTime $at = null)
+    public static function ageAt(?\DateTime $birthday = null, ?\DateTime $at = null)
     {
         if (empty($birthday)) {
             return null;

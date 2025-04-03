@@ -14,7 +14,7 @@
  * Session::set('LOGIN', $user);
  *
  * @package   SFLF
- * @version   v4.0.0
+ * @version   v4.0.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -36,11 +36,11 @@ class Session
     /**
      * セッションを開始します。
      *
-     * @param \SessionHandlerInterface $handler  セッションハンドラ (default: null)
-     * @param array<string, mixed>     $options  session_start のオプション引数 (default: [])
+     * @param \SessionHandlerInterface|null $handler  セッションハンドラ (default: null)
+     * @param array<string, mixed>          $options  session_start のオプション引数 (default: [])
      * @return bool
      */
-    public static function start(\SessionHandlerInterface $handler = null, array $options = [])
+    public static function start(?\SessionHandlerInterface $handler = null, array $options = [])
     {
         if (!empty($handler)) {
             session_set_save_handler($handler, true);

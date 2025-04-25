@@ -174,7 +174,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/block.unless_errors.php エラー有無分岐用 Smarty タグ
  *
  * @package   SFLF
- * @version   v4.0.0
+ * @version   v4.0.2
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -284,6 +284,13 @@ abstract class Form
      * @var Form
      */
     protected $_parent_;
+
+    /**
+     * URLヘッダ情報キャッシュ
+     * 
+     * @var array<string, array<int, array<string, string|array<string>>>> ['url' => [redirect_step => ['header_name' => 'header_body'|['header_body', ...]]], ...]
+     */
+    protected $_url_header_cache_ = [];
 
     /**
      * デフォルト入力コンバータ（同じフィールド名同士でコピーするコンバータ）を取得します。
@@ -813,7 +820,7 @@ abstract class Form
      * 各種 valid_* の validation メソッドでの入力判定は本メソッドを使用して下さい。
      *
      * @param mixed|null $value
-     * @return bool
+     * @return ($value is null ? true : bool)
      */
     protected function _empty($value)
     {
@@ -824,6 +831,80 @@ abstract class Form
             return empty(array_filter($value, function ($i) { return $i !== null && $i !== ''; }));
         }
         return $value === null || $value === '';
+    }
+
+    /**
+     * 指定URLのヘッダ情報を取得します。
+     * 
+     * ※ヘッダ名は小文字に変換されます
+     * ※HTTPステータスラインは以下の特殊ヘッダ名で取得できます。
+     *   - @status-line   : HTTP ステータスライン (='{@http-version} {@status-code} {@reason-phrase}')
+     *   - @http-version  : HTTP バージョン
+     *   - @status-code   : ステータスコード
+     *   - @reason-phrase : ステータ理由
+     * ※本メソッドは取得したヘッダ情報を一時的にキャシュし、ヘッダ情報を参照するバリデーションでのURLアクセス回数を抑止します。
+     *
+     * @param string|null $url
+     * @param bool $with_redirects (default: false)
+     * @return ($with_redirects is false ? array<string, string|array<string>> : array<int, array<string, string|array<string>>>)
+     */
+    protected function _getHeaders($url, $with_redirects = false)
+    {
+        if (empty($url)) {
+            return [];
+        }
+        if ($this->_url_header_cache_[$url] ?? false) {
+            $all_headers = $this->_url_header_cache_[$url];
+            return $with_redirects ? $all_headers : $all_headers[count($all_headers) - 1];
+        }
+        try {
+            $headers = get_headers($url, false, stream_context_create([
+                'http' => [
+                    'ignore_errors' => true,
+                    'timeout'       => 3,
+                ],
+                'ssl'  => [
+                    'verify_peer'      => false,
+                    'verify_peer_name' => false
+                ],
+            ]));
+    
+            if ($headers === false) {
+                return $this->_url_header_cache_[$url] = [];
+            }
+        } catch (\Exception $e) {
+            return $this->_url_header_cache_[$url] = [];
+        }
+
+        $analyzed_headers = [];
+        $step = -1;
+        foreach ($headers as $header) {
+            if(strpos($header,'HTTP/') === 0){
+                $step++;
+                [$version, $code, $reason] = explode(' ', $header, 3);
+                $analyzed_headers[$step]['@status-line'] = $header;
+                $analyzed_headers[$step]['@http-version']     = $version;
+                $analyzed_headers[$step]['@status-code']      = $code;
+                $analyzed_headers[$step]['@reason-phrase']    = $reason;
+                continue;
+            }
+
+            [$header_name, $header_body] = explode(':', $header, 2);
+            $header_name = strtolower(trim($header_name));
+            $header_body = trim($header_body);
+            if (!isset($analyzed_headers[$step][$header_name])) {
+                $analyzed_headers[$step][$header_name] = $header_body;
+            } else {
+                if (is_array($analyzed_headers[$step][$header_name])) {
+                    $analyzed_headers[$step][$header_name][] = $header_body;
+                } else {
+                    $analyzed_headers[$step][$header_name] = [$analyzed_headers[$step][$header_name], $header_body];
+                }
+            }
+        }
+
+        $this->_url_header_cache_[$url] = $analyzed_headers;
+        return $with_redirects ? $analyzed_headers : $analyzed_headers[count($analyzed_headers) - 1];
     }
 
     //##########################################################################
@@ -1755,6 +1836,135 @@ abstract class Form
     protected function valid_url($field, $label, $value)
     {
         return $this->valid_regex($field, $label, $value, "/^(https?|ftp)(:\/\/[-_.!~*\'()a-zA-Z0-9;\/?:\@&=+\$,%#]+)$/u", "URL形式");
+    }
+
+    //--------------------------------------------------------------------------
+    /**
+     * URL：ヘッダ情報
+     *
+     * ex)
+     * - [Form::VALID_URL_HEADER_MATCH, header_name, pattern, Form::APPLY_SAVE]
+     * - [Form::VALID_URL_HEADER_MATCH, header_name, pattern, 'label_of_pattern', Form::APPLY_SAVE]
+     *
+     * @var string
+     */
+    public const VALID_URL_HEADER_MATCH = 'url_header_match';
+
+    /**
+     * URL：ヘッダ情報
+     *
+     * @param string      $field          検査対象フィールド名
+     * @param string      $label          検査対象フィールドのラベル名
+     * @param string|null $value          検索対象フィールドの値
+     * @param string      $header_name    ヘッダ名、又は '@status-line', '@http-version', '@status-code', '@reason-phrase'
+     * @param string      $pattern        ヘッダ値の正規表現
+     * @param string|null $pattern_label  ヘッダ値の正規表現のラベル (default: null)
+     * @return string|string[]|null null: OK, string: NG = エラーメッセージ
+     * @throws InvalidValidateRuleException
+     */
+    protected function valid_url_header_match($field, $label, $value, $header_name, $pattern, $pattern_label = null)
+    {
+        if ($this->_empty($value)) { 
+            return null;
+        }
+        $headers       = $this->_getHeaders($value);
+        if (empty($headers)) {
+            return "{$label}のヘッダ情報取得に失敗しました。指定URLはブラウザ以外からのアクセスに制限が掛かっている可能性があるため、正しく処理できません。";
+        }
+        $header_name   = strtolower($header_name);
+        $header_bodies = $headers[$header_name] ?? null;
+        if (is_array($header_bodies)) {
+            $errors = [];
+            foreach ($header_bodies as $header_body) {
+                $error = $this->valid_regex($field, $label, $header_body, $pattern, $pattern_label);
+                if (!empty($error)) {
+                    $errors[] = $error;
+                }
+            }
+            return empty($errors) ? null : $errors;
+        }
+        return $this->valid_regex($field, $label, $header_bodies, $pattern, $pattern_label);
+    }
+
+    //--------------------------------------------------------------------------
+    /**
+     * URL：ヘッダ情報：Content-Type
+     *
+     * ex)
+     * - [Form::VALID_URL_CONTENT_TYPE_MATCH, pattern, Form::APPLY_SAVE]
+     * - [Form::VALID_URL_CONTENT_TYPE_MATCH, pattern, 'label_of_pattern', Form::APPLY_SAVE]
+     *
+     * @var string
+     */
+    public const VALID_URL_CONTENT_TYPE_MATCH = 'url_content_type_match';
+
+    /**
+     * URL：ヘッダ情報：Content-Type
+     *
+     * @param string      $field         検査対象フィールド名
+     * @param string      $label         検査対象フィールドのラベル名
+     * @param string|null $value         検索対象フィールドの値
+     * @param string      $pattern       コンテンツタイプの正規表現
+     * @param string|null $pattern_label コンテンツタイプ形式（正規表現）のラベル (default: null)
+     * @return string|string[]|null null: OK, string: NG = エラーメッセージ
+     * @throws InvalidValidateRuleException
+     */
+    protected function valid_url_content_type_match($field, $label, $value, $pattern, $pattern_label = null)
+    {
+        return $this->valid_url_header_match($field, $label, $value, 'Content-Type', $pattern, "コンテンツタイプが".($pattern_label ?? $pattern)."のURL");
+    }
+
+    //--------------------------------------------------------------------------
+    /**
+     * URL：ヘッダ情報：Content-Type：画像
+     *
+     * ex)
+     * - [Form::VALID_URL_CONTENT_TYPE_IMAGE, Form::APPLY_SAVE]
+     *
+     * @var string
+     */
+    public const VALID_URL_CONTENT_TYPE_IMAGE = 'url_content_type_image';
+
+    /**
+     * URL：ヘッダ情報：Content-Type：画像
+     *
+     * @param string      $field         検査対象フィールド名
+     * @param string      $label         検査対象フィールドのラベル名
+     * @param string|null $value         検索対象フィールドの値
+     * @return string|string[]|null null: OK, string: NG = エラーメッセージ
+     * @throws InvalidValidateRuleException
+     */
+    protected function valid_url_content_type_image($field, $label, $value)
+    {
+        return $this->valid_url_content_type_match($field, $label, $value, "/^image\/.+$/", "画像");
+    }
+
+    //--------------------------------------------------------------------------
+    /**
+     * URL：HTTPステータスコード
+     *
+     * ex)
+     * - [Form::VALID_URL_HTTP_STATUS_MATCH, Form::APPLY_SAVE]
+     * - [Form::VALID_URL_HTTP_STATUS_MATCH, 'status_code_pattern', 'label_of_pattern', Form::APPLY_SAVE]
+     *
+     * @var string
+     */
+    public const VALID_URL_HTTP_STATUS_MATCH = 'url_http_status_match';
+
+    /**
+     * URL：HTTPステータスコード
+     *
+     * @param string      $field         検査対象フィールド名
+     * @param string      $label         検査対象フィールドのラベル名
+     * @param string|null $value         検索対象フィールドの値
+     * @param string      $pattern       ステータスコードの正規表現 (default: /^200$/)
+     * @param string      $pattern_label ステータスコードのラベル (default: '200 OK')
+     * @return string|string[]|null null: OK, string: NG = エラーメッセージ
+     * @throws InvalidValidateRuleException
+     */
+    protected function valid_url_http_status_match($field, $label, $value, $pattern = '/^200$/', $pattern_label = '200 OK')
+    {
+        return $this->valid_url_header_match($field, $label, $value, '@status-code', $pattern, 'HTTPステータスが'.$pattern_label.'のURL');
     }
 
     //--------------------------------------------------------------------------

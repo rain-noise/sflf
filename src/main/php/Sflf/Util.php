@@ -17,7 +17,7 @@
  * $pass = Util::randomCode(8);
  *
  * @package   SFLF
- * @version   v4.1.0
+ * @version   v4.1.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -395,10 +395,11 @@ class Util
     /**
      * 対象のディレクトリを サブディレクトリを含め 削除します。
      *
-     * @param string $dir 削除対象ディレクトリパス
+     * @param string $dir        削除対象ディレクトリパス
+     * @param bool   $remove_own 自身を削除するか否か (default: true)
      * @return void
      */
-    public static function removeDir($dir)
+    public static function removeDir($dir, $remove_own = true)
     {
         if (!file_exists($dir)) {
             return;
@@ -407,14 +408,16 @@ class Util
             while (false !== ($item = readdir($handle))) {
                 if ($item != "." && $item != "..") {
                     if (is_dir("$dir/$item")) {
-                        self::removeDir("$dir/$item");
+                        self::removeDir("$dir/$item", true);
                     } else {
                         unlink("$dir/$item");
                     }
                 }
             }
             closedir($handle);
-            rmdir($dir);
+            if ($remove_own) {
+                rmdir($dir);
+            }
         }
     }
 

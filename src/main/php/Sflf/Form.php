@@ -174,7 +174,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/block.unless_errors.php エラー有無分岐用 Smarty タグ
  *
  * @package   SFLF
- * @version   v4.0.1
+ * @version   v4.0.2
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -857,15 +857,22 @@ abstract class Form
             $all_headers = $this->_url_header_cache_[$url];
             return $with_redirects ? $all_headers : $all_headers[count($all_headers) - 1];
         }
-        $headers = get_headers($url, false, stream_context_create([
-            'http' => ['ignore_errors' => true],
-            'ssl'  => [
-                'verify_peer'      => false,
-                'verify_peer_name' => false
-            ],
-        ]));
-
-        if ($headers === false) {
+        try {
+            $headers = get_headers($url, false, stream_context_create([
+                'http' => [
+                    'ignore_errors' => true,
+                    'timeout'       => 3,
+                ],
+                'ssl'  => [
+                    'verify_peer'      => false,
+                    'verify_peer_name' => false
+                ],
+            ]));
+    
+            if ($headers === false) {
+                return $this->_url_header_cache_[$url] = [];
+            }
+        } catch (\Exception $e) {
             return $this->_url_header_cache_[$url] = [];
         }
 
@@ -1861,6 +1868,9 @@ abstract class Form
             return null;
         }
         $headers       = $this->_getHeaders($value);
+        if (empty($headers)) {
+            return "{$label}のヘッダ情報取得に失敗しました。指定URLはブラウザ以外からのアクセスに制限が掛かっている可能性があるため、正しく処理できません。";
+        }
         $header_name   = strtolower($header_name);
         $header_bodies = $headers[$header_name] ?? null;
         if (is_array($header_bodies)) {

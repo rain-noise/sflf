@@ -174,7 +174,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/block.unless_errors.php エラー有無分岐用 Smarty タグ
  *
  * @package   SFLF
- * @version   v4.0.2
+ * @version   v4.0.3
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -3229,7 +3229,7 @@ abstract class Form
      * アップロードファイル：WEB画像拡張子
      *
      * 許可される拡張子パターンは以下の通りです
-     * - /^(jpe?g|gif|png)$/iu
+     * - /^(jpe?g|gif|png|webp)$/iu
      *
      * ex)
      * - [Form::VALID_FILE_WEB_IMAGE_SUFFIX, Form::APPLY_SAVE]
@@ -3249,7 +3249,7 @@ abstract class Form
      */
     protected function valid_file_web_image_suffix($field, $label, $value)
     {
-        return $this->valid_file_suffix_match($field, $label, $value, '/^(jpe?g|gif|png)$/iu', '画像形式[jpg, jpeg, gif, png]');
+        return $this->valid_file_suffix_match($field, $label, $value, '/^(jpe?g|gif|png|webp)$/iu', '画像形式[JPEG, GIF, PNG, WebP]');
     }
 
     //--------------------------------------------------------------------------

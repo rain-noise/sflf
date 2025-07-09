@@ -174,7 +174,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/block.unless_errors.php エラー有無分岐用 Smarty タグ
  *
  * @package   SFLF
- * @version   v4.0.3
+ * @version   v4.0.4
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -2007,6 +2007,9 @@ abstract class Form
 
     /**
      * IPv4(CIDR)アドレスリスト（デフォルト区切り：改行)
+     * ※`#`以降の文字列はコメントとして無視されます。
+     * ※余分な空白はトリムされます。
+     * ※空行は無視されます。
      *
      * @param string           $field     検査対象フィールド名
      * @param string           $label     検査対象フィールドのラベル名
@@ -2022,7 +2025,7 @@ abstract class Form
         assert(!is_null($value));
         $errors = [];
         foreach (explode($delimiter, $value) as $i => $ip) {
-            $ip = trim($ip);
+            $ip = trim(preg_replace('/#.*$/','',$ip) ?? '');
             if (!empty($ip) && !preg_match(self::IP_V4_PATTERN, $ip)) {
                 $errors[] = ($i + 1)." 行目の{$label} [ {$ip} ] はIPアドレス(CIDR)形式で入力して下さい。";
             }

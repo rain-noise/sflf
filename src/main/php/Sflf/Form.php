@@ -174,7 +174,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/block.unless_errors.php エラー有無分岐用 Smarty タグ
  *
  * @package   SFLF
- * @version   v4.0.5
+ * @version   v4.0.6
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -2389,7 +2389,7 @@ abstract class Form
             return [];
         }
         $org  = $text;
-        $conv = mb_convert_encoding(mb_convert_encoding($text, $encode, 'UTF-8'), 'UTF-8', $encode);
+        $conv = mb_convert_encoding(mb_convert_encoding($text, $encode, 'UTF-8') ?: '', 'UTF-8', $encode) ?: '';
         if (strlen($org) != strlen($conv)) {
             $diff = array_diff(preg_split("//u", $org, -1, PREG_SPLIT_NO_EMPTY) ?: [], preg_split("//u", $conv, -1, PREG_SPLIT_NO_EMPTY) ?: []);
             return $diff;

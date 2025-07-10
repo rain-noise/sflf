@@ -17,7 +17,7 @@
  * $pass = Util::randomCode(8);
  *
  * @package   SFLF
- * @version   v4.1.1
+ * @version   v4.1.2
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -655,7 +655,7 @@ class Util
             return [];
         }
         $org  = $text;
-        $conv = mb_convert_encoding(mb_convert_encoding($text, $encode, 'UTF-8'), 'UTF-8', $encode);
+        $conv = mb_convert_encoding(mb_convert_encoding($text, $encode, 'UTF-8') ?: '', 'UTF-8', $encode) ?: '';
         if (strlen($org) != strlen($conv)) {
             $diff = array_diff(self::stringToArray($org), self::stringToArray($conv));
             return $diff;
@@ -1234,7 +1234,7 @@ class Util
             $line .= '"'.str_replace('"', '""', $val ?? '').'",';
         }
         $line = substr($line, 0, -1);
-        fwrite($stream, mb_convert_encoding($line, $encoding, "UTF-8"));
+        fwrite($stream, mb_convert_encoding($line, $encoding, "UTF-8") ?: '');
     }
 
     /**
@@ -1261,7 +1261,7 @@ class Util
             $line .= '"'.str_replace('"', '""', $val ?? '').'",';
         }
         $line = substr($line, 0, -1);
-        fwrite($stream, mb_convert_encoding($line, $encoding, "UTF-8"));
+        fwrite($stream, mb_convert_encoding($line, $encoding, "UTF-8") ?: '');
     }
 
     /**
@@ -1282,7 +1282,7 @@ class Util
             $line .= '"'.str_replace('"', '""', $val ?? '').'",';
         }
         $line = substr($line, 0, -1);
-        fwrite($stream, mb_convert_encoding($line, $encoding, "UTF-8"));
+        fwrite($stream, mb_convert_encoding($line, $encoding, "UTF-8") ?: '');
     }
 
     /**

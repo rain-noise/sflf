@@ -174,7 +174,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/block.unless_errors.php エラー有無分岐用 Smarty タグ
  *
  * @package   SFLF
- * @version   v4.0.4
+ * @version   v4.0.5
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -1990,7 +1990,7 @@ abstract class Form
      */
     protected function valid_ip_v4_address($field, $label, $value)
     {
-        return $this->valid_regex($field, $label, $value, self::IP_V4_PATTERN, 'IPアドレス(CIDR)形式');
+        return $this->valid_regex($field, $label, $value, self::IP_V4_PATTERN, 'IPv4アドレス(CIDR)形式');
     }
 
     //--------------------------------------------------------------------------
@@ -2011,13 +2011,14 @@ abstract class Form
      * ※余分な空白はトリムされます。
      * ※空行は無視されます。
      *
-     * @param string           $field     検査対象フィールド名
-     * @param string           $label     検査対象フィールドのラベル名
-     * @param string|null      $value     検索対象フィールドの値
-     * @param non-empty-string $delimiter 区切り文字 (default: PHP_EOL)
+     * @param string           $field         検査対象フィールド名
+     * @param string           $label         検査対象フィールドのラベル名
+     * @param string|null      $value         検索対象フィールドの値
+     * @param non-empty-string $delimiter     区切り文字 (default: PHP_EOL)
+     * @param bool             $allow_comment コメント許容 (default: true)
      * @return string[]|null null: OK, string: NG = エラーメッセージ
      */
-    protected function valid_ip_v4_address_list($field, $label, $value, $delimiter = PHP_EOL)
+    protected function valid_ip_v4_address_list($field, $label, $value, $delimiter = PHP_EOL, $allow_comment = true)
     {
         if ($this->_empty($value)) {
             return null;
@@ -2025,8 +2026,154 @@ abstract class Form
         assert(!is_null($value));
         $errors = [];
         foreach (explode($delimiter, $value) as $i => $ip) {
-            $ip = trim(preg_replace('/#.*$/','',$ip) ?? '');
+            $ip = trim($allow_comment ? (preg_replace('/#.*$/', '', $ip) ?? '') : $ip);
             if (!empty($ip) && !preg_match(self::IP_V4_PATTERN, $ip)) {
+                $errors[] = ($i + 1)." 行目の{$label} [ {$ip} ] はIPv4アドレス(CIDR)形式で入力して下さい。";
+            }
+        }
+        return $errors;
+    }
+
+    //--------------------------------------------------------------------------
+    /**
+     * IPv6(CIDR)アドレス
+     *
+     * ex)
+     * - [Form::VALID_IP_V6_ADDRESS, Form::APPLY_SAVE]
+     *
+     * @var string
+     */
+    public const VALID_IP_V6_ADDRESS = 'ip_v6_address';
+    /** @var string IPv6の正規表現 */
+    public const IP_V6_PATTERN = '/^(([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))(\/([1-9]|[1-9][0-9]|1[0-1][0-9]|12[0-8]))?$/u';
+
+    /**
+     * IPv6(CIDR)アドレス
+     *
+     * @param string      $field 検査対象フィールド名
+     * @param string      $label 検査対象フィールドのラベル名
+     * @param string|null $value 検索対象フィールドの値
+     * @return string|null null: OK, string: NG = エラーメッセージ
+     */
+    protected function valid_ip_v6_address($field, $label, $value)
+    {
+        return $this->valid_regex($field, $label, $value, self::IP_V6_PATTERN, 'IPv6アドレス(CIDR)形式');
+    }
+
+    //--------------------------------------------------------------------------
+    /**
+     * IPv6(CIDR)アドレスリスト（デフォルト区切り：改行)
+     * ※`#`以降の文字列はコメントとして無視されます。
+     * ※余分な空白はトリムされます。
+     * ※空行は無視されます。
+     *
+     * ex)
+     * - [Form::VALID_IP_V6_ADDRESS_LIST, Form::APPLY_SAVE]
+     * - [Form::VALID_IP_V6_ADDRESS_LIST, 'delimiter', Form::APPLY_SAVE]
+     *
+     * @var string
+     */
+    public const VALID_IP_V6_ADDRESS_LIST = 'ip_v6_address_list';
+
+    /**
+     * IPv6(CIDR)アドレスリスト（デフォルト区切り：改行)
+     * ※`#`以降の文字列はコメントとして無視されます。
+     * ※余分な空白はトリムされます。
+     * ※空行は無視されます。
+     *
+     * @param string           $field         検査対象フィールド名
+     * @param string           $label         検査対象フィールドのラベル名
+     * @param string|null      $value         検索対象フィールドの値
+     * @param non-empty-string $delimiter     区切り文字 (default: PHP_EOL)
+     * @param bool             $allow_comment コメント許容 (default: true)
+     * @return string[]|null null: OK, string: NG = エラーメッセージ
+     */
+    protected function valid_ip_v6_address_list($field, $label, $value, $delimiter = PHP_EOL, $allow_comment = true)
+    {
+        if ($this->_empty($value)) {
+            return null;
+        }
+        assert(!is_null($value));
+        $errors = [];
+        foreach (explode($delimiter, $value) as $i => $ip) {
+            $ip = trim($allow_comment ? (preg_replace('/#.*$/', '', $ip) ?? '') : $ip);
+            if (!empty($ip) && !preg_match(self::IP_V6_PATTERN, $ip)) {
+                $errors[] = ($i + 1)." 行目の{$label} [ {$ip} ] はIPv6アドレス(CIDR)形式で入力して下さい。";
+            }
+        }
+        return $errors;
+    }
+
+
+    //--------------------------------------------------------------------------
+    /**
+     * IP(CIDR)アドレス（IPv4 又は IPv6）
+     * ※本バリデーションは IPv4 と IPv6 の両方を許容します。
+     *
+     * ex)
+     * - [Form::VALID_IP_ADDRESS, Form::APPLY_SAVE]
+     *
+     * @var string
+     */
+    public const VALID_IP_ADDRESS = 'ip_address';
+
+    /**
+     * IP(CIDR)アドレス（IPv4 又は IPv6）
+     * ※本バリデーションは IPv4 と IPv6 の両方を許容します。
+     *
+     * @param string      $field 検査対象フィールド名
+     * @param string      $label 検査対象フィールドのラベル名
+     * @param string|null $value 検索対象フィールドの値
+     * @return string|null null: OK, string: NG = エラーメッセージ
+     */
+    protected function valid_ip_address($field, $label, $value)
+    {
+        if ($this->valid_regex($field, $label, $value, self::IP_V4_PATTERN, 'IPアドレス(CIDR)形式') === null) {
+            return null;
+        }
+        return $this->valid_regex($field, $label, $value, self::IP_V6_PATTERN, 'IPアドレス(CIDR)形式');
+    }
+
+    //--------------------------------------------------------------------------
+    /**
+     * IP(CIDR)アドレス（IPv4 又は IPv6）リスト（デフォルト区切り：改行)
+     * ※本バリデーションは IPv4 と IPv6 の両方を許容します。
+     * ※`#`以降の文字列はコメントとして無視されます。
+     * ※余分な空白はトリムされます。
+     * ※空行は無視されます。
+     *
+     * ex)
+     * - [Form::VALID_IP_ADDRESS_LIST, Form::APPLY_SAVE]
+     * - [Form::VALID_IP_ADDRESS_LIST, 'delimiter', Form::APPLY_SAVE]
+     *
+     * @var string
+     */
+    public const VALID_IP_ADDRESS_LIST = 'ip_address_list';
+
+    /**
+     * IP(CIDR)アドレス（IPv4 又は IPv6）リスト（デフォルト区切り：改行)
+     * ※本バリデーションは IPv4 と IPv6 の両方を許容します。
+     * ※`#`以降の文字列はコメントとして無視されます。
+     * ※余分な空白はトリムされます。
+     * ※空行は無視されます。
+     *
+     * @param string           $field         検査対象フィールド名
+     * @param string           $label         検査対象フィールドのラベル名
+     * @param string|null      $value         検索対象フィールドの値
+     * @param non-empty-string $delimiter     区切り文字 (default: PHP_EOL)
+     * @param bool             $allow_comment コメント許容 (default: true)
+     * @return string[]|null null: OK, string: NG = エラーメッセージ
+     */
+    protected function valid_ip_address_list($field, $label, $value, $delimiter = PHP_EOL, $allow_comment = true)
+    {
+        if ($this->_empty($value)) {
+            return null;
+        }
+        assert(!is_null($value));
+        $errors = [];
+        foreach (explode($delimiter, $value) as $i => $ip) {
+            $ip = trim($allow_comment ? (preg_replace('/#.*$/', '', $ip) ?? '') : $ip);
+            if (!empty($ip) && !(preg_match(self::IP_V4_PATTERN, $ip) || preg_match(self::IP_V6_PATTERN, $ip))) {
                 $errors[] = ($i + 1)." 行目の{$label} [ {$ip} ] はIPアドレス(CIDR)形式で入力して下さい。";
             }
         }

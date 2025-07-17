@@ -31,7 +31,7 @@
 .paginate .pager li span { border: 1px solid #eee; padding: 5px 10px 5px; border-radius: 4px; -webkit-border-radius: 4px; -moz-border-radius: 4px; color: #333; }
 
 @package   SFLF
-@version   v4.0.0
+@version   v4.0.1
 @author    github.com/rain-noise
 @copyright Copyright (c) 2017 github.com/rain-noise
 @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -39,20 +39,16 @@
 *}
 {if $type == 'FORM'}
 <script type="text/javascript">
-<!--
 	var pageJump = function(page) {
 		jQuery('{$hidden}').val(page);
 		jQuery('{$submit}').click();
 	};
-//-->
 </script>
 {else}
 <script type="text/javascript">
-<!--
 	var pageJump = function(page) {
 		location.href = '{$url}' + page;
 	};
-//-->
 </script>
 {/if}
 <div class="paginate">

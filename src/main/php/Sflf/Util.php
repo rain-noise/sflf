@@ -17,7 +17,7 @@
  * $pass = Util::randomCode(8);
  *
  * @package   SFLF
- * @version   v4.1.2
+ * @version   v4.1.3
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -791,7 +791,7 @@ class Util
      *
      * @param string $url リダイレクトURL
      * @param array<string, mixed> $query クエリパラメータ (default: [])
-     * @return void
+     * @return never
      */
     public static function redirect($url, $query = [])
     {
@@ -820,7 +820,7 @@ class Util
      *
      * @param string $data        出力内容
      * @param int    $http_status HTTPステータス (default: 200)
-     * @return void
+     * @return never
      */
     public static function writePlain($data, $http_status = 200)
     {
@@ -837,7 +837,7 @@ class Util
      *
      * @param object|array<array-key, mixed> $data        オブジェクト
      * @param int                            $http_status HTTPステータス (default: 200)
-     * @return void
+     * @return never
      */
     public static function writeJson($data, $http_status = 200)
     {
@@ -855,7 +855,7 @@ class Util
      * @param object|array<array-key, mixed> $data        オブジェクト
      * @param string                         $callback    コールバック関数
      * @param int                            $http_status HTTPステータス (default: 200)
-     * @return void
+     * @return never
      */
     public static function writeJsonp($data, $callback, $http_status = 200)
     {
@@ -899,7 +899,7 @@ class Util
     /**
      * 多次元配列を一次元配列に変換します。
      *
-     * @param array<mixed[]> $array 多次元配列
+     * @param array<mixed[]>|mixed[] $array 多次元配列
      * @return mixed[] 1次元配列
      */
     public static function flatten(array $array)
@@ -1292,7 +1292,7 @@ class Util
      *
      * @param resource $stream 出力先ストリーム
      * @param bool $as_file 対象ストリームがファイルか否か
-     * @return void
+     * @return ($as_file is true ? void : never)
      */
     public static function csvClose($stream, $as_file)
     {

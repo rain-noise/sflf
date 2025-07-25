@@ -1097,7 +1097,7 @@ class Util
      * @param string[]|array<string, string>|array<string[]>                                 $col_labels ヘッダ行のラベル指定(配列又は連想配列) (default: [])
      * @param string                                                                         $encoding   CSVファイルエンコーディング (default: SJIS-win)
      * @param bool                                                                           $with_bom   BOM付き (default: false)
-     * @return void
+     * @return ($as_file is true ? void : never)
      */
     public static function writeCsv($file_name, $as_file, $converter, array $rs, $cols, $has_header = true, $col_labels = [], $encoding = 'SJIS-win', $with_bom = false)
     {

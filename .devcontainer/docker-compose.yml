@@ -1,4 +1,6 @@
 version: '3'
+volumes:
+  mariadb:
 services:
   # Workspace for Dev Container Development
   workspace:
@@ -21,3 +23,4 @@ services:
     volumes:
       - ./docker/mariadb/initdb.d:/docker-entrypoint-initdb.d
       - ./docker/mariadb/conf.d:/etc/mysql/conf.d
+      - mariadb:/var/lib/mysql

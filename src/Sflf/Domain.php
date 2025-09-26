@@ -106,8 +106,8 @@
  *     }
  * }
  *
- * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/domain/*.php 汎用ドメイン
- * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/function.domains.php ドメイン整形出力用 Smarty タグ
+ * @see https://github.com/rain-noise/sflf/blob/master/src/extensions/domain/*.php 汎用ドメイン
+ * @see https://github.com/rain-noise/sflf/blob/master/src/extensions/smarty/plugins/function.domains.php ドメイン整形出力用 Smarty タグ
  *
  * @package   SFLF
  * @version   v4.0.0

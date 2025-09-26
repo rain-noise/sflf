@@ -30,7 +30,7 @@
  * Purpose:  ドメイン選択フォーム及びラベルを表示する
  * -------------------------------------------------------------
  *
- * @see       https://github.com/rain-noise/sflf/blob/master/src/main/php/Sflf/Domain.php
+ * @see       https://github.com/rain-noise/sflf/blob/master/src/Sflf/Domain.php
  *
  * @package   SFLF
  * @version   v4.0.0

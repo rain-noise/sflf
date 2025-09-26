@@ -168,10 +168,10 @@
  * @todo multiple file form 対応
  * @todo sub form の file form / multiple file form 対応
  *
- * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/function.hiddens.php    hiddenタグ出力用 Smarty タグ
- * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/function.errors.php     エラーメッセージ出力用 Smarty タグ
- * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/block.if_errors.php     エラー有無分岐用 Smarty タグ
- * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/block.unless_errors.php エラー有無分岐用 Smarty タグ
+ * @see https://github.com/rain-noise/sflf/blob/master/src/extensions/smarty/plugins/function.hiddens.php    hiddenタグ出力用 Smarty タグ
+ * @see https://github.com/rain-noise/sflf/blob/master/src/extensions/smarty/plugins/function.errors.php     エラーメッセージ出力用 Smarty タグ
+ * @see https://github.com/rain-noise/sflf/blob/master/src/extensions/smarty/plugins/block.if_errors.php     エラー有無分岐用 Smarty タグ
+ * @see https://github.com/rain-noise/sflf/blob/master/src/extensions/smarty/plugins/block.unless_errors.php エラー有無分岐用 Smarty タグ
  *
  * @package   SFLF
  * @version   v4.0.6

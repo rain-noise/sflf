@@ -31,7 +31,7 @@
  * $mail->send();
  *
  * @package   SFLF
- * @version   v4.0.0
+ * @version   v4.0.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -356,7 +356,7 @@ class Mail
         }
         $matches = [];
         if (preg_match('/^("([^"].*)" *)|(([^<].*) *)<(.*)>$/', trim($address), $matches)) {
-            return mb_encode_mimeheader(trim(!empty($matches[2]) ? $matches[2] : ($matches[4] ?? '')), $charset, $transfer_encoding, $linefeed)."<".($matches[5] ?? '').">";
+            return mb_encode_mimeheader(trim(!empty($matches[2]) ? $matches[2] : $matches[4]), $charset, $transfer_encoding, $linefeed)."<".($matches[5] ?? '').">";
         }
         return "<".$address.">";
     }

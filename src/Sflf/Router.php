@@ -37,7 +37,7 @@
  * }
  *
  * @package   SFLF
- * @version   v4.1.0
+ * @version   v4.1.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -141,6 +141,22 @@ class Router
         } catch (\Throwable $e) {
             throw new NoRouteException("Route Not Found : Controller [ {$controller} ] can not instantiate.", 0, $e);
         }
+    }
+
+    /**
+     * 自身のルート（コントローラー::アクション）が存在するかチェックします。
+     *
+     * @return bool
+     */
+    public function exists()
+    {
+        $clazz = $this->_getControllerName();
+        if (!class_exists($clazz)) {
+            return false;
+        }
+
+        $method = $this->_getMethodName();
+        return method_exists($clazz, $method);
     }
 
     /**

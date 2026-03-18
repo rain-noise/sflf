@@ -156,7 +156,13 @@ class Router
         }
 
         $method = $this->_getMethodName();
-        return method_exists($clazz, $method);
+        try {
+            $invoker = new \ReflectionMethod($clazz, $method);
+        } catch (\Throwable $e) {
+            return false;
+        }
+
+        return true;
     }
 
     /**

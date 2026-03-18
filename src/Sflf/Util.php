@@ -17,7 +17,7 @@
  * $pass = Util::randomCode(8);
  *
  * @package   SFLF
- * @version   v4.1.3
+ * @version   v4.1.4
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -828,6 +828,23 @@ class Util
         http_response_code($http_status);
         header('Content-Type: text/plain; charset=UTF-8');
         echo $data;
+        exit();
+    }
+
+    /**
+     * データを HTML形式 で書き出します。
+     * ※本メソッドは exit を call します。
+     *
+     * @param string $html        HTMLデータ
+     * @param int    $http_status HTTPステータス (default: 200)
+     * @return never
+     */
+    public static function writeHtml($html, $http_status = 200)
+    {
+        ob_clean();
+        http_response_code($http_status);
+        header('Content-Type: text/html; charset=UTF-8');
+        echo $html;
         exit();
     }
 

@@ -25,7 +25,7 @@
  * Purpose:  <input type="hidden" /> タグを出力する
  * -------------------------------------------------------------
  *
- * @see       https://github.com/rain-noise/sflf/blob/master/src/main/php/Sflf/Form.php
+ * @see       https://github.com/rain-noise/sflf/blob/master/src/Sflf/Form.php
  *
  * @package   SFLF
  * @version   v4.0.0

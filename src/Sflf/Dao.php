@@ -32,7 +32,7 @@
  *     // Something to do
  * });
  *
- * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/includes/paginate.tpl ページ送り Smarty テンプレート
+ * @see https://github.com/rain-noise/sflf/blob/master/src/extensions/smarty/includes/paginate.tpl ページ送り Smarty テンプレート
  *
  * @package   SFLF
  * @version   v4.0.0

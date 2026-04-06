@@ -23,7 +23,7 @@
  *     //Something to do
  * }
  *
- * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/function.token.php トークン出力用 Smarty タグ
+ * @see https://github.com/rain-noise/sflf/blob/master/src/extensions/smarty/plugins/function.token.php トークン出力用 Smarty タグ
  *
  * @package   SFLF
  * @version   v4.0.0

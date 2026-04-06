@@ -16,7 +16,7 @@
  * Purpose:  トークンを hidden タグで出力する
  * -------------------------------------------------------------
  *
- * @see       https://github.com/rain-noise/sflf/blob/master/src/main/php/Sflf/Token.php
+ * @see       https://github.com/rain-noise/sflf/blob/master/src/Sflf/Token.php
  *
  * @package   SFLF
  * @version   v4.0.0

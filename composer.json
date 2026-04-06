@@ -10,7 +10,7 @@
     "license": "MIT",
     "type": "project",    
     "config": {
-        "vendor-dir": "src/main/php/vendor"
+        "vendor-dir": "src/vendor"
     },
     "require-dev": {
         "smarty/smarty": "^5.4",
@@ -19,8 +19,8 @@
     },
     "autoload": {
         "classmap": [
-            "src/main/php/Sflf/",
-            "src/main/php/extensions/modules"
+            "src/Sflf/",
+            "src/extensions/modules"
         ]
     },
     "autoload-dev": {

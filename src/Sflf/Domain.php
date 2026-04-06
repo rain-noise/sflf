@@ -22,21 +22,21 @@
  * Sex::init();
  *
  * // 定数不要系
- * class Sex extends Domain {
+ * final class Sex extends Domain {
  *     protected static function generate() {
  *         return array(
- *              new Sex('M', '男性')
- *             ,new Sex('F', '女性')
+ *              new static('M', '男性')
+ *             ,new static('F', '女性')
  *         );
  *     }
  * }
  *
  * // メソッド拡張系
- * class Sex extends Domain {
+ * final class Sex extends Domain {
  *     protected static function generate() {
  *         return array(
- *              new Sex(1, '男性')
- *             ,new Sex(2, '女性')
+ *              new static(1, '男性')
+ *             ,new static(2, '女性')
  *         );
  *     }
  *
@@ -102,12 +102,12 @@
  *     }
  *
  *     protected static function generate() {
- *         return Dao::select('SELECT prefecture_id AS value, name AS label FROM prefecture ORDER BY prefecture_id ASC', [], Prefecture::class);
+ *         return Dao::select('SELECT prefecture_id AS value, name AS label FROM prefecture ORDER BY prefecture_id ASC', [], static::class);
  *     }
  * }
  *
- * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/domain/*.php 汎用ドメイン
- * @see https://github.com/rain-noise/sflf/blob/master/src/main/php/extensions/smarty/plugins/function.domains.php ドメイン整形出力用 Smarty タグ
+ * @see https://github.com/rain-noise/sflf/blob/master/src/extensions/domain/*.php 汎用ドメイン
+ * @see https://github.com/rain-noise/sflf/blob/master/src/extensions/smarty/plugins/function.domains.php ドメイン整形出力用 Smarty タグ
  *
  * @package   SFLF
  * @version   v4.0.0

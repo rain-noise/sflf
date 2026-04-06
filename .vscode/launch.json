@@ -10,7 +10,7 @@
             "request": "launch",
             "port": 9003
             // "pathMappings": {
-            //     "/var/www/":"${workspaceRoot}/src/main/php/var/www/"
+            //     "/var/www/":"${workspaceRoot}/src/var/www/"
             // }
         }
     ]

@@ -219,7 +219,7 @@ class DaoTest extends SflfTestCase
     public function test_query_error()
     {
         $this->expectException(DatabaseException::class);
-        $this->expectExceptionMessage("Execute query failed : 1054 Unknown column 'invalid_col' in 'where clause'\n--- [SQL] ---\nSELECT * FROM users WHERE invalid_col = 'invalid'\n-------------\n");
+        $this->expectExceptionMessage("Execute query failed : 1054 Unknown column 'invalid_col' in 'WHERE'\n--- [SQL] ---\nSELECT * FROM users WHERE invalid_col = 'invalid'\n-------------\n");
 
         Dao::query("SELECT * FROM users WHERE invalid_col = 'invalid'");
     }

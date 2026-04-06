@@ -14,7 +14,7 @@
  * Cookie::remove('key');
  *
  * @package   SFLF
- * @version   v4.0.0
+ * @version   v4.1.0
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -59,12 +59,13 @@ class Cookie
      * @param string                                      $expiry   有効期限 (default: '+1 day')
      * @param string                                      $path     パス (default: '/')
      * @param string                                      $domain   ドメイン (default: '')
-     * @param bool                                        $secure   セキュア (default: false)
+     * @param bool                                        $secure   セキュア (default: true)
+     * @param bool                                        $httponly HTTPのみ (default: true)
      * @param 'Lax'|'lax'|'None'|'none'|'Strict'|'strict' $samesite セイムサイト (default: 'Lax')
      * @return bool true : 成功／false : 失敗
      * @throws \InvalidArgumentException Invalid expiry format, expiry MUST be able to converted by strtotime()
      */
-    public static function set($name, $value, $expiry = '+1 day', $path = '/', $domain = '', $secure = false, $samesite = 'Lax')
+    public static function set($name, $value, $expiry = '+1 day', $path = '/', $domain = '', $secure = true, $httponly = true, $samesite = 'Lax')
     {
         //$domain = $domain ? $domain : $_SERVER['HTTP_HOST'] ;
         if (($expiry = strtotime($expiry)) === false) {
@@ -77,9 +78,10 @@ class Cookie
                 'domain'   => $domain,
                 'secure'   => $secure,
                 'samesite' => $samesite,
+                'httponly' => $httponly,
             ]);
         } else {
-            $result = setcookie($name, $value, $expiry, $path."; SameSite={$samesite}", $domain, $secure);
+            $result = setcookie($name, $value, $expiry, $path."; SameSite={$samesite}", $domain, $secure, $httponly);
         }
         if ($result) {
             $_COOKIE[$name] = $value;

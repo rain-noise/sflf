@@ -174,7 +174,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/extensions/smarty/plugins/block.unless_errors.php エラー有無分岐用 Smarty タグ
  *
  * @package   SFLF
- * @version   v4.0.6
+ * @version   v4.0.7
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -705,7 +705,6 @@ abstract class Form
                 // Validation 実行
                 $method  = "valid_{$check}";
                 $invoker = new \ReflectionMethod($clazz, $method);
-                $invoker->setAccessible(true);
 
                 $error = $invoker->invokeArgs($this, $args);
                 if (!empty($error)) {

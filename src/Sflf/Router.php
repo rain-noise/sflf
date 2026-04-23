@@ -37,7 +37,7 @@
  * }
  *
  * @package   SFLF
- * @version   v4.1.2
+ * @version   v4.1.3
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -146,24 +146,25 @@ class Router
     /**
      * 自身のルート（コントローラー::アクション）が存在するかチェックします。
      *
-     * @param bool $accessible publicメソッド以外へのアクセスを許可するか否か (default: false)
      * @return bool
      */
-    public function exists($accessible = false)
+    public function exists()
     {
-        $clazz = $this->_getControllerName();
-        if (!class_exists($clazz)) {
-            return false;
-        }
-
+        $clazz  = $this->_getControllerName();
         $method = $this->_getMethodName();
+        $args   = $this->getArgs();
+
         try {
             $invoker = new \ReflectionMethod($clazz, $method);
         } catch (\Throwable $e) {
             return false;
         }
 
-        if (!$accessible && !$invoker->isPublic()) {
+        if (!$this->accessible && !$invoker->isPublic()) {
+            return false;
+        }
+
+        if (count($args) < $invoker->getNumberOfRequiredParameters()) {
             return false;
         }
 

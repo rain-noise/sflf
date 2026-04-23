@@ -1,5 +1,5 @@
 <?php
-// namespace App\Core; // 名前空間が必要な場合はコメントを解除して下さい。（任意の名前空間による設定も可）
+namespace App\Core; // 名前空間が必要な場合はコメントを解除して下さい。（任意の名前空間による設定も可）
 
 /**
  * Single File Low Functionality Class Tools
@@ -37,7 +37,7 @@
  * }
  *
  * @package   SFLF
- * @version   v4.1.1
+ * @version   v4.1.2
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -146,9 +146,10 @@ class Router
     /**
      * 自身のルート（コントローラー::アクション）が存在するかチェックします。
      *
+     * @param bool $accessible publicメソッド以外へのアクセスを許可するか否か (default: false)
      * @return bool
      */
-    public function exists()
+    public function exists($accessible = false)
     {
         $clazz = $this->_getControllerName();
         if (!class_exists($clazz)) {
@@ -159,6 +160,10 @@ class Router
         try {
             $invoker = new \ReflectionMethod($clazz, $method);
         } catch (\Throwable $e) {
+            return false;
+        }
+
+        if (!$accessible && !$invoker->isPublic()) {
             return false;
         }
 
@@ -183,11 +188,14 @@ class Router
             throw new NoRouteException("Route Not Found : Controller [ {$clazz}->{$method}() ] can not invoke.", 0, $e);
         }
 
+        if (!$this->accessible && !$invoker->isPublic()) {
+            throw new NoRouteException("Route Not Found : Controller [ {$clazz}->{$method}() ] can not invoke, because of not accessible.");
+        }
+
         if (count($args) < $invoker->getNumberOfRequiredParameters()) {
             throw new NoRouteException("Route Not Found : Controller [ {$clazz}->{$method}() ] can not invoke, because of not enough required args count.");
         }
 
-        $invoker->setAccessible($this->accessible);
         return $invoker->invokeArgs($controller, $args);
     }
 

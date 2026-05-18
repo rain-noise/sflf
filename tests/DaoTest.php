@@ -669,30 +669,31 @@ class DaoTest extends SflfTestCase
     public function test_compile_and_Query()
     {
         $query = Dao::compile(
-            "SELECT * FROM i=:i AND d=:d AND s=:s AND t=:t AND a IN (:a) AND ss=:s AND baz=:baz",
+            "SELECT * FROM i=:i AND d=:d AND s=:s AND t=:t AND a IN (:a) AND aina IN (:aina) AND ss=:s AND baz=:baz",
             [
                 "i"    => 123,
                 "d"    => 12.3,
                 "s"    => "foo",
                 "t"    => new DateTime("2023-01-02 12:34:56"),
                 "a"    => [456, 45.6, "bar", new DateTime("2023-03-04 12:34:56")],
+                "aina" => [1, [2, ['3']], '4'], // 多元配列の子要素配列は NULL として処理される
                 ":baz" => "baz" // Deprecated
             ]
         );
         $this->assertEquals(
-            "SELECT * FROM i=?/*0*/ AND d=?/*1*/ AND s=?/*2*/ AND t=?/*3*/ AND a IN (?/*4*/, ?/*5*/, ?/*6*/, ?/*7*/) AND ss=?/*8*/ AND baz=?/*9*/",
+            "SELECT * FROM i=?/*0*/ AND d=?/*1*/ AND s=?/*2*/ AND t=?/*3*/ AND a IN (?/*4*/, ?/*5*/, ?/*6*/, ?/*7*/) AND aina IN (?/*8*/, ?/*9*/, ?/*10*/) AND ss=?/*11*/ AND baz=?/*12*/",
             $query->sql()
         );
         $this->assertEquals(
-            [123, 12.3, "foo", "2023-01-02 12:34:56", 456, 45.6, "bar", "2023-03-04 12:34:56", "foo", "baz"],
+            [123, 12.3, "foo", "2023-01-02 12:34:56", 456, 45.6, "bar", "2023-03-04 12:34:56", 1, null, '4', "foo", "baz"],
             $query->params()
         );
         $this->assertEquals(
-            "idssidssss",
+            "idssidssissss",
             $query->bindParamTypes()
         );
         $this->assertEquals(
-            "/* Emulated SQL */ SELECT * FROM i=123 AND d=12.3 AND s='foo' AND t='2023-01-02 12:34:56' AND a IN (456, 45.6, 'bar', '2023-03-04 12:34:56') AND ss='foo' AND baz='baz'",
+            "/* Emulated SQL */ SELECT * FROM i=123 AND d=12.3 AND s='foo' AND t='2023-01-02 12:34:56' AND a IN (456, 45.6, 'bar', '2023-03-04 12:34:56') AND aina IN (1, NULL, '4') AND ss='foo' AND baz='baz'",
             $query->emulate()
         );
     }

@@ -35,7 +35,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/extensions/smarty/includes/paginate.tpl ページ送り Smarty テンプレート
  *
  * @package   SFLF
- * @version   v4.0.0
+ * @version   v4.0.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -730,7 +730,7 @@ class Dao
                 $holder = "";
                 if (is_array($val)) {
                     foreach ($val as $v) {
-                        $real_params[] = $v;
+                        $real_params[] = is_array($v) ? null : $v;
                         $holder .= "?/*{$count}*/, ";
                         $count++;
                     }

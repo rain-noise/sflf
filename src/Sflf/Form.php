@@ -842,7 +842,7 @@ abstract class Form
         switch ($convert->to) {
             case To::Single:
                 if (is_array($value)) {
-                    $converted_value = count($value) == 1 ? $value[0] : $convert->fallback;
+                    $converted_value = count($value) == 1 ? array_values($value)[0] : $convert->fallback;
                     if (!$convert->allows_sublist && is_array($converted_value)) {
                         $converted_value = $convert->fallback;
                     }

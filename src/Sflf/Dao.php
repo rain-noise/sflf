@@ -35,7 +35,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/extensions/smarty/includes/paginate.tpl ページ送り Smarty テンプレート
  *
  * @package   SFLF
- * @version   v4.0.0
+ * @version   v4.0.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -686,6 +686,10 @@ class Dao
 
     /**
      * SQLテンプレートを展開します。
+     * 
+     * なお、一次元配列のパラメータは要素数分のカンマ区切りのプレースホルダーに展開されます。
+     * この時、配列パラメータの子要素に配列が含まれる場合、その配列は条件指定の値として不明な要素となるため、
+     * パラメータの値が null に変換されて処理されます。
      *
      * @param  string                      $sql    SQL文
      * @param  array<string, mixed>|object $params パラメータ
@@ -730,7 +734,7 @@ class Dao
                 $holder = "";
                 if (is_array($val)) {
                     foreach ($val as $v) {
-                        $real_params[] = $v;
+                        $real_params[] = is_array($v) ? null : $v;
                         $holder .= "?/*{$count}*/, ";
                         $count++;
                     }

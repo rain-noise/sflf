@@ -10,6 +10,7 @@
  * require_once "/path/to/Form.php"; // or use AutoLoader
  *
  * class UserForm extends Form {
+ *     #[Convert(To::Single)] // パラメータが配列で来たら単数形式に変換する
  *     public $user_id;
  *     public $name;
  *     public $mail_address;
@@ -174,7 +175,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/extensions/smarty/plugins/block.unless_errors.php エラー有無分岐用 Smarty タグ
  *
  * @package   SFLF
- * @version   v4.0.7
+ * @version   v4.1.0
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -287,7 +288,7 @@ abstract class Form
 
     /**
      * URLヘッダ情報キャッシュ
-     * 
+     *
      * @var array<string, array<int, array<string, string|array<string>>>> ['url' => [redirect_step => ['header_name' => 'header_body'|['header_body', ...]]], ...]
      */
     protected $_url_header_cache_ = [];
@@ -467,7 +468,7 @@ abstract class Form
                 continue;
             }
 
-            $this->$field = $converter($field, static::_has($src, $field), $src, static::_get($src, $field), $this, $origin);
+            $this->_set($field, $converter($field, static::_has($src, $field), $src, static::_get($src, $field), $this, $origin));
 
             if (isset($files[$field])) {
                 $this->$field = new UploadFile($clazz, $field, $files[$field]);
@@ -815,6 +816,58 @@ abstract class Form
     }
 
     /**
+     * Convertアトリビュートの指定に従い入力値の「配列⇔単独」変換を行います。
+     *
+     * @param string $property プロパティ名
+     * @param mixed $value     設定する値
+     * @return void
+     */
+    private function _set($property, $value)
+    {
+        $reflection = new \ReflectionProperty($this, $property);
+        $converts   = $reflection->getAttributes(Convert::class);
+
+        if (empty($converts)) {
+            $this->$property = $value;
+            return;
+        }
+
+        $convert = $converts[0]->newInstance();
+        if ($value === null) {
+            $this->$property = $convert->fallback;
+            return;
+        }
+
+        $converted_value = $value;
+        switch ($convert->to) {
+            case To::Single:
+                if (is_array($value)) {
+                    $converted_value = count($value) == 1 ? array_values($value)[0] : $convert->fallback;
+                    if (!$convert->allows_sublist && is_array($converted_value)) {
+                        $converted_value = $convert->fallback;
+                    }
+                }
+                break;
+
+            case To::List:
+                if (!is_array($value)) {
+                    $converted_value = [$value];
+                } else {
+                    if (!$convert->allows_sublist) {
+                        $converted_value = array_values(array_filter($value, fn ($v) => !is_array($v)));
+                    }
+                }
+                break;
+        }
+
+        try {
+            $this->$property = $converted_value;
+        } catch (\TypeError $e) {
+            $this->$property = $convert->fallback;
+        }
+    }
+
+    /**
      * 未入力の定義
      * 各種 valid_* の validation メソッドでの入力判定は本メソッドを使用して下さい。
      *
@@ -834,7 +887,7 @@ abstract class Form
 
     /**
      * 指定URLのヘッダ情報を取得します。
-     * 
+     *
      * ※ヘッダ名は小文字に変換されます
      * ※HTTPステータスラインは以下の特殊ヘッダ名で取得できます。
      *   - @status-line   : HTTP ステータスライン (='{@http-version} {@status-code} {@reason-phrase}')
@@ -862,12 +915,12 @@ abstract class Form
                     'ignore_errors' => true,
                     'timeout'       => 3,
                 ],
-                'ssl'  => [
+                'ssl' => [
                     'verify_peer'      => false,
                     'verify_peer_name' => false
                 ],
             ]));
-    
+
             if ($headers === false) {
                 return $this->_url_header_cache_[$url] = [];
             }
@@ -876,21 +929,21 @@ abstract class Form
         }
 
         $analyzed_headers = [];
-        $step = -1;
+        $step             = -1;
         foreach ($headers as $header) {
-            if(strpos($header,'HTTP/') === 0){
+            if (strpos($header, 'HTTP/') === 0) {
                 $step++;
-                [$version, $code, $reason] = explode(' ', $header, 3);
-                $analyzed_headers[$step]['@status-line'] = $header;
-                $analyzed_headers[$step]['@http-version']     = $version;
-                $analyzed_headers[$step]['@status-code']      = $code;
-                $analyzed_headers[$step]['@reason-phrase']    = $reason;
+                [$version, $code, $reason]                 = explode(' ', $header, 3);
+                $analyzed_headers[$step]['@status-line']   = $header;
+                $analyzed_headers[$step]['@http-version']  = $version;
+                $analyzed_headers[$step]['@status-code']   = $code;
+                $analyzed_headers[$step]['@reason-phrase'] = $reason;
                 continue;
             }
 
             [$header_name, $header_body] = explode(':', $header, 2);
-            $header_name = strtolower(trim($header_name));
-            $header_body = trim($header_body);
+            $header_name                 = strtolower(trim($header_name));
+            $header_body                 = trim($header_body);
             if (!isset($analyzed_headers[$step][$header_name])) {
                 $analyzed_headers[$step][$header_name] = $header_body;
             } else {
@@ -1863,10 +1916,10 @@ abstract class Form
      */
     protected function valid_url_header_match($field, $label, $value, $header_name, $pattern, $pattern_label = null)
     {
-        if ($this->_empty($value)) { 
+        if ($this->_empty($value)) {
             return null;
         }
-        $headers       = $this->_getHeaders($value);
+        $headers = $this->_getHeaders($value);
         if (empty($headers)) {
             return "{$label}のヘッダ情報取得に失敗しました。指定URLはブラウザ以外からのアクセスに制限が掛かっている可能性があるため、正しく処理できません。";
         }
@@ -2265,7 +2318,7 @@ abstract class Form
 
     /**
      * 半角英数記号
-     * 
+     *
      * @param string      $field 検査対象フィールド名
      * @param string      $label 検査対象フィールドのラベル名
      * @param string|null $value 検索対象フィールドの値
@@ -2517,44 +2570,44 @@ abstract class Form
      * @var array<array-key, string>
      */
     private static $_LETTER_TO_REGEX = [
-        "^" => "^",
-        "$" => "$",
-        "a" => "([aAａＡⒶⓐ🄰🅐🅰@＠])",
-        "b" => "([bBｂＢⒷⓑ🄱🅑🅱])",
-        "c" => "([cCｃＣⒸⓒ🄲🅒🅲©])",
-        "d" => "([dDｄＤⒹⓓ🄳🅓🅳])",
-        "e" => "([eEｅＥⒺⓔ🄴🅔🅴])",
-        "f" => "([fFｆＦⒻⓕ🄵🅕🅵])",
-        "g" => "([gGｇＧⒼⓖ🄶🅖🅶])",
-        "h" => "([hHｈＨⒽⓗ🄷🅗🅷])",
-        "i" => "([iIｉＩⒾⓘ🄸🅘🅸])",
-        "j" => "([jJｊＪⒿⓙ🄹🅙🅹])",
-        "k" => "([kKｋＫⓀⓚ🄺🅚🅺])",
-        "l" => "([lLｌＬⓁⓛ🄻🅛🅻])",
-        "m" => "([mMｍＭⓂⓜ🄼🅜🅼])",
-        "n" => "([nNｎＮⓃⓝ🄽🅝🅽])",
-        "o" => "([oOｏＯⓄⓞ🄾🅞🅾])",
-        "p" => "([pPｐＰⓅⓟ🄿🅟🅿℗])",
-        "q" => "([qQｑＱⓆⓠ🅀🅠🆀])",
-        "r" => "([rRｒＲⓇⓡ🅁🅡🆁®])",
-        "s" => "([sSｓＳⓈⓢ🅂🅢🆂])",
-        "t" => "([tTｔＴⓉⓣ🅃🅣🆃])",
-        "u" => "([uUｕＵⓊⓤ🅄🅤🆄])",
-        "v" => "([vVｖＶⓋⓥ🅅🅥🆅])",
-        "w" => "([wWｗＷⓌⓦ🅆🅦🆆])",
-        "x" => "([xXｘＸⓍⓧ🅇🅧🆇])",
-        "y" => "([yYｙＹⓎⓨ🅈🅨🆈])",
-        "z" => "([zZｚＺⓏⓩ🅉🅩🆉])",
-        "0" => "([0０⓿])",
-        "1" => "([1１①⓵❶➀➊㊀一壱壹弌🈩])",
-        "2" => "([2２②⓶❷➁➋㊁二弐貳弎🈔])",
-        "3" => "([3３③⓷❸➂➌㊂三参參弎🈪])",
-        "4" => "([4４④⓸❹➃➍㊃四肆])",
-        "5" => "([5５⑤⓹❺➄➎㊄五伍])",
-        "6" => "([6６⑥⓺❻➅➏㊅六陸])",
-        "7" => "([7７⑦⓻❼➆➐㊆七漆柒質])",
-        "8" => "([8８⑧⓼❽➇➑㊇八捌])",
-        "9" => "([9９⑨⓽❾➈➒㊈九玖])",
+        "^"  => "^",
+        "$"  => "$",
+        "a"  => "([aAａＡⒶⓐ🄰🅐🅰@＠])",
+        "b"  => "([bBｂＢⒷⓑ🄱🅑🅱])",
+        "c"  => "([cCｃＣⒸⓒ🄲🅒🅲©])",
+        "d"  => "([dDｄＤⒹⓓ🄳🅓🅳])",
+        "e"  => "([eEｅＥⒺⓔ🄴🅔🅴])",
+        "f"  => "([fFｆＦⒻⓕ🄵🅕🅵])",
+        "g"  => "([gGｇＧⒼⓖ🄶🅖🅶])",
+        "h"  => "([hHｈＨⒽⓗ🄷🅗🅷])",
+        "i"  => "([iIｉＩⒾⓘ🄸🅘🅸])",
+        "j"  => "([jJｊＪⒿⓙ🄹🅙🅹])",
+        "k"  => "([kKｋＫⓀⓚ🄺🅚🅺])",
+        "l"  => "([lLｌＬⓁⓛ🄻🅛🅻])",
+        "m"  => "([mMｍＭⓂⓜ🄼🅜🅼])",
+        "n"  => "([nNｎＮⓃⓝ🄽🅝🅽])",
+        "o"  => "([oOｏＯⓄⓞ🄾🅞🅾])",
+        "p"  => "([pPｐＰⓅⓟ🄿🅟🅿℗])",
+        "q"  => "([qQｑＱⓆⓠ🅀🅠🆀])",
+        "r"  => "([rRｒＲⓇⓡ🅁🅡🆁®])",
+        "s"  => "([sSｓＳⓈⓢ🅂🅢🆂])",
+        "t"  => "([tTｔＴⓉⓣ🅃🅣🆃])",
+        "u"  => "([uUｕＵⓊⓤ🅄🅤🆄])",
+        "v"  => "([vVｖＶⓋⓥ🅅🅥🆅])",
+        "w"  => "([wWｗＷⓌⓦ🅆🅦🆆])",
+        "x"  => "([xXｘＸⓍⓧ🅇🅧🆇])",
+        "y"  => "([yYｙＹⓎⓨ🅈🅨🆈])",
+        "z"  => "([zZｚＺⓏⓩ🅉🅩🆉])",
+        "0"  => "([0０⓿])",
+        "1"  => "([1１①⓵❶➀➊㊀一壱壹弌🈩])",
+        "2"  => "([2２②⓶❷➁➋㊁二弐貳弎🈔])",
+        "3"  => "([3３③⓷❸➂➌㊂三参參弎🈪])",
+        "4"  => "([4４④⓸❹➃➍㊃四肆])",
+        "5"  => "([5５⑤⓹❺➄➎㊄五伍])",
+        "6"  => "([6６⑥⓺❻➅➏㊅六陸])",
+        "7"  => "([7７⑦⓻❼➆➐㊆七漆柒質])",
+        "8"  => "([8８⑧⓼❽➇➑㊇八捌])",
+        "9"  => "([9９⑨⓽❾➈➒㊈九玖])",
         'ア' => '([アｱ㋐あァｧぁ])',
         'イ' => '([イｲ㋑㋼いィｨぃヰゐ])',
         'ウ' => '([ウｳ㋒うゥｩぅヱゑ])',
@@ -4459,4 +4512,46 @@ class InvalidValidateRuleException extends \RuntimeException
     {
         parent::__construct($message, $code, $previous);
     }
+}
+
+/**
+ * Form に対する値の設定に際して、配列⇨単体／単体⇨配列の自動変換を行うことを指示するアトリビュート。
+ * 本設定は Form::popurate() で値を設定した際に有効になります。
+ * ※直接代入した場合は適用されませんのでご注意下さい。
+ * 
+ * @package   SFLF
+ * @author    github.com/rain-noise
+ * @copyright Copyright (c) 2017 github.com/rain-noise
+ * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
+ */
+#[\Attribute(\Attribute::TARGET_PROPERTY)]
+class Convert
+{
+    /**
+     * Form::popurate() で値を取り込む際にフォーム要素の配列⇔単独形式の変換を行うアトリビュートを定義します。
+     *
+     * @param To $to 変換先
+     * @param mixed $fallback 変換できなかった場合の代替値 （default: null）
+     * @param boolean $allows_sublist 子要素に配列を許可するか否か（dafault: false）
+     */
+    public function __construct(
+        public To $to,
+        public mixed $fallback = null,
+        public bool $allows_sublist = false
+    ) {
+    }
+}
+
+/**
+ * Convert アトリビュートで自動変換する先の形式（配列 or 単体）を定義します。
+ * 
+ * @package   SFLF
+ * @author    github.com/rain-noise
+ * @copyright Copyright (c) 2017 github.com/rain-noise
+ * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
+ */
+enum To
+{
+    case List;
+    case Single;
 }

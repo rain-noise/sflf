@@ -415,6 +415,19 @@ class DaoTest extends SflfTestCase
 
     public function test_paginate()
     {
+        [$pi, $rs] = Dao::paginate('invalid', 2, "SELECT * FROM users");
+        $this->assertInstanceOf(PageInfo::class, $pi);
+        $this->assertSame(1, $pi->page);
+        $this->assertSame(2, $pi->page_size);
+        $this->assertSame(3, $pi->hit_count);
+        $this->assertSame(2, $pi->max_page);
+        $this->assertSame(0, $pi->offset);
+        $this->assertSame(1, $pi->limit);
+        $this->assertSame(2, count($rs));
+        $this->assertInstanceOf(stdClass::class, $rs[0]);
+        $this->assertSame(1, $rs[0]->user_id);
+        $this->assertSame(2, $rs[1]->user_id);
+
         [$pi, $rs] = Dao::paginate(-1, 2, "SELECT * FROM users");
         $this->assertInstanceOf(PageInfo::class, $pi);
         $this->assertSame(1, $pi->page);
@@ -464,6 +477,26 @@ class DaoTest extends SflfTestCase
         $this->assertSame(1, count($rs));
         $this->assertInstanceOf(stdClass::class, $rs[0]);
         $this->assertSame(3, $rs[0]->user_id);
+
+        [$pi, $rs] = Dao::paginate(1, 'invalid', "SELECT * FROM users");
+        $this->assertInstanceOf(PageInfo::class, $pi);
+        $this->assertSame(1, $pi->page);
+        $this->assertSame(0, $pi->page_size);
+        $this->assertSame(0, $pi->hit_count);
+        $this->assertSame(1, $pi->max_page);
+        $this->assertSame(0, $pi->offset);
+        $this->assertSame(0, $pi->limit);
+        $this->assertSame(0, count($rs));
+
+        [$pi, $rs] = Dao::paginate(2, -1, "SELECT * FROM users");
+        $this->assertInstanceOf(PageInfo::class, $pi);
+        $this->assertSame(1, $pi->page);
+        $this->assertSame(0, $pi->page_size);
+        $this->assertSame(0, $pi->hit_count);
+        $this->assertSame(1, $pi->max_page);
+        $this->assertSame(0, $pi->offset);
+        $this->assertSame(0, $pi->limit);
+        $this->assertSame(0, count($rs));
 
         [$pi, $rs] = Dao::paginate(1, 1, "SELECT * FROM users WHERE gender = :gender", ['gender' => 1], User::class);
         $this->assertInstanceOf(PageInfo::class, $pi);

@@ -35,7 +35,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/extensions/smarty/includes/paginate.tpl ページ送り Smarty テンプレート
  *
  * @package   SFLF
- * @version   v4.0.1
+ * @version   v4.0.2
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -589,6 +589,9 @@ class Dao
      */
     public static function paginate($page, $page_size, $sql, $params = [], $clazz = 'stdClass', $optimized_count_sql = null)
     {
+        if ((int)$page_size < 1) {
+            return [new PageInfo(1, 0, 0), []];
+        }
         $hit_count = empty($optimized_count_sql) ? self::count($sql, $params) : self::get($optimized_count_sql, $params) ;
         $pi        = new PageInfo($page, $page_size, $hit_count);
         $rs        = self::select("$sql LIMIT {$pi->offset}, {$pi->page_size}", $params, $clazz);
@@ -686,7 +689,7 @@ class Dao
 
     /**
      * SQLテンプレートを展開します。
-     * 
+     *
      * なお、一次元配列のパラメータは要素数分のカンマ区切りのプレースホルダーに展開されます。
      * この時、配列パラメータの子要素に配列が含まれる場合、その配列は条件指定の値として不明な要素となるため、
      * パラメータの値が null に変換されて処理されます。
@@ -1096,9 +1099,21 @@ class PageInfo
      */
     public function __construct($page, $page_size, $hit_count)
     {
+        $page_size = (int) $page_size;
+        if ($page_size < 1) {
+            $this->page      = 1;
+            $this->page_size = 0;
+            $this->hit_count = 0;
+            $this->max_page  = 1;
+            $this->offset    = 0;
+            $this->limit     = 0;
+            return;
+        }
+
         $max_page = (int) floor($hit_count / $page_size) + ($hit_count % $page_size == 0 ? 0 : 1);
         $max_page = $max_page == 0 ? 1 : $max_page ;
-        $page     = (empty($page) || $page < 1) ? 1 : $page ;
+        $page     = (int) $page;
+        $page     = $page < 1 ? 1 : $page ;
         $page     = $max_page < $page ? $max_page : $page ;
         $offset   = ($page - 1) * $page_size;
         $limit    = $offset + $page_size - 1;

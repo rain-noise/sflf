@@ -10,7 +10,6 @@
  * require_once "/path/to/Form.php"; // or use AutoLoader
  *
  * class UserForm extends Form {
- *     #[Convert(To::Single)] // パラメータが配列で来たら単数形式に変換する
  *     public $user_id;
  *     public $name;
  *     public $mail_address;
@@ -19,6 +18,7 @@
  *     public $avatar;
  *     public $sex;
  *     public $birthday;
+ *     public array|null $hobbies = null; // 複数選択可能な要素は array 型指定と初期化が必要です（指定がないと単独⇔リスト自動変換で単独要素に変換されてしまいます）
  *
  *     public $bank;
  *     public $shipping_addresses;
@@ -50,7 +50,8 @@
  *             'sex'                => '性別',
  *             'birthday'           => '生年月日',
  *             'bank'               => '口座情報',
- *             'shipping_addresses' => '配送先'
+ *             'shipping_addresses' => '配送先',
+ *             'hobbies'            => '趣味'
  *         ];
  *     }
  *
@@ -166,6 +167,7 @@
  * }
  *
  *
+ * @todo SUB_FORM, SUB_FORM_LIST, FILES のアトリビュート指定対応
  * @todo multiple file form 対応
  * @todo sub form の file form / multiple file form 対応
  *
@@ -175,7 +177,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/extensions/smarty/plugins/block.unless_errors.php エラー有無分岐用 Smarty タグ
  *
  * @package   SFLF
- * @version   v4.1.0
+ * @version   v4.2.0
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -426,7 +428,8 @@ abstract class Form
     }
 
     /**
-     * リクエストデータ又は Dto オブジェクトから自身のインスタンス変数に値をコピーします。
+     * リクエストデータ又は Dto オブジェクトから自身の public なインスタンス変数に値をコピーします。
+     * ※protected/private なインスタンス変数へのコピーは行われません
      *
      * @param array<string, mixed>|object                                                                                                  $src       コピー元データ。リクエストデータ(=$_REQUEST)又はDtoオブジェクト
      * @param array<string, mixed>|null                                                                                                    $files     アップロードファイル情報(=$_FILES) (default: null)
@@ -448,7 +451,7 @@ abstract class Form
         }
 
         $clazz = get_class($this);
-        foreach (get_object_vars($this) as $field => $origin) {
+        foreach ($this->_getPublicObjectVars() as $field => $origin) {
             // サブフォームの解析
             if (array_key_exists($field, static::SUB_FORM)) {
                 $this->$field = $this->_genarateSubForm(static::SUB_FORM[$field], static::_get($src, $field), $converter);
@@ -468,18 +471,36 @@ abstract class Form
                 continue;
             }
 
-            $this->_set($field, $converter($field, static::_has($src, $field), $src, static::_get($src, $field), $this, $origin));
-
             if (isset($files[$field])) {
                 $this->$field = new UploadFile($clazz, $field, $files[$field]);
-            } else {
-                if (UploadFile::exists($clazz, $field)) {
-                    $this->$field = UploadFile::load($clazz, $field);
-                } elseif (in_array($field, static::FILES) && empty($this->$field)) {
-                    $this->$field = UploadFile::createEmpty($clazz, $field);
-                }
+                continue;
             }
+            if (UploadFile::exists($clazz, $field)) {
+                $this->$field = UploadFile::load($clazz, $field);
+                continue;
+            }
+            if (in_array($field, static::FILES) && empty($this->$field)) {
+                $this->$field = UploadFile::createEmpty($clazz, $field);
+                continue;
+            }
+
+            $this->_set($field, $converter($field, static::_has($src, $field), $src, static::_get($src, $field), $this, $origin));
         }
+    }
+
+    /**
+     * スコープが public なプロパティに限定して取得します。
+     *
+     * @return array<string, mixed>
+     */
+    private function _getPublicObjectVars() : array
+    {
+        $result = [];
+        $ref    = new \ReflectionObject($this);
+        foreach ($ref->getProperties(\ReflectionProperty::IS_PUBLIC) as $prop) {
+            $result[$prop->getName()] = $prop->getValue($this);
+        }
+        return $result;
     }
 
     /**
@@ -816,54 +837,83 @@ abstract class Form
     }
 
     /**
-     * Convertアトリビュートの指定に従い入力値の「配列⇔単独」変換を行います。
+     * Formプロパティの型指定（arrayか否か）に従い入力値の「配列⇔単独」変換を行います。
+     *
+     * - 単独　⇨単独　： 要素が null 又は '' なら代替値（デフォルト: null）に変換
+     *   　　　　　　　　 それ以外はそのまま
+     * - 単独　⇨リスト： 要素が null 又は '' なら代替値（デフォルト: null）に変換
+     *   　　　　　　　　 それ以外は要素数が1件のリストに変換
+     * - リスト⇨単独　： リスト内の array, null 及び '' は除外されます。
+     *   　　　　　　　　 要素数が0件なら代替値（デフォルト: null）に変換
+     *   　　　　　　　　 要素数が1件なら単独に変換
+     *   　　　　　　　 　要素数が2件以上なら代替値（デフォルト: null）に変換
+     * - リスト⇨リスト： リスト内の array, null 及び '' は除外されます。
+     *   　　　　　　　　 要素数が0件なら代替値（デフォルト: null）に変換
+     *
+     * なお、自動変換を行いたくないプロパティには NotConvert アトリビュートを付与することで変換を抑止できます。
+     * また、代替値として null を許容できない／任意の値を指定したいプロパティには Fallback アトリビュートで代替値を指定できます。
      *
      * @param string $property プロパティ名
      * @param mixed $value     設定する値
      * @return void
      */
-    private function _set($property, $value)
+    protected function _set($property, $value)
     {
-        $reflection = new \ReflectionProperty($this, $property);
-        $converts   = $reflection->getAttributes(Convert::class);
+        $reflection   = new \ReflectionProperty($this, $property);
+        $not_converts = $reflection->getAttributes(NotConvert::class);
 
-        if (empty($converts)) {
+        if (!empty($not_converts)) {
             $this->$property = $value;
             return;
         }
 
-        $convert = $converts[0]->newInstance();
-        if ($value === null) {
-            $this->$property = $convert->fallback;
+        $fallbacks = $reflection->getAttributes(Fallback::class);
+        $fallback  = empty($fallbacks) ? null : $fallbacks[0]->newInstance()->value;
+
+        if ($value === null || $value === '') {
+            $this->$property = $fallback;
             return;
+        }
+        $value = is_array($value) ? array_filter($value, fn ($v) => !is_array($v) && $v !== null && $v !== '') : $value;
+
+        $type             = $reflection->getType();
+        $convert_to_array = false;
+        if ($type instanceof \ReflectionUnionType) {
+            foreach ($type->getTypes() as $t) {
+                if ($t instanceof \ReflectionNamedType) {
+                    if ($t->getName() == 'array') {
+                        $convert_to_array = true;
+                        break;
+                    }
+                }
+            }
+        } elseif ($type instanceof \ReflectionIntersectionType) {
+            // PHP の交差型（Intersection Types）は、クラス名およびインターフェース名のみが対象で array が含まれることはない
+            $convert_to_array = false;
+        } elseif ($type instanceof \ReflectionNamedType) {
+            $convert_to_array = $type->getName() == 'array';
         }
 
         $converted_value = $value;
-        switch ($convert->to) {
-            case To::Single:
-                if (is_array($value)) {
-                    $converted_value = count($value) == 1 ? array_values($value)[0] : $convert->fallback;
-                    if (!$convert->allows_sublist && is_array($converted_value)) {
-                        $converted_value = $convert->fallback;
-                    }
-                }
-                break;
-
-            case To::List:
-                if (!is_array($value)) {
-                    $converted_value = [$value];
-                } else {
-                    if (!$convert->allows_sublist) {
-                        $converted_value = array_values(array_filter($value, fn ($v) => !is_array($v)));
-                    }
-                }
-                break;
+        if ($convert_to_array) {
+            if (is_array($value)) {
+                $converted_value = empty($value) ? $fallback : $value;
+            } else {
+                $converted_value = [$value];
+                trigger_error("Form property '".get_class($this)."::\${$property}' was converted from single to list.", E_USER_WARNING);
+            }
+        } else {
+            if (is_array($value)) {
+                $converted_value = count($value) == 1 ? array_values($value)[0] : $fallback;
+                trigger_error("Form property ".get_class($this)."::\${$property}' was converted from list to single.", E_USER_WARNING);
+            }
         }
 
         try {
             $this->$property = $converted_value;
         } catch (\TypeError $e) {
-            $this->$property = $convert->fallback;
+            // $fallback が TypeError になる場合はそのまま例外を伝搬させる
+            $this->$property = $fallback;
         }
     }
 
@@ -4515,43 +4565,43 @@ class InvalidValidateRuleException extends \RuntimeException
 }
 
 /**
- * Form に対する値の設定に際して、配列⇨単体／単体⇨配列の自動変換を行うことを指示するアトリビュート。
- * 本設定は Form::popurate() で値を設定した際に有効になります。
- * ※直接代入した場合は適用されませんのでご注意下さい。
- * 
+ * Form::popurate() による値の設定に際して、配列⇨単体／単体⇨配列の自動変換を行わないことを指示するアトリビュート。
+ *
  * @package   SFLF
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
-class Convert
+class NotConvert
 {
     /**
-     * Form::popurate() で値を取り込む際にフォーム要素の配列⇔単独形式の変換を行うアトリビュートを定義します。
-     *
-     * @param To $to 変換先
-     * @param mixed $fallback 変換できなかった場合の代替値 （default: null）
-     * @param boolean $allows_sublist 子要素に配列を許可するか否か（dafault: false）
+     * Form::popurate() で値を取り込む際にフォーム要素の配列⇔単独形式の自動変換を行わないことを指示するアトリビュートを定義します。
      */
-    public function __construct(
-        public To $to,
-        public mixed $fallback = null,
-        public bool $allows_sublist = false
-    ) {
+    public function __construct()
+    {
     }
 }
 
+
 /**
- * Convert アトリビュートで自動変換する先の形式（配列 or 単体）を定義します。
- * 
+ * Form::popurate() による値の設定に際して、配列⇨単体／単体⇨配列の自動変換を行う際に使用する代替値を指定するアトリビュート。
+ *
  * @package   SFLF
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
  */
-enum To
+#[\Attribute(\Attribute::TARGET_PROPERTY)]
+class Fallback
 {
-    case List;
-    case Single;
+    /**
+     * Form::popurate() で値を取り込む際にフォーム要素の配列⇔単独形式の変換で使われる代替値を指定します。
+     *
+     * @param mixed $value 変換できなかった場合の代替値
+     */
+    public function __construct(
+        public mixed $value
+    ) {
+    }
 }

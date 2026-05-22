@@ -18,10 +18,10 @@
  *     public $avatar;
  *     public $sex;
  *     public $birthday;
+ *     public array|null $hobbies = null; // 複数選択可能な要素は array 型指定と初期化が必要です（指定がないと単独⇔リスト自動変換で単独要素に変換されてしまいます）
  *
  *     public $bank;
  *     public $shipping_addresses;
- *     public array|null $hobbies = []; // 複数選択可能な要素は array 型指定と初期化が必要です（指定がないと単独⇔リスト自動変換で単独要素に変換されてしまいます）
  *
  *     // サブフォーム定義
  *     // ※HTML name 属性は bank[xxxxx] （ bank[name], bank[branch], bank[holder], bank[number] ）
@@ -167,6 +167,7 @@
  * }
  *
  *
+ * @todo SUB_FORM, SUB_FORM_LIST, FILES のアトリビュート指定対応
  * @todo multiple file form 対応
  * @todo sub form の file form / multiple file form 対応
  *

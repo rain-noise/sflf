@@ -17,7 +17,7 @@
  * $pass = Util::randomCode(8);
  *
  * @package   SFLF
- * @version   v4.1.4
+ * @version   v4.2.0
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -449,6 +449,90 @@ class Util
         }
 
         return $obj->$key ?? $default;
+    }
+
+    /**
+     * リクエストデータから指定のパラメータを取得します。
+     * この際に以下の「元データ⇨単独」変換を行います。
+     *
+     * - 単独　⇨単独　： 要素が null 又は '' なら代替値（デフォルト: null）に変換
+     *   　　　　　　　　 それ以外はそのまま
+     * - リスト⇨単独　： リスト内の array, null 及び '' は除外されます。
+     *   　　　　　　　　 要素数が0件なら代替値（デフォルト: null）に変換
+     *   　　　　　　　　 要素数が1件なら単独に変換
+     *   　　　　　　　 　要素数が2件以上なら代替値（デフォルト: null）に変換
+     *
+     * @param array<string, mixed> $request  リクエストデータ
+     * @param string               $param    パラメータ名
+     * @param mixed                $fallback 代替値 (default: null)
+     * @return mixed
+     */
+    public static function getAsSingle($request, $param, $fallback = null)
+    {
+        return static::_getAs('single', $request, $param, $fallback);
+    }
+
+    /**
+     * リクエストデータから指定のパラメータを取得します。
+     * この際に以下の「元データ⇨リスト」変換を行います。
+     *
+     * - 単独　⇨リスト： 要素が null 又は '' なら代替値（デフォルト: null）に変換
+     *   　　　　　　　　 それ以外は要素数が1件のリストに変換
+     * - リスト⇨リスト： リスト内の array, null 及び '' は除外されます。
+     *   　　　　　　　　 要素数が0件なら代替値（デフォルト: null）に変換
+     *
+     * @param array<string, mixed> $request  リクエストデータ
+     * @param string               $param    パラメータ名
+     * @param mixed                $fallback 代替値 (default: null)
+     * @return array<mixed>
+     */
+    public static function getAsList($request, $param, $fallback = null)
+    {
+        return static::_getAs('list', $request, $param, $fallback);
+    }
+
+    /**
+     * リクエストデータから指定のパラメータを取得します。
+     * この際に「配列⇔単独」変換を行います。
+     *
+     * - 単独　⇨単独　： 要素が null 又は '' なら代替値（デフォルト: null）に変換
+     *   　　　　　　　　 それ以外はそのまま
+     * - 単独　⇨リスト： 要素が null 又は '' なら代替値（デフォルト: null）に変換
+     *   　　　　　　　　 それ以外は要素数が1件のリストに変換
+     * - リスト⇨単独　： リスト内の array, null 及び '' は除外されます。
+     *   　　　　　　　　 要素数が0件なら代替値（デフォルト: null）に変換
+     *   　　　　　　　　 要素数が1件なら単独に変換
+     *   　　　　　　　 　要素数が2件以上なら代替値（デフォルト: null）に変換
+     * - リスト⇨リスト： リスト内の array, null 及び '' は除外されます。
+     *   　　　　　　　　 要素数が0件なら代替値（デフォルト: null）に変換
+     *
+     * @param 'single'|'list'      $type     取得タイプ
+     * @param array<string, mixed> $request  リクエストデータ
+     * @param string               $param    パラメータ名
+     * @param mixed                $fallback 代替値 (default: null)
+     * @return mixed
+     */
+    protected static function _getAs($type, $request, $param, $fallback = null)
+    {
+        $value = self::get($request, $param);
+        if ($value === null || $value === '') {
+            return $fallback;
+        }
+        $value = is_array($value) ? array_filter($value, fn ($v) => !is_array($v) && $v !== null && $v !== '') : $value;
+
+        if ($type === 'list') {
+            if (is_array($value)) {
+                return empty($value) ? $fallback : $value;
+            }
+
+            return [$value];
+        }
+
+        if (is_array($value)) {
+            return count($value) == 1 ? array_values($value)[0] : $fallback;
+        }
+
+        return $value;
     }
 
     /**
@@ -1406,34 +1490,83 @@ class Util
     /**
      * 指定URLのヘッダ情報を取得します。
      *
-     * @param string $url         URL
-     * @param bool   $associative ヘッダ解析 (default: false)
-     * @return mixed ヘッダ情報
+     * ※ヘッダ名は小文字に変換されます
+     * ※HTTPステータスラインは以下の特殊ヘッダ名で取得できます。
+     *   - @status-line   : HTTP ステータスライン (='{@http-version} {@status-code} {@reason-phrase}')
+     *   - @http-version  : HTTP バージョン
+     *   - @status-code   : ステータスコード
+     *   - @reason-phrase : ステータ理由
+     *
+     * @param string $url            URL
+     * @param bool   $with_redirects リダイレクト途中のヘッダ情報も取得するか否か (default: false)
+     * @return ($with_redirects is false ? array<string, string|array<string>> : array<int, array<string, string|array<string>>>)
      */
-    public static function urlGetHeaders($url, $associative = false)
+    public static function urlGetHeaders($url, $with_redirects = false)
     {
-        $headers = @get_headers($url, $associative, stream_context_create([
-            'http' => ['ignore_errors' => true],
-            'ssl'  => [
-                'verify_peer'      => false,
-                'verify_peer_name' => false
-            ],
-        ]));
+        if (empty($url)) {
+            return [];
+        }
+        try {
+            $headers = get_headers($url, false, stream_context_create([
+                'http' => [
+                    'ignore_errors' => true,
+                    'timeout'       => 3,
+                ],
+                'ssl' => [
+                    'verify_peer'      => false,
+                    'verify_peer_name' => false
+                ],
+            ]));
 
-        return $headers === false ? [] : $headers;
+            if ($headers === false) {
+                return [];
+            }
+        } catch (\Exception $e) {
+            return [];
+        }
+
+        $analyzed_headers = [];
+        $step             = -1;
+        foreach ($headers as $header) {
+            if (strpos($header, 'HTTP/') === 0) {
+                $step++;
+                [$version, $code, $reason]                 = explode(' ', $header, 3);
+                $analyzed_headers[$step]['@status-line']   = $header;
+                $analyzed_headers[$step]['@http-version']  = $version;
+                $analyzed_headers[$step]['@status-code']   = $code;
+                $analyzed_headers[$step]['@reason-phrase'] = $reason;
+                continue;
+            }
+
+            [$header_name, $header_body] = array_pad(explode(':', $header, 2), 2, '');
+            $header_name                 = strtolower(trim($header_name));
+            $header_body                 = trim($header_body);
+            if (!isset($analyzed_headers[$step][$header_name])) {
+                $analyzed_headers[$step][$header_name] = $header_body;
+            } else {
+                if (is_array($analyzed_headers[$step][$header_name])) {
+                    $analyzed_headers[$step][$header_name][] = $header_body;
+                } else {
+                    $analyzed_headers[$step][$header_name] = [$analyzed_headers[$step][$header_name], $header_body];
+                }
+            }
+        }
+
+        return $with_redirects ? $analyzed_headers : $analyzed_headers[count($analyzed_headers) - 1] ?? [];
     }
 
     /**
      * 指定URLのページが存在するかチェックします。
-     * ※HTTPステータスコードが 2XX系 及び 3XX 系の場合に true を返します。
+     * ※最終的なHTTPステータスコードが 2XX系 の場合に true を返します。
      *
      * @param string $url URL
      * @return bool true: 存在する, false: 存在しない
      */
     public static function urlExistContents($url)
     {
-        $headers = static::urlGetHeaders($url, false);
-        return preg_match('/[23][0-9]{2}/', $headers[0] ?? '') === 1;
+        $headers     = static::urlGetHeaders($url);
+        $status_code = $headers['@status-code'] ?? null;
+        return is_string($status_code) ? preg_match('/2[0-9]{2}/', $status_code) === 1 : false;
     }
 
     /**

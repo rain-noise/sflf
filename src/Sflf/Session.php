@@ -59,6 +59,7 @@ class Session
             }
             if (!$is_valid) {
                 unset($_COOKIE[$session_name]);
+                trigger_error("Invalid session ID '{$session_id}' was discarded and a new session will be started.", E_USER_NOTICE);
             }
         }
         if (!empty($handler)) {

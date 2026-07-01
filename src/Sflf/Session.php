@@ -14,7 +14,7 @@
  * Session::set('LOGIN', $user);
  *
  * @package   SFLF
- * @version   v4.0.1
+ * @version   v4.0.2
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -42,6 +42,25 @@ class Session
      */
     public static function start(?\SessionHandlerInterface $handler = null, array $options = [])
     {
+        $session_name = session_name();
+        if (isset($_COOKIE[$session_name])) {
+            $session_id = $_COOKIE[$session_name];
+            if ($handler instanceof \SessionUpdateTimestampHandlerInterface) {
+                $is_valid = $handler->validateId($session_id);
+            } else {
+                $bits  = (int)ini_get('session.sid_bits_per_character');
+                $len   = max(1, (int)(ini_get('session.sid_length') ?: 32));
+                $chars = match($bits) {
+                    4       => '[0-9a-f]',
+                    5       => '[0-9a-v]',
+                    default => '[0-9a-zA-Z,\-]',
+                };
+                $is_valid = (bool)preg_match('/^' . $chars . '{' . $len . '}$/', $session_id);
+            }
+            if (!$is_valid) {
+                unset($_COOKIE[$session_name]);
+            }
+        }
         if (!empty($handler)) {
             session_set_save_handler($handler, true);
         }

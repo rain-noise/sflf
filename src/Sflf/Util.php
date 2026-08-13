@@ -17,7 +17,7 @@
  * $pass = Util::randomCode(8);
  *
  * @package   SFLF
- * @version   v4.2.0
+ * @version   v4.2.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -1530,7 +1530,7 @@ class Util
         foreach ($headers as $header) {
             if (strpos($header, 'HTTP/') === 0) {
                 $step++;
-                [$version, $code, $reason]                 = explode(' ', $header, 3);
+                [$version, $code, $reason]                 = array_pad(explode(' ', $header, 3), 3, '');
                 $analyzed_headers[$step]['@status-line']   = $header;
                 $analyzed_headers[$step]['@http-version']  = $version;
                 $analyzed_headers[$step]['@status-code']   = $code;

@@ -177,7 +177,7 @@
  * @see https://github.com/rain-noise/sflf/blob/master/src/extensions/smarty/plugins/block.unless_errors.php エラー有無分岐用 Smarty タグ
  *
  * @package   SFLF
- * @version   v4.2.0
+ * @version   v4.2.1
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -905,7 +905,7 @@ abstract class Form
         } else {
             if (is_array($value)) {
                 $converted_value = count($value) == 1 ? array_values($value)[0] : $fallback;
-                trigger_error("Form property ".get_class($this)."::\${$property}' was converted from list to single.", E_USER_WARNING);
+                trigger_error("Form property '".get_class($this)."::\${$property}' was converted from list to single.", E_USER_WARNING);
             }
         }
 

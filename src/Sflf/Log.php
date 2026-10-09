@@ -34,7 +34,7 @@
  * );
  *
  * @package   SFLF
- * @version   v4.0.1
+ * @version   v4.1.0
  * @author    github.com/rain-noise
  * @copyright Copyright (c) 2017 github.com/rain-noise
  * @license   MIT License https://github.com/rain-noise/sflf/blob/master/LICENSE
@@ -90,6 +90,8 @@ class Log
     private static $_LOG_DISPLAY = self::DISPLAY_NONE;
     /** @var string|null ロガー設定定義：ログ出力抑止パターン */
     private static $_LOG_SUPPRESS_PATTERN = null;
+    /** @var string|null ロガー設定定義：ロググループ名 */
+    private static $_LOG_GROUP_NAME = null;
 
     /**
      * ブラウザ画面ログ出力ストック用バッファ
@@ -147,15 +149,17 @@ class Log
      * @param string      $suffix           ログファイルサフィックスのDatePattern (default: _Ym)
      * @param int         $display          画面出力制御 DISPLAY_* (default: DISPLAY_NONE)
      * @param string|null $suppress_pattern ログ出力抑止パターン正規表現 (default: null)
+     * @param string|null $log_group_name   ロググループ名 (default: null)
      * @return void
      */
-    public static function init($level, $file_name = null, $suffix = "_Ym", $display = self::DISPLAY_NONE, $suppress_pattern = null)
+    public static function init($level, $file_name = null, $suffix = "_Ym", $display = self::DISPLAY_NONE, $suppress_pattern = null, $log_group_name = null)
     {
         self::$_LOG_LEVEL            = $level;
         self::$_LOG_FILE             = $file_name;
         self::$_LOG_FILE_SUFFIX      = $suffix;
         self::$_LOG_DISPLAY          = $display;
         self::$_LOG_SUPPRESS_PATTERN = $suppress_pattern;
+        self::$_LOG_GROUP_NAME       = $log_group_name;
 
         if (self::$_LOG_DISPLAY == self::DISPLAY_FINALLY) {
             register_shutdown_function(function () { Log::display(); });
@@ -297,6 +301,14 @@ class Log
                 ."\n".$exception,
                 1,
                 '** '
+            );
+        }
+
+        if (!empty(self::$_LOG_GROUP_NAME)) {
+            $body = self::_indent(
+                self::$_LOG_GROUP_NAME." ".$body,
+                1,
+                self::$_LOG_GROUP_NAME." "
             );
         }
 
